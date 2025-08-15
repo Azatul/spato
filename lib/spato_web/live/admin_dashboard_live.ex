@@ -44,47 +44,55 @@ defmodule SpatoWeb.AdminDashboardLive do
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 
                 <!-- Card: Bilik mesyuarat (Meeting Room) -->
-                <div class="bg-white p-6 rounded-xl shadow-md flex justify-between items-center transition-transform hover:scale-105">
+                <div class="bg-white p-6 rounded-xl shadow-md flex flex-col justify-between h-40 transition-transform hover:scale-105">
                     <div>
                         <p class="text-sm text-gray-500">Bilik mesyuarat</p>
                         <p class="text-3xl font-bold mt-1">12</p>
                     </div>
-                    <button class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg flex items-center shadow-lg transition-colors">
-                        Ambil tindakan →
-                    </button>
+                    <div class="w-full flex justify-end">
+                        <button class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-1 px-4 rounded-md shadow-lg transition-colors mt-4 text-sm">
+                            Ambil tindakan →
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Card: Kenderaan (Vehicle) -->
-                <div class="bg-white p-6 rounded-xl shadow-md flex justify-between items-center transition-transform hover:scale-105">
+                <div class="bg-white p-6 rounded-xl shadow-md flex flex-col justify-between h-40 transition-transform hover:scale-105">
                     <div>
                         <p class="text-sm text-gray-500">Kenderaan</p>
                         <p class="text-3xl font-bold mt-1">8</p>
                     </div>
-                    <button class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg flex items-center shadow-lg transition-colors">
-                        Ambil tindakan →
-                    </button>
+                    <div class="w-full flex justify-end">
+                        <button class="bg-green-600 hover:bg-green-700 text-white font-semibold py-1 px-4 rounded-md shadow-lg transition-colors mt-4 text-sm">
+                            Ambil tindakan →
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Card: Katering (Catering) -->
-                <div class="bg-white p-6 rounded-xl shadow-md flex justify-between items-center transition-transform hover:scale-105">
+                <div class="bg-white p-6 rounded-xl shadow-md flex flex-col justify-between h-40 transition-transform hover:scale-105">
                     <div>
                         <p class="text-sm text-gray-500">Katering</p>
                         <p class="text-3xl font-bold mt-1">4</p>
                     </div>
-                    <button class="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-4 rounded-lg flex items-center shadow-lg transition-colors">
-                        Ambil tindakan →
-                    </button>
+                    <div class="w-full flex justify-end">
+                        <button class="bg-yellow-500 hover:bg-yellow-700 text-white font-semibold py-1 px-4 rounded-md shadow-lg transition-colors mt-4 text-sm">
+                            Ambil tindakan →
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Card: Peralatan (Equipment) -->
-                <div class="bg-white p-6 rounded-xl shadow-md flex justify-between items-center transition-transform hover:scale-105">
+                <div class="bg-white p-6 rounded-xl shadow-md flex flex-col justify-between h-40 transition-transform hover:scale-105">
                     <div>
                         <p class="text-sm text-gray-500">Peralatan</p>
-                        <p class="text-3xl font-bold mt-1">5</p>
+                        <p class="text-3xl font-bold mt-1">12</p>
                     </div>
-                    <button class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg flex items-center shadow-lg transition-colors">
-                        Ambil tindakan →
-                    </button>
+                    <div class="w-full flex justify-end">
+                        <button class="bg-red-600 hover:bg-red-700 text-white font-semibold py-1 px-4 rounded-md shadow-lg transition-colors mt-4 text-sm">
+                            Ambil tindakan →
+                        </button>
+                    </div>
                 </div>
             </div>
         </section>
@@ -139,130 +147,7 @@ defmodule SpatoWeb.AdminDashboardLive do
 
             <!-- Calendar Grid -->
             <div class="overflow-x-auto rounded-lg border border-gray-200">
-                <table class="min-w-full divide-y divide-gray-200 text-sm">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th scope="col" class="px-6 py-3 text-left font-bold text-gray-700 uppercase tracking-wider"></th>
-                            <th scope="col" class="px-6 py-3 text-left font-bold text-gray-700 uppercase tracking-wider bg-pink-100">
-                                Isnin<br>
-                                <span class="font-normal text-xs">18/09/2024</span>
-                            </th>
-                            <th scope="col" class="px-6 py-3 text-left font-bold text-gray-700 uppercase tracking-wider bg-pink-100">
-                                Selasa<br>
-                                <span class="font-normal text-xs">19/09/2024</span>
-                            </th>
-                            <th scope="col" class="px-6 py-3 text-left font-bold text-gray-700 uppercase tracking-wider">Rabu</th>
-                            <th scope="col" class="px-6 py-3 text-left font-bold text-gray-700 uppercase tracking-wider">Khamis</th>
-                            <th scope="col" class="px-6 py-3 text-left font-bold text-gray-700 uppercase tracking-wider">Jumaat</th>
-                            <th scope="col" class="px-6 py-3 text-left font-bold text-gray-700 uppercase tracking-wider">Sabtu</th>
-                            <th scope="col" class="px-6 py-3 text-left font-bold text-gray-700 uppercase tracking-wider">Ahad</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        <!-- Time slots - using a loop for simplicity -->
-                        <!-- This would be dynamic in a real application -->
-                        <tr class="h-16">
-                            <td class="px-6 py-4 font-bold text-gray-900 whitespace-nowrap border-r border-gray-200">08:00 - 09:00</td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                        </tr>
-                        <tr class="h-16">
-                            <td class="px-6 py-4 font-bold text-gray-900 whitespace-nowrap border-r border-gray-200">09:00 - 10:00</td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                        </tr>
-                        <tr class="h-16">
-                            <td class="px-6 py-4 font-bold text-gray-900 whitespace-nowrap border-r border-gray-200">10:00 - 11:00</td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                        </tr>
-                        <tr class="h-16">
-                            <td class="px-6 py-4 font-bold text-gray-900 whitespace-nowrap border-r border-gray-200">11:00 - 12:00</td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                        </tr>
-                        <tr class="h-16">
-                            <td class="px-6 py-4 font-bold text-gray-900 whitespace-nowrap border-r border-gray-200">12:00 - 13:00</td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                        </tr>
-                        <tr class="h-16">
-                            <td class="px-6 py-4 font-bold text-gray-900 whitespace-nowrap border-r border-gray-200">13:00 - 14:00</td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                        </tr>
-                        <tr class="h-16">
-                            <td class="px-6 py-4 font-bold text-gray-900 whitespace-nowrap border-r border-gray-200">14:00 - 15:00</td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                        </tr>
-                        <tr class="h-16">
-                            <td class="px-6 py-4 font-bold text-gray-900 whitespace-nowrap border-r border-gray-200">15:00 - 16:00</td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                        </tr>
-                        <tr class="h-16">
-                            <td class="px-6 py-4 font-bold text-gray-900 whitespace-nowrap border-r border-gray-200">16:00 - 17:00</td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                        </tr>
-                        <tr class="h-16">
-                            <td class="px-6 py-4 font-bold text-gray-900 whitespace-nowrap border-r border-gray-200">17:00 - 18:00</td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                            <td class="px-6 py-4"></td>
-                        </tr>
-                    </tbody>
-                </table>
+
             </div>
         </section>
 

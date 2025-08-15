@@ -46,7 +46,7 @@ defmodule SpatoWeb.UserLoginLive do
 
           <!-- Actions: Log in button -->
           <:actions>
-            <.button phx-disable-with="Logging in..." class="block w-full py-2 rounded-md text-white bg-[#224179] hover:bg-[#20386b] transition font-semibold">
+            <.button phx-disable-with="Logging in..." class="block w-full py-2 rounded-md text-white hover:bg-[#20386b] transition font-semibold bg-[#224179]">
               Log Masuk
             </.button>
           </:actions>

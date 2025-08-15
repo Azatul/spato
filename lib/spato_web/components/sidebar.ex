@@ -116,11 +116,6 @@ defmodule SpatoWeb.Components.Sidebar do
                 Senarai Pengguna
               </.sidebar_link>
             </li>
-            <li>
-              <.sidebar_link to="/statistik" icon="chart-bar" active={@active_tab == "statistik"} open={@open}>
-                Statistik
-              </.sidebar_link>
-            </li>
           <% end %>
         </ul>
       </nav>
