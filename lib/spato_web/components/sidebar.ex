@@ -1,64 +1,137 @@
-# lib/spato_web/components/sidebar.ex
-defmodule SpatoWeb.Sidebar do
+defmodule SpatoWeb.Components.Sidebar do
   use Phoenix.Component
 
-  # Komponen ini boleh dipanggil dengan: <.sidebar />
+  attr :active_tab, :string, default: nil
+  attr :current_user, :map, required: true
+  attr :open, :boolean, default: true
+  attr :toggle_event, :string, default: nil
+
   def sidebar(assigns) do
     ~H"""
-    <aside class="bg-white w-64 p-4 shadow-md flex-shrink-0">
-      <div class="flex items-center space-x-2 pb-4 border-b border-gray-200">
-        <img src="https://placehold.co/40x40" alt="SPATO Logo" class="w-10 h-10" />
-        <h1 class="font-bold text-lg text-blue-700">SPATO</h1>
+    <aside
+      class={[
+        "h-full bg-gray-100 border-r border-gray-200 p-4 flex flex-col transition-all duration-300 overflow-y-auto",
+        @open && "w-64",
+        !@open && "w-16"
+      ]}
+    >
+      <!-- Toggle button -->
+      <div class="flex justify-end mb-4">
+        <button
+          phx-click={@toggle_event}
+          class="w-8 h-8 flex items-center justify-center bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors"
+          title="Toggle sidebar"
+        >
+          <i class={
+            if @open,
+              do: "fa-solid fa-angle-left",
+              else: "fa-solid fa-angle-right"
+          }></i>
+        </button>
       </div>
-      <nav class="mt-8">
-        <ul>
-          <li class="mb-2">
-            <a href="#" class="flex items-center p-2 text-blue-700 bg-blue-100 rounded-md">
-              <i class="fa-solid fa-chart-line w-5 h-5 mr-3"></i>
+
+      <nav class="flex-1">
+        <ul class="space-y-2">
+
+          <!-- Dashboard -->
+          <li>
+            <.sidebar_link
+              to="/admin/dashboard"
+              icon="house"
+              active={@active_tab == "dashboard"}
+              open={@open}
+            >
               Dashboard
-            </a>
+            </.sidebar_link>
           </li>
-          <li class="mb-2">
-            <a href="#" class="flex items-center p-2 text-gray-600 hover:bg-gray-100 rounded-md">
-              <i class="fa-solid fa-building w-5 h-5 mr-3"></i>
-              Tempahan Bilik Mesyuarat
-            </a>
+
+          <!-- Tempahan submenu -->
+          <li>
+            <details class="group">
+              <summary class={[
+                "flex items-center justify-between px-4 py-2 rounded-md hover:bg-gray-200 cursor-pointer",
+                @active_tab in ["meeting_rooms", "vehicles", "catering", "equipments"] && "bg-gray-300 font-bold"
+              ]}>
+                <div class="flex items-center gap-2">
+                  <i class="fa-solid fa-calendar-check"></i>
+                  <%= if @open, do: "Tempahan" %>
+                </div>
+                <%= if @open do %>
+                  <i class="fa-solid fa-angle-down transition-transform group-open:rotate-180"></i>
+                <% end %>
+              </summary>
+
+              <ul class="ml-8 mt-2 space-y-1">
+                <li><.sidebar_link to="/meeting_rooms" icon="door-closed" active={@active_tab == "meeting_rooms"} open={@open}>Tempahan Bilik Mesyuarat</.sidebar_link></li>
+                <li><.sidebar_link to="/vehicles" icon="car" active={@active_tab == "vehicles"} open={@open}>Tempahan Kenderaan</.sidebar_link></li>
+                <li><.sidebar_link to="/catering" icon="utensils" active={@active_tab == "catering"} open={@open}>Tempahan Katering</.sidebar_link></li>
+                <li><.sidebar_link to="/equipments" icon="tools" active={@active_tab == "equipments"} open={@open}>Tempahan Peralatan</.sidebar_link></li>
+                <li><.sidebar_link to="/equipments" icon="tools" active={@active_tab == "equipments"} open={@open}>Sejarah Tempahan</.sidebar_link></li>
+              </ul>
+            </details>
           </li>
-          <li class="mb-2">
-            <a href="#" class="flex items-center p-2 text-gray-600 hover:bg-gray-100 rounded-md">
-              <i class="fa-solid fa-list-check w-5 h-5 mr-3"></i>
-              Tempahan
-            </a>
-          </li>
-          <li class="ml-4 mb-2">
-            <a href="#" class="block p-2 text-gray-600 hover:bg-gray-100 rounded-md">
-              Tempahan Bilik Mesyuarat
-            </a>
-          </li>
-          <li class="ml-4 mb-2">
-            <a href="#" class="block p-2 text-gray-600 hover:bg-gray-100 rounded-md">
-              Tempahan Kenderaan
-            </a>
-          </li>
-          <li class="ml-4 mb-2">
-            <a href="#" class="block p-2 text-gray-600 hover:bg-gray-100 rounded-md">
-              Tempahan Katering
-            </a>
-          </li>
-          <li class="ml-4 mb-2">
-            <a href="#" class="block p-2 text-gray-600 hover:bg-gray-100 rounded-md">
-              Tempahan Peralatan
-            </a>
-          </li>
-          <li class="mb-2">
-            <a href="#" class="flex items-center p-2 text-gray-600 hover:bg-gray-100 rounded-md">
-              <i class="fa-solid fa-history w-5 h-5 mr-3"></i>
-              Sejarah Tempahan Saya
-            </a>
-          </li>
+
+          <!-- Admin-only items -->
+          <%= if is_admin?(@current_user) do %>
+            <li>
+              <details class="group">
+                <summary class={[
+                  "flex items-center justify-between px-4 py-2 rounded-md hover:bg-gray-200 cursor-pointer",
+                  @active_tab in ["manage_meeting_rooms", "manage_vehicles", "manage_catering", "manage_equipments"] && "bg-gray-300 font-bold"
+                ]}>
+                  <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-boxes-stacked"></i>
+                    <%= if @open, do: "Pengurusan Aset" %>
+                  </div>
+                  <%= if @open do %>
+                    <i class="fa-solid fa-angle-down transition-transform group-open:rotate-180"></i>
+                  <% end %>
+                </summary>
+
+                <ul class="ml-8 mt-2 space-y-1">
+                  <li><.sidebar_link to="/manage_meeting_rooms" icon="door-open" active={@active_tab == "manage_meeting_rooms"} open={@open}>Urus Bilik Mesyuarat</.sidebar_link></li>
+                  <li><.sidebar_link to="/manage_vehicles" icon="truck" active={@active_tab == "manage_vehicles"} open={@open}>Urus Kenderaan</.sidebar_link></li>
+                  <li><.sidebar_link to="/manage_catering" icon="utensils" active={@active_tab == "manage_catering"} open={@open}>Urus Katering</.sidebar_link></li>
+                  <li><.sidebar_link to="/manage_equipments" icon="tools" active={@active_tab == "manage_equipments"} open={@open}>Urus Peralatan</.sidebar_link></li>
+                </ul>
+              </details>
+            </li>
+
+            <li>
+              <.sidebar_link to="/users" icon="users" active={@active_tab == "users"} open={@open}>
+                Senarai Pengguna
+              </.sidebar_link>
+            </li>
+          <% end %>
         </ul>
       </nav>
     </aside>
     """
   end
+
+  attr :to, :string, required: true
+  attr :icon, :string, required: true
+  attr :active, :boolean, default: false
+  attr :open, :boolean, default: true
+  slot :inner_block, required: true
+
+  def sidebar_link(assigns) do
+    ~H"""
+    <a
+      href={@to}
+      class={[
+        "flex items-center gap-2 px-4 py-2 rounded-md hover:bg-gray-200 transition-all duration-300",
+        @active && "bg-gray-300 font-bold"
+      ]}
+    >
+      <i class={"fa-solid fa-#{@icon}"}></i>
+      <%= if @open do %>
+        <span><%= render_slot(@inner_block) %></span>
+      <% end %>
+    </a>
+    """
+  end
+
+  defp is_admin?(%{role: "admin"}), do: true
+  defp is_admin?(_), do: false
 end

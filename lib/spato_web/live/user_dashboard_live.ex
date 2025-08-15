@@ -1,42 +1,31 @@
 defmodule SpatoWeb.UserDashboardLive do
   use SpatoWeb, :live_view
+  import SpatoWeb.Components.Sidebar
 
-  import SpatoWeb.Sidebar
+  on_mount {SpatoWeb.UserAuth, :ensure_authenticated}
 
-  alias Spato.Accounts
-  alias Spato.Accounts.User
-
-  @impl true
   def mount(_params, _session, socket) do
-    users = Accounts.list_users()
-
     {:ok,
-      socket
-      |> assign(:page_title, "User Dashboard")
-      |> assign(:users, users)
-      |> assign(:search_term, "")
-    }
+     socket
+     |> assign(:page_title, "User Dashboard")
+     |> assign(:active_tab, "dashboard")
+     |> assign(:sidebar_open, true)}
   end
 
-  @impl true
-  def handle_event("search", %{"query" => query}, socket) do
-    users =
-      Accounts.list_users()
-      |> Enum.filter(fn user ->
-        String.contains?(String.downcase(user.email), String.downcase(query))
-      end)
-
-    {:noreply, assign(socket, :users, users)}
+  def handle_event("toggle_sidebar", _params, socket) do
+    {:noreply, update(socket, :sidebar_open, &(!&1))}
   end
 
-  @impl true
 def render(assigns) do
   ~H"""
   <div class="flex w-screen h-screen bg-gray-100 font-sans overflow-hidden">
     <!-- Sidebar -->
-    <div class="w-64 h-full bg-white shadow-md flex-shrink-0">
-      <.sidebar />
-    </div>
+    <.sidebar
+        active_tab={@active_tab}
+        current_user={@current_user}
+        open={@sidebar_open}
+        toggle_event="toggle_sidebar"
+      />
 
     <!-- Main Content -->
     <main class="flex-1 p-8 overflow-y-auto bg-gray-50">
