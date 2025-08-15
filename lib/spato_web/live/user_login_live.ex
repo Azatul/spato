@@ -8,7 +8,7 @@ defmodule SpatoWeb.UserLoginLive do
 
         <!-- Logo + Title -->
         <div class="flex items-center justify-center mb-6 text-center">
-          <img src={~p"/images/logo-6.png"} alt="SPATO Logo" class="w-76 h-34 mr-4">
+          <img src={~p"/images/spato.png"} alt="SPATO Logo" class="w-72">
         </div>
 
         <!-- Login Form -->

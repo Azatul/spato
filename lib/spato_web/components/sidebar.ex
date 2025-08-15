@@ -1,6 +1,7 @@
 defmodule SpatoWeb.Components.Sidebar do
   use Phoenix.Component
 
+  # The attr for @socket is needed to correctly use Routes.static_path.
   attr :active_tab, :string, default: nil
   attr :current_user, :map, required: true
   attr :open, :boolean, default: true
@@ -15,6 +16,19 @@ defmodule SpatoWeb.Components.Sidebar do
         !@open && "w-16"
       ]}
     >
+      <!-- Logo section at the top of the sidebar -->
+      <div class="mb-6">
+        <img
+          src="/images/logo.png"
+          alt="Spato Logo"
+          class={[
+            "mx-auto h-12 transition-transform duration-300",
+            @open && "scale-100",
+            !@open && "scale-0"
+          ]}
+        />
+      </div>
+
       <!-- Toggle button -->
       <div class="flex justify-end mb-4">
         <button
@@ -50,7 +64,7 @@ defmodule SpatoWeb.Components.Sidebar do
             <details class="group">
               <summary class={[
                 "flex items-center justify-between px-4 py-2 rounded-md hover:bg-gray-200 cursor-pointer",
-                @active_tab in ["meeting_rooms", "vehicles", "catering", "equipments"] && "bg-gray-300 font-bold"
+                @active_tab in ["meeting_rooms", "vehicles", "catering", "equipments", "history"] && "bg-gray-300 font-bold"
               ]}>
                 <div class="flex items-center gap-2">
                   <i class="fa-solid fa-calendar-check"></i>
@@ -66,7 +80,7 @@ defmodule SpatoWeb.Components.Sidebar do
                 <li><.sidebar_link to="/vehicles" icon="car" active={@active_tab == "vehicles"} open={@open}>Tempahan Kenderaan</.sidebar_link></li>
                 <li><.sidebar_link to="/catering" icon="utensils" active={@active_tab == "catering"} open={@open}>Tempahan Katering</.sidebar_link></li>
                 <li><.sidebar_link to="/equipments" icon="tools" active={@active_tab == "equipments"} open={@open}>Tempahan Peralatan</.sidebar_link></li>
-                <li><.sidebar_link to="/equipments" icon="tools" active={@active_tab == "equipments"} open={@open}>Sejarah Tempahan</.sidebar_link></li>
+                <li><.sidebar_link to="/history" icon="clock-rotate-left" active={@active_tab == "history"} open={@open}>Sejarah Tempahan</.sidebar_link></li>
               </ul>
             </details>
           </li>
@@ -100,6 +114,11 @@ defmodule SpatoWeb.Components.Sidebar do
             <li>
               <.sidebar_link to="/users" icon="users" active={@active_tab == "users"} open={@open}>
                 Senarai Pengguna
+              </.sidebar_link>
+            </li>
+            <li>
+              <.sidebar_link to="/statistik" icon="chart-bar" active={@active_tab == "statistik"} open={@open}>
+                Statistik
               </.sidebar_link>
             </li>
           <% end %>
