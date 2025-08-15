@@ -79,7 +79,7 @@ def render(assigns) do
       </div>
 
       <!-- Action Buttons -->
-      <div class="flex space-x-4 mb-8">
+      <div class="flex justify-center space-x-4 mb-8">
         <button class="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700">
           <i class="fa-solid fa-plus mr-2"></i> Tempah Bilik Mesyuarat
         </button>
@@ -102,7 +102,7 @@ def render(assigns) do
         <div class="flex items-center justify-between mb-4 flex-wrap gap-4">
           <div class="flex items-center space-x-2">
             <span class="text-gray-600">Jenis tempahan</span>
-            <select class="border rounded-md p-2">
+            <select class="border rounded-md p-2 w-64">
               <option>Tempahan Bilik Mesyuarat</option>
             </select>
           </div>
@@ -113,9 +113,9 @@ def render(assigns) do
           </div>
           <div class="flex items-center space-x-2">
             <span class="text-gray-600">Dari</span>
-            <input type="date" class="border rounded-md p-2 w-32" />
+            <input type="date" class="border rounded-md p-2 w-35" />
             <span class="text-gray-600">Hingga</span>
-            <input type="date" class="border rounded-md p-2 w-32" />
+            <input type="date" class="border rounded-md p-2 w-35" />
           </div>
         </div>
 
