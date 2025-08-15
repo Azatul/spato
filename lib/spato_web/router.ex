@@ -19,7 +19,7 @@ defmodule SpatoWeb.Router do
 
   scope "/", SpatoWeb do
     pipe_through :browser
-
+live "/dashboard", UserDashboardLive
     get "/", PageController, :home
   end
 
