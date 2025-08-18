@@ -16,33 +16,35 @@ defmodule SpatoWeb.Components.Sidebar do
         !@open && "w-16"
       ]}
     >
-      <!-- Logo section at the top of the sidebar -->
-      <div class="mb-6">
+      <!-- Logo (clickable toggle) -->
+        <div
+          class={[
+            "flex items-center transition-all duration-300 cursor-pointer h-16", # h-16 gives vertical space
+            @open && "justify-start space-x-2 px-4",   # expanded → left align with padding
+            !@open && "justify-center"                 # collapsed → center align
+          ]}
+          phx-click={@toggle_event}
+          title="Toggle sidebar"
+        >
+          <!-- Icon (always visible, full size) -->
+          <img
+            src="/images/spato - logo.png"
+            alt="Spato Icon"
+            class="h-8"
+          />
+
+        <!-- Wordmark (only visible when expanded) -->
         <img
-          src="/images/logo.png"
+          src="/images/spato - word.png"
           alt="Spato Logo"
           class={[
-            "mx-auto h-12 transition-transform duration-300",
-            @open && "scale-100",
-            !@open && "scale-0"
+            "h-5 transition-all duration-300 origin-left",
+            @open && "opacity-100 scale-x-100",
+            !@open && "opacity-0 scale-x-0"
           ]}
         />
       </div>
 
-      <!-- Toggle button -->
-      <div class="flex justify-end mb-4">
-        <button
-          phx-click={@toggle_event}
-          class="w-8 h-8 flex items-center justify-center bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors"
-          title="Toggle sidebar"
-        >
-          <i class={
-            if @open,
-              do: "fa-solid fa-angle-left",
-              else: "fa-solid fa-angle-right"
-          }></i>
-        </button>
-      </div>
 
       <nav class="flex-1">
         <ul class="space-y-2">
