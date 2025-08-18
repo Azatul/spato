@@ -561,4 +561,80 @@ defmodule Spato.AccountsTest do
       assert %Ecto.Changeset{} = Accounts.change_department(department)
     end
   end
+
+  describe "user_profiles" do
+    alias Spato.Accounts.UserProfile
+
+    import Spato.AccountsFixtures
+
+    @invalid_attrs %{position: nil, address: nil, full_name: nil, dob: nil, ic_number: nil, gender: nil, phone_number: nil, employment_status: nil, date_joined: nil, profile_picture_url: nil, last_login_at: nil, is_active: nil}
+
+    test "list_user_profiles/0 returns all user_profiles" do
+      user_profile = user_profile_fixture()
+      assert Accounts.list_user_profiles() == [user_profile]
+    end
+
+    test "get_user_profile!/1 returns the user_profile with given id" do
+      user_profile = user_profile_fixture()
+      assert Accounts.get_user_profile!(user_profile.id) == user_profile
+    end
+
+    test "create_user_profile/1 with valid data creates a user_profile" do
+      valid_attrs = %{position: "some position", address: "some address", full_name: "some full_name", dob: ~D[2025-08-17], ic_number: "some ic_number", gender: "some gender", phone_number: "some phone_number", employment_status: "some employment_status", date_joined: ~D[2025-08-17], profile_picture_url: "some profile_picture_url", last_login_at: ~U[2025-08-17 04:31:00Z], is_active: true}
+
+      assert {:ok, %UserProfile{} = user_profile} = Accounts.create_user_profile(valid_attrs)
+      assert user_profile.position == "some position"
+      assert user_profile.address == "some address"
+      assert user_profile.full_name == "some full_name"
+      assert user_profile.dob == ~D[2025-08-17]
+      assert user_profile.ic_number == "some ic_number"
+      assert user_profile.gender == "some gender"
+      assert user_profile.phone_number == "some phone_number"
+      assert user_profile.employment_status == "some employment_status"
+      assert user_profile.date_joined == ~D[2025-08-17]
+      assert user_profile.profile_picture_url == "some profile_picture_url"
+      assert user_profile.last_login_at == ~U[2025-08-17 04:31:00Z]
+      assert user_profile.is_active == true
+    end
+
+    test "create_user_profile/1 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} = Accounts.create_user_profile(@invalid_attrs)
+    end
+
+    test "update_user_profile/2 with valid data updates the user_profile" do
+      user_profile = user_profile_fixture()
+      update_attrs = %{position: "some updated position", address: "some updated address", full_name: "some updated full_name", dob: ~D[2025-08-18], ic_number: "some updated ic_number", gender: "some updated gender", phone_number: "some updated phone_number", employment_status: "some updated employment_status", date_joined: ~D[2025-08-18], profile_picture_url: "some updated profile_picture_url", last_login_at: ~U[2025-08-18 04:31:00Z], is_active: false}
+
+      assert {:ok, %UserProfile{} = user_profile} = Accounts.update_user_profile(user_profile, update_attrs)
+      assert user_profile.position == "some updated position"
+      assert user_profile.address == "some updated address"
+      assert user_profile.full_name == "some updated full_name"
+      assert user_profile.dob == ~D[2025-08-18]
+      assert user_profile.ic_number == "some updated ic_number"
+      assert user_profile.gender == "some updated gender"
+      assert user_profile.phone_number == "some updated phone_number"
+      assert user_profile.employment_status == "some updated employment_status"
+      assert user_profile.date_joined == ~D[2025-08-18]
+      assert user_profile.profile_picture_url == "some updated profile_picture_url"
+      assert user_profile.last_login_at == ~U[2025-08-18 04:31:00Z]
+      assert user_profile.is_active == false
+    end
+
+    test "update_user_profile/2 with invalid data returns error changeset" do
+      user_profile = user_profile_fixture()
+      assert {:error, %Ecto.Changeset{}} = Accounts.update_user_profile(user_profile, @invalid_attrs)
+      assert user_profile == Accounts.get_user_profile!(user_profile.id)
+    end
+
+    test "delete_user_profile/1 deletes the user_profile" do
+      user_profile = user_profile_fixture()
+      assert {:ok, %UserProfile{}} = Accounts.delete_user_profile(user_profile)
+      assert_raise Ecto.NoResultsError, fn -> Accounts.get_user_profile!(user_profile.id) end
+    end
+
+    test "change_user_profile/1 returns a user_profile changeset" do
+      user_profile = user_profile_fixture()
+      assert %Ecto.Changeset{} = Accounts.change_user_profile(user_profile)
+    end
+  end
 end

@@ -36,6 +36,13 @@ defmodule SpatoWeb.Router do
     live "/departments/:id", DepartmentLive.Show, :show
     live "/departments/:id/show/edit", DepartmentLive.Show, :edit
 
+    live "/user_profiles", UserProfileLive.Index, :index
+    live "/user_profiles/new", UserProfileLive.Index, :new
+    live "/user_profiles/:id/edit", UserProfileLive.Index, :edit
+
+    live "/user_profiles/:id", UserProfileLive.Show, :show
+    live "/user_profiles/:id/show/edit", UserProfileLive.Show, :edit
+
     live "/", UserLoginLive
   end
 
