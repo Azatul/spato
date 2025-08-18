@@ -16,24 +16,21 @@ defmodule SpatoWeb.Components.Sidebar do
         !@open && "w-16"
       ]}
     >
-      <!-- Logo (clickable toggle) -->
-        <div
-          class={[
-            "flex items-center transition-all duration-300 cursor-pointer h-16", # h-16 gives vertical space
-            @open && "justify-start space-x-2 px-4",   # expanded → left align with padding
-            !@open && "justify-center"                 # collapsed → center align
-          ]}
-          phx-click={@toggle_event}
-          title="Toggle sidebar"
-        >
-          <!-- Icon (always visible, full size) -->
-          <img
-            src="/images/spato - logo.png"
-            alt="Spato Icon"
-            class="h-8"
-          />
+      <div
+        class={[
+          "flex items-center transition-all duration-300 cursor-pointer h-16",
+          @open && "justify-start space-x-2 px-4",
+          !@open && "justify-center"
+        ]}
+        phx-click={@toggle_event}
+        title="Toggle sidebar"
+      >
+        <img
+          src="/images/spato - logo.png"
+          alt="Spato Icon"
+          class="h-8"
+        />
 
-        <!-- Wordmark (only visible when expanded) -->
         <img
           src="/images/spato - word.png"
           alt="Spato Logo"
@@ -49,7 +46,6 @@ defmodule SpatoWeb.Components.Sidebar do
       <nav class="flex-1">
         <ul class="space-y-2">
 
-          <!-- Dashboard -->
           <li>
             <.sidebar_link
               to="/admin/dashboard"
@@ -61,7 +57,6 @@ defmodule SpatoWeb.Components.Sidebar do
             </.sidebar_link>
           </li>
 
-          <!-- Tempahan submenu -->
           <li>
             <details class="group">
               <summary class={[
@@ -87,7 +82,6 @@ defmodule SpatoWeb.Components.Sidebar do
             </details>
           </li>
 
-          <!-- Admin-only items -->
           <%= if is_admin?(@current_user) do %>
             <li>
               <details class="group">
@@ -133,7 +127,7 @@ defmodule SpatoWeb.Components.Sidebar do
 
   def sidebar_link(assigns) do
     ~H"""
-    <a
+    <.link
       href={@to}
       class={[
         "flex items-center gap-2 px-4 py-2 rounded-md hover:bg-gray-200 transition-all duration-300",
@@ -144,7 +138,7 @@ defmodule SpatoWeb.Components.Sidebar do
       <%= if @open do %>
         <span><%= render_slot(@inner_block) %></span>
       <% end %>
-    </a>
+    </.link>
     """
   end
 
