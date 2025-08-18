@@ -45,6 +45,7 @@ defmodule SpatoWeb.DepartmentLive.Index do
     {:noreply, stream_delete(socket, :departments, department)}
   end
 
+<<<<<<< HEAD
 
   @impl true
 def render(assigns) do
@@ -57,40 +58,53 @@ def render(assigns) do
     </.link>
   </:actions>
 </.header>
+=======
+  @impl true
+  def render(assigns) do
+    ~H"""
+    <.header>
+    Listing Departments
+    <:actions>
+      <.link patch={~p"/departments/new"}>
+        <.button>New Department</.button>
+      </.link>
+    </:actions>
+  </.header>
+>>>>>>> 3485a8d5d168892177904b2c209f383c38e7c452
 
-<.table
-  id="departments"
-  rows={@streams.departments}
-  row_click={fn {_id, department} -> JS.navigate(~p"/departments/#{department}") end}
->
-  <:col :let={{_id, department}} label="Name">{department.name}</:col>
-  <:col :let={{_id, department}} label="Code">{department.code}</:col>
-  <:action :let={{_id, department}}>
-    <div class="sr-only">
-      <.link navigate={~p"/departments/#{department}"}>Show</.link>
-    </div>
-    <.link patch={~p"/departments/#{department}/edit"}>Edit</.link>
-  </:action>
-  <:action :let={{id, department}}>
-    <.link
-      phx-click={JS.push("delete", value: %{id: department.id}) |> hide("##{id}")}
-      data-confirm="Are you sure?"
-    >
-      Delete
-    </.link>
-  </:action>
-</.table>
+  <.table
+    id="departments"
+    rows={@streams.departments}
+    row_click={fn {_id, department} -> JS.navigate(~p"/departments/#{department}") end}
+  >
+    <:col :let={{_id, department}} label="Name">{department.name}</:col>
+    <:col :let={{_id, department}} label="Code">{department.code}</:col>
+    <:action :let={{_id, department}}>
+      <div class="sr-only">
+        <.link navigate={~p"/departments/#{department}"}>Show</.link>
+      </div>
+      <.link patch={~p"/departments/#{department}/edit"}>Edit</.link>
+    </:action>
+    <:action :let={{id, department}}>
+      <.link
+        phx-click={JS.push("delete", value: %{id: department.id}) |> hide("##{id}")}
+        data-confirm="Are you sure?"
+      >
+        Delete
+      </.link>
+    </:action>
+  </.table>
 
-<.modal :if={@live_action in [:new, :edit]} id="department-modal" show on_cancel={JS.patch(~p"/departments")}>
-  <.live_component
-    module={SpatoWeb.DepartmentLive.FormComponent}
-    id={@department.id || :new}
-    title={@page_title}
-    action={@live_action}
-    department={@department}
-    patch={~p"/departments"}
-  />
-</.modal>
-"""
+  <.modal :if={@live_action in [:new, :edit]} id="department-modal" show on_cancel={JS.patch(~p"/departments")}>
+    <.live_component
+      module={SpatoWeb.DepartmentLive.FormComponent}
+      id={@department.id || :new}
+      title={@page_title}
+      action={@live_action}
+      department={@department}
+      patch={~p"/departments"}
+    />
+  </.modal>
+  """
  end
 end
