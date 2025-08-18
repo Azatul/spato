@@ -149,16 +149,16 @@ defmodule SpatoWeb.UserAuth do
   Use the `on_mount` lifecycle macro in LiveViews to mount or authenticate
   the current_user:
 
-      defmodule EventSphereWeb.PageLive do
-        use EventSphereWeb, :live_view
+      defmodule SpatoWeb.PageLive do
+        use SpatoWeb, :live_view
 
-        on_mount {EventSphereWeb.UserAuth, :mount_current_user}
+        on_mount {SpatoWeb.UserAuth, :mount_current_user}
         ...
       end
 
   Or use the `live_session` of your router to invoke the on_mount callback:
 
-      live_session :authenticated, on_mount: [{EventSphereWeb.UserAuth, :ensure_authenticated}] do
+      live_session :authenticated, on_mount: [{SpatoWeb.UserAuth, :ensure_authenticated}] do
         live "/profile", ProfileLive, :index
       end
   """

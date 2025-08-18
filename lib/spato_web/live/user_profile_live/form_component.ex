@@ -28,9 +28,6 @@ defmodule SpatoWeb.UserProfileLive.FormComponent do
         <.input field={@form[:position]} type="text" label="Position" />
         <.input field={@form[:employment_status]} type="text" label="Employment status" />
         <.input field={@form[:date_joined]} type="date" label="Date joined" />
-        <.input field={@form[:profile_picture_url]} type="text" label="Profile picture url" />
-        <.input field={@form[:last_login_at]} type="datetime-local" label="Last login at" />
-        <.input field={@form[:is_active]} type="checkbox" label="Is active" />
         <:actions>
           <.button phx-disable-with="Saving...">Save User profile</.button>
         </:actions>

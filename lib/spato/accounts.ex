@@ -23,6 +23,24 @@ defmodule Spato.Accounts do
 
   """
 
+  def count_total_users() do
+    Repo.aggregate(User, :count, :id)
+  end
+
+  def count_admins() do
+    Repo.aggregate(User, :count, :id, where: [role: "admin"])
+  end
+
+  def count_staff() do
+    Repo.aggregate(User, :count, :id, where: [role: "user"])
+  end
+
+  # This assumes you have a field like `status` in your User schema.
+  # Adjust the field and value to match your schema.
+  def count_active_users() do
+    Repo.aggregate(User, :count, :id, where: [status: "active"])
+  end
+
   def list_users do
     Repo.all(User)
   end

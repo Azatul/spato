@@ -114,7 +114,7 @@ defmodule SpatoWeb.Components.Sidebar do
             </li>
 
             <li>
-              <.sidebar_link to="/users" icon="users" active={@active_tab == "users"} open={@open}>
+              <.sidebar_link to="/user_profiles" icon="users" active={@active_tab == "users"} open={@open}>
                 Senarai Pengguna
               </.sidebar_link>
             </li>
