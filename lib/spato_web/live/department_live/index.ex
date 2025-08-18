@@ -45,6 +45,8 @@ defmodule SpatoWeb.DepartmentLive.Index do
     {:noreply, stream_delete(socket, :departments, department)}
   end
 
+
+  @impl true
 def render(assigns) do
   ~H"""
   <.header>
