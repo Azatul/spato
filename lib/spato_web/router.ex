@@ -13,6 +13,15 @@ defmodule SpatoWeb.Router do
     plug :fetch_current_user
   end
 
+  pipeline :user_auth do
+    plug :require_authenticated_user
+  end
+
+  pipeline :admin_auth do
+    plug :require_authenticated_user
+    plug :require_authenticated_admin
+  end
+
   pipeline :api do
     plug :accepts, ["json"]
   end
@@ -20,7 +29,24 @@ defmodule SpatoWeb.Router do
   scope "/", SpatoWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
+    live "/", UserLoginLive
+  end
+
+  scope "/", SpatoWeb do
+    pipe_through [:browser, :user_auth]
+    live "/dashboard", UserDashboardLive
+    # Add more user LiveViews here
+  end
+
+  scope "/admin", SpatoWeb do
+    pipe_through [:browser, :admin_auth]
+
+    live_session :admin_only,
+      on_mount: [{SpatoWeb.UserAuth, :ensure_admin}] do
+
+      live "/dashboard", AdminDashboardLive
+      # Add more admin-only LiveViews here
+    end
   end
 
   # Other scopes may use custom stacks.

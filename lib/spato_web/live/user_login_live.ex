@@ -3,34 +3,56 @@ defmodule SpatoWeb.UserLoginLive do
 
   def render(assigns) do
     ~H"""
-    <div class="mx-auto max-w-sm">
-      <.header class="text-center">
-        Log in to account
-        <:subtitle>
-          Don't have an account?
-          <.link navigate={~p"/users/register"} class="font-semibold text-brand hover:underline">
-            Sign up
-          </.link>
-          for an account now.
-        </:subtitle>
-      </.header>
+    <div class="bg-[#bcd2e4] min-h-screen w-full flex items-center justify-center">
+      <div class="bg-white rounded-lg shadow-md p-8 w-full max-w-sm">
 
-      <.simple_form for={@form} id="login_form" action={~p"/users/log_in"} phx-update="ignore">
-        <.input field={@form[:email]} type="email" label="Email" required />
-        <.input field={@form[:password]} type="password" label="Password" required />
+        <!-- Logo + Title -->
+        <div class="flex items-center justify-center mb-6 text-center">
+          <img src={~p"/images/spato.png"} alt="SPATO Logo" class="w-72">
+        </div>
 
-        <:actions>
-          <.input field={@form[:remember_me]} type="checkbox" label="Keep me logged in" />
-          <.link href={~p"/users/reset_password"} class="text-sm font-semibold">
-            Forgot your password?
-          </.link>
-        </:actions>
-        <:actions>
-          <.button phx-disable-with="Logging in..." class="w-full">
-            Log in <span aria-hidden="true">→</span>
-          </.button>
-        </:actions>
-      </.simple_form>
+        <!-- Login Form -->
+
+       <.simple_form for={@form} id="login_form" action={~p"/users/log_in"} phx-update="ignore">
+
+          <!-- Email field -->
+          <div>
+            <label class="block text-sm font-medium text-gray-800 mb-1">Emel</label>
+            <.input
+              field={@form[:email]}
+              type="email"
+              placeholder="Masukkan emel"
+              class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#224179]"
+              required
+            />
+          </div>
+
+          <!-- Password field -->
+          <div>
+            <label class="block text-sm font-medium text-gray-800 mb-1">Kata Laluan</label>
+            <.input
+              field={@form[:password]}
+              type="password"
+              placeholder="Masukkan kata laluan"
+              class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#224179]"
+              required
+            />
+            <div class="text-right mt-1">
+              <.link href={~p"/users/reset_password"} class="text-sm text-[#224179] hover:underline">
+                Lupa kata laluan?
+              </.link>
+            </div>
+          </div>
+
+          <!-- Actions: Log in button -->
+          <:actions>
+            <.button phx-disable-with="Logging in..." class="block w-full py-2 rounded-md text-white hover:bg-[#20386b] transition font-semibold bg-[#224179]">
+              Log Masuk
+            </.button>
+          </:actions>
+        </.simple_form>
+
+      </div>
     </div>
     """
   end
