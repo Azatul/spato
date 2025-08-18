@@ -505,4 +505,60 @@ defmodule Spato.AccountsTest do
       refute inspect(%User{password: "123456"}) =~ "password: \"123456\""
     end
   end
+
+  describe "departments" do
+    alias Spato.Accounts.Department
+
+    import Spato.AccountsFixtures
+
+    @invalid_attrs %{code: nil, name: nil}
+
+    test "list_departments/0 returns all departments" do
+      department = department_fixture()
+      assert Accounts.list_departments() == [department]
+    end
+
+    test "get_department!/1 returns the department with given id" do
+      department = department_fixture()
+      assert Accounts.get_department!(department.id) == department
+    end
+
+    test "create_department/1 with valid data creates a department" do
+      valid_attrs = %{code: "some code", name: "some name"}
+
+      assert {:ok, %Department{} = department} = Accounts.create_department(valid_attrs)
+      assert department.code == "some code"
+      assert department.name == "some name"
+    end
+
+    test "create_department/1 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} = Accounts.create_department(@invalid_attrs)
+    end
+
+    test "update_department/2 with valid data updates the department" do
+      department = department_fixture()
+      update_attrs = %{code: "some updated code", name: "some updated name"}
+
+      assert {:ok, %Department{} = department} = Accounts.update_department(department, update_attrs)
+      assert department.code == "some updated code"
+      assert department.name == "some updated name"
+    end
+
+    test "update_department/2 with invalid data returns error changeset" do
+      department = department_fixture()
+      assert {:error, %Ecto.Changeset{}} = Accounts.update_department(department, @invalid_attrs)
+      assert department == Accounts.get_department!(department.id)
+    end
+
+    test "delete_department/1 deletes the department" do
+      department = department_fixture()
+      assert {:ok, %Department{}} = Accounts.delete_department(department)
+      assert_raise Ecto.NoResultsError, fn -> Accounts.get_department!(department.id) end
+    end
+
+    test "change_department/1 returns a department changeset" do
+      department = department_fixture()
+      assert %Ecto.Changeset{} = Accounts.change_department(department)
+    end
+  end
 end
