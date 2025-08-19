@@ -45,8 +45,6 @@ defmodule SpatoWeb.DepartmentLive.Index do
     {:noreply, stream_delete(socket, :departments, department)}
   end
 
-<<<<<<< HEAD
-
   @impl true
 def render(assigns) do
   ~H"""
@@ -58,19 +56,6 @@ def render(assigns) do
     </.link>
   </:actions>
 </.header>
-=======
-  @impl true
-  def render(assigns) do
-    ~H"""
-    <.header>
-    Listing Departments
-    <:actions>
-      <.link patch={~p"/departments/new"}>
-        <.button>New Department</.button>
-      </.link>
-    </:actions>
-  </.header>
->>>>>>> 3485a8d5d168892177904b2c209f383c38e7c452
 
   <.table
     id="departments"
