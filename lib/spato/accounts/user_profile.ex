@@ -8,15 +8,15 @@ defmodule Spato.Accounts.UserProfile do
     field :full_name, :string
     field :dob, :date
     field :ic_number, :string
-    field :gender, :string
+    field :gender, Ecto.Enum, values: [:male, :female]
     field :phone_number, :string
-    field :employment_status, :string
+    field :employment_status, Ecto.Enum, values: [:full_time, :part_time, :contract, :intern]
     field :date_joined, :date
     field :profile_picture_url, :string
     field :last_login_at, :utc_datetime
-    field :is_active, :boolean, default: false
-    field :user_id, :id
-    field :department_id, :id
+
+    belongs_to :user, Spato.Accounts.User
+    belongs_to :department, Spato.Accounts.Department
 
     timestamps(type: :utc_datetime)
   end
@@ -24,7 +24,9 @@ defmodule Spato.Accounts.UserProfile do
   @doc false
   def changeset(user_profile, attrs) do
     user_profile
-    |> cast(attrs, [:full_name, :dob, :ic_number, :gender, :phone_number, :address, :position, :employment_status, :date_joined, :profile_picture_url, :last_login_at, :is_active])
-    |> validate_required([:full_name, :dob, :ic_number, :gender, :phone_number, :address, :position, :employment_status, :date_joined, :profile_picture_url, :last_login_at, :is_active])
+    |> cast(attrs, [:full_name, :dob, :ic_number, :gender, :phone_number, :address, :position, :employment_status, :date_joined, :profile_picture_url, :last_login_at, :user_id, :department_id])
+    |> validate_required([:full_name, :user_id, :department_id])
+    |> assoc_constraint(:user)
+    |> assoc_constraint(:department)
   end
 end

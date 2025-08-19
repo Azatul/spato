@@ -9,6 +9,9 @@ defmodule Spato.Accounts.User do
     field :current_password, :string, virtual: true, redact: true
     field :confirmed_at, :utc_datetime
     field :role, :string, default: "user"
+    field :last_seen_at, :utc_datetime
+
+    has_one :profile, Spato.Accounts.UserProfile
 
     timestamps(type: :utc_datetime)
   end
@@ -39,7 +42,7 @@ defmodule Spato.Accounts.User do
 
   def changeset(user, attrs) do
     user
-    |> cast(attrs, [:email, :password, :role])
+    |> cast(attrs, [:email, :password, :role, :last_seen_at])
     |> validate_required([:email, :password, :role])
     |> validate_inclusion(:role, ["user", "admin"])
   end

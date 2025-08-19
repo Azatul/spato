@@ -55,7 +55,7 @@ def render(assigns) do
       <.button>New Department</.button>
     </.link>
   </:actions>
-</.header>
+  </.header>
 
   <.table
     id="departments"

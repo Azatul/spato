@@ -9,20 +9,17 @@ defmodule SpatoWeb.UserProfileLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    total_users = Accounts.count_total_users()
-    admin_users = Accounts.count_admins()
-    staff_users = Accounts.count_staff()
-    active_users = Accounts.count_active_users()
+    stats = Accounts.user_stats()
 
     {:ok,
      socket
      |> assign(:page_title, "User Profiles")
      |> assign(:active_tab, "user_profiles")
      |> assign(:sidebar_open, true)
-     |> assign(:total_users, total_users)
-     |> assign(:admin_users, admin_users)
-     |> assign(:staff_users, staff_users)
-     |> assign(:active_users, active_users)
+     |> assign(:total_users, stats.total_users)
+     |> assign(:admin_users, stats.admins)
+     |> assign(:staff_users, stats.users)
+     |> assign(:active_users, stats.active_users)
      |> stream(:user_profiles, Accounts.list_user_profiles())}
   end
 
@@ -129,6 +126,8 @@ defmodule SpatoWeb.UserProfileLive.Index do
             row_click={fn {_id, user_profile} -> JS.navigate(~p"/user_profiles/#{user_profile}") end}
           >
             <:col :let={{_id, user_profile}} label="Nama Penuh">{user_profile.full_name}</:col>
+            <:col :let={{_id, user_profile}} label="Email">{user_profile.user.email}</:col>
+            <:col :let={{_id, user_profile}} label="Peranan">{user_profile.user.role}</:col>
             <:col :let={{_id, user_profile}} label="Tarikh Lahir">{user_profile.dob}</:col>
             <:col :let={{_id, user_profile}} label="No. IC">{user_profile.ic_number}</:col>
             <:col :let={{_id, user_profile}} label="Jantina">{user_profile.gender}</:col>
@@ -137,6 +136,7 @@ defmodule SpatoWeb.UserProfileLive.Index do
             <:col :let={{_id, user_profile}} label="Jawatan">{user_profile.position}</:col>
             <:col :let={{_id, user_profile}} label="Status Pekerjaan">{user_profile.employment_status}</:col>
             <:col :let={{_id, user_profile}} label="Tarikh Lantikan">{user_profile.date_joined}</:col>
+
             <:action :let={{_id, user_profile}}>
               <div class="sr-only">
                 <.link navigate={~p"/user_profiles/#{user_profile}"}>Show</.link>
@@ -152,6 +152,7 @@ defmodule SpatoWeb.UserProfileLive.Index do
               </.link>
             </:action>
           </.table>
+
 
           <.modal :if={@live_action in [:new, :edit]} id="user_profile-modal" show on_cancel={JS.patch(~p"/user_profiles")}>
             <.live_component

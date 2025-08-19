@@ -29,6 +29,8 @@ defmodule SpatoWeb.UserAuth do
     token = Accounts.generate_user_session_token(user)
     user_return_to = get_session(conn, :user_return_to)
 
+    Accounts.update_user_last_seen(user)
+
     conn
     |> renew_session()
     |> put_token_in_session(token)
