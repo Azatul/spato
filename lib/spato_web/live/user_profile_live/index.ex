@@ -127,7 +127,6 @@ defmodule SpatoWeb.UserProfileLive.Index do
           >
             <:col :let={{_id, user_profile}} label="Nama Penuh">{user_profile.full_name}</:col>
             <:col :let={{_id, user_profile}} label="Email">{user_profile.user.email}</:col>
-            <:col :let={{_id, user_profile}} label="Peranan">{user_profile.user.role}</:col>
             <:col :let={{_id, user_profile}} label="Tarikh Lahir">{user_profile.dob}</:col>
             <:col :let={{_id, user_profile}} label="No. IC">{user_profile.ic_number}</:col>
             <:col :let={{_id, user_profile}} label="Jantina">{user_profile.gender}</:col>
@@ -136,6 +135,8 @@ defmodule SpatoWeb.UserProfileLive.Index do
             <:col :let={{_id, user_profile}} label="Jawatan">{user_profile.position}</:col>
             <:col :let={{_id, user_profile}} label="Status Pekerjaan">{user_profile.employment_status}</:col>
             <:col :let={{_id, user_profile}} label="Tarikh Lantikan">{user_profile.date_joined}</:col>
+            <:col :let={{_id, user_profile}} label="Peranan"><%= user_profile.user.role %></:col>
+            <:col :let={{_id, user_profile}} label="Jabatan"><%= user_profile.department.name %></:col>
 
             <:action :let={{_id, user_profile}}>
               <div class="sr-only">

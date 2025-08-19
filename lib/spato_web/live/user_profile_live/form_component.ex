@@ -1,6 +1,5 @@
 defmodule SpatoWeb.UserProfileLive.FormComponent do
   use SpatoWeb, :live_component
-
   alias Spato.Accounts
 
   @impl true
@@ -13,62 +12,78 @@ defmodule SpatoWeb.UserProfileLive.FormComponent do
       </.header>
 
       <.simple_form
-      for={@form}
-      id="user_profile-form"
-      phx-target={@myself}
-      phx-change="validate"
-      phx-submit="save"
-    >
-      <.input field={@form[:full_name]} type="text" label="Full name" />
-      <.input field={@form[:dob]} type="date" label="Dob" />
-      <.input field={@form[:ic_number]} type="text" label="Ic number" />
+        for={@form}
+        id="user_profile-form"
+        phx-target={@myself}
+        phx-change="validate"
+        phx-submit="save"
+      >
+        <.input field={@form[:full_name]} type="text" label="Full name" />
+        <.input field={@form[:dob]} type="date" label="Dob" />
+        <.input field={@form[:ic_number]} type="text" label="Ic number" />
 
-      <!-- Gender Dropdown -->
-      <.input
-        field={@form[:gender]}
-        type="select"
-        label="Jantina"
-        options={[
-          {"Lelaki", "male"},
-          {"Perempuan", "female"}
-        ]}
-      />
+        <!-- Gender Dropdown -->
+        <.input
+          field={@form[:gender]}
+          type="select"
+          label="Jantina"
+          options={[{"Lelaki", "male"}, {"Perempuan", "female"}]}
+        />
 
-      <.input field={@form[:phone_number]} type="text" label="Phone number" />
-      <.input field={@form[:address]} type="text" label="Address" />
-      <.input field={@form[:position]} type="text" label="Position" />
+        <.input field={@form[:phone_number]} type="text" label="Phone number" />
+        <.input field={@form[:address]} type="text" label="Address" />
+        <.input field={@form[:position]} type="text" label="Position" />
 
-      <!-- Employment Status Dropdown -->
-      <.input
-        field={@form[:employment_status]}
-        type="select"
-        label="Status Pekerjaan"
-        options={[
-          {"Sepenuh Masa", "full_time"},
-          {"Separuh Masa", "part_time"},
-          {"Kontrak", "contract"},
-          {"Pelatih", "intern"}
-        ]}
-      />
+        <!-- Employment Status Dropdown -->
+        <.input
+          field={@form[:employment_status]}
+          type="select"
+          label="Status Pekerjaan"
+          options={[
+            {"Sepenuh Masa", "full_time"},
+            {"Separuh Masa", "part_time"},
+            {"Kontrak", "contract"},
+            {"Pelatih", "intern"}
+          ]}
+        />
 
-      <.input field={@form[:date_joined]} type="date" label="Date joined" />
-      <:actions>
-        <.button phx-disable-with="Saving...">Save User profile</.button>
-      </:actions>
-    </.simple_form>
+        <.input field={@form[:date_joined]} type="date" label="Date joined" />
 
+        <!-- User Dropdown -->
+        <.input
+          field={@form[:user_id]}
+          type="select"
+          label="Pengguna"
+          options={for u <- @users, do: {u.email, u.id}}
+        />
+
+        <!-- Department Dropdown -->
+        <.input
+          field={@form[:department_id]}
+          type="select"
+          label="Jabatan"
+          options={for d <- @departments, do: {d.name, d.id}}
+        />
+
+        <:actions>
+          <.button phx-disable-with="Saving...">Save User profile</.button>
+        </:actions>
+      </.simple_form>
     </div>
     """
   end
 
   @impl true
   def update(%{user_profile: user_profile} = assigns, socket) do
+    users = Accounts.list_users()
+    departments = Accounts.list_departments()
+
     {:ok,
      socket
      |> assign(assigns)
-     |> assign_new(:form, fn ->
-       to_form(Accounts.change_user_profile(user_profile))
-     end)}
+     |> assign(:users, users)
+     |> assign(:departments, departments)
+     |> assign_new(:form, fn -> to_form(Accounts.change_user_profile(user_profile)) end)}
   end
 
   @impl true

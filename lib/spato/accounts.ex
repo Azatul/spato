@@ -264,13 +264,11 @@ defmodule Spato.Accounts do
   ## User profiles
   ## =====================
 
-    def list_user_profiles do
-      Spato.Repo.all(
-        from up in Spato.Accounts.UserProfile,
-        join: u in assoc(up, :user),
-        preload: [user: u]
-      )
-    end
+  def list_user_profiles do
+    Spato.Accounts.UserProfile
+    |> Spato.Repo.all()
+    |> Spato.Repo.preload([:user, :department])
+  end
 
   def get_user_profile!(id), do: Repo.get!(UserProfile, id)
 
