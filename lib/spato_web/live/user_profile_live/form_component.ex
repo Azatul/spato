@@ -13,25 +13,50 @@ defmodule SpatoWeb.UserProfileLive.FormComponent do
       </.header>
 
       <.simple_form
-        for={@form}
-        id="user_profile-form"
-        phx-target={@myself}
-        phx-change="validate"
-        phx-submit="save"
-      >
-        <.input field={@form[:full_name]} type="text" label="Full name" />
-        <.input field={@form[:dob]} type="date" label="Dob" />
-        <.input field={@form[:ic_number]} type="text" label="Ic number" />
-        <.input field={@form[:gender]} type="text" label="Gender" />
-        <.input field={@form[:phone_number]} type="text" label="Phone number" />
-        <.input field={@form[:address]} type="text" label="Address" />
-        <.input field={@form[:position]} type="text" label="Position" />
-        <.input field={@form[:employment_status]} type="text" label="Employment status" />
-        <.input field={@form[:date_joined]} type="date" label="Date joined" />
-        <:actions>
-          <.button phx-disable-with="Saving...">Save User profile</.button>
-        </:actions>
-      </.simple_form>
+      for={@form}
+      id="user_profile-form"
+      phx-target={@myself}
+      phx-change="validate"
+      phx-submit="save"
+    >
+      <.input field={@form[:full_name]} type="text" label="Full name" />
+      <.input field={@form[:dob]} type="date" label="Dob" />
+      <.input field={@form[:ic_number]} type="text" label="Ic number" />
+
+      <!-- Gender Dropdown -->
+      <.input
+        field={@form[:gender]}
+        type="select"
+        label="Jantina"
+        options={[
+          {"Lelaki", "male"},
+          {"Perempuan", "female"}
+        ]}
+      />
+
+      <.input field={@form[:phone_number]} type="text" label="Phone number" />
+      <.input field={@form[:address]} type="text" label="Address" />
+      <.input field={@form[:position]} type="text" label="Position" />
+
+      <!-- Employment Status Dropdown -->
+      <.input
+        field={@form[:employment_status]}
+        type="select"
+        label="Status Pekerjaan"
+        options={[
+          {"Sepenuh Masa", "full_time"},
+          {"Separuh Masa", "part_time"},
+          {"Kontrak", "contract"},
+          {"Pelatih", "intern"}
+        ]}
+      />
+
+      <.input field={@form[:date_joined]} type="date" label="Date joined" />
+      <:actions>
+        <.button phx-disable-with="Saving...">Save User profile</.button>
+      </:actions>
+    </.simple_form>
+
     </div>
     """
   end
