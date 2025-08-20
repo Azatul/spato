@@ -1,13 +1,26 @@
 defmodule SpatoWeb.MeetingRoomLive.Index do
   use SpatoWeb, :live_view
+  import SpatoWeb.Components.Sidebar
 
   alias Spato.Assets
   alias Spato.Assets.MeetingRoom
 
+  on_mount {SpatoWeb.UserAuth, :ensure_authenticated}
+
   @impl true
-  def mount(_params, _session, socket) do
-    {:ok, stream(socket, :meeting_rooms, Assets.list_meeting_rooms())}
-  end
+def mount(_params, _session, socket) do
+  {:ok,
+   socket
+   |> assign(:page_title, "Meeting Rooms")
+   |> assign(:active_tab, "meeting_rooms")
+   |> assign(:sidebar_open, true)
+   |> stream(:meeting_rooms, Assets.list_meeting_rooms())}
+end
+
+@impl true
+def handle_event("toggle_sidebar", _params, socket) do
+  {:noreply, update(socket, :sidebar_open, &(!&1))}
+end
 
   @impl true
   def handle_params(params, _url, socket) do
@@ -45,55 +58,68 @@ defmodule SpatoWeb.MeetingRoomLive.Index do
     {:noreply, stream_delete(socket, :meeting_rooms, meeting_room)}
   end
 
-@impl true
+  @impl true
 def render(assigns) do
   ~H"""
-<.header>
-  Listing Meeting rooms
-  <:actions>
-    <.link patch={~p"/meeting_rooms/new"}>
-      <.button>New Meeting room</.button>
-    </.link>
-  </:actions>
-</.header>
+  <div class="flex w-screen h-screen bg-gray-100 font-sans overflow-hidden">
+    <!-- Sidebar -->
+    <.sidebar
+      active_tab={@active_tab}
+      current_user={@current_user}
+      open={@sidebar_open}
+      toggle_event="toggle_sidebar"
+    />
 
-<.table
-  id="meeting_rooms"
-  rows={@streams.meeting_rooms}
-  row_click={fn {_id, meeting_room} -> JS.navigate(~p"/meeting_rooms/#{meeting_room}") end}
->
-  <:col :let={{_id, meeting_room}} label="Name">{meeting_room.name}</:col>
-  <:col :let={{_id, meeting_room}} label="Location">{meeting_room.location}</:col>
-  <:col :let={{_id, meeting_room}} label="Capacity">{meeting_room.capacity}</:col>
-  <:col :let={{_id, meeting_room}} label="Available facility">{meeting_room.available_facility}</:col>
-  <:col :let={{_id, meeting_room}} label="Photo url">{meeting_room.photo_url}</:col>
-  <:col :let={{_id, meeting_room}} label="Status">{meeting_room.status}</:col>
-  <:action :let={{_id, meeting_room}}>
-    <div class="sr-only">
-      <.link navigate={~p"/meeting_rooms/#{meeting_room}"}>Show</.link>
-    </div>
-    <.link patch={~p"/meeting_rooms/#{meeting_room}/edit"}>Edit</.link>
-  </:action>
-  <:action :let={{id, meeting_room}}>
-    <.link
-      phx-click={JS.push("delete", value: %{id: meeting_room.id}) |> hide("##{id}")}
-      data-confirm="Are you sure?"
-    >
-      Delete
-    </.link>
-  </:action>
-</.table>
+    <!-- Main Content -->
+    <main class="flex-1 p-8 overflow-y-auto bg-gray-50">
+      <.header>
+        Listing Meeting rooms
+        <:actions>
+          <.link patch={~p"/meeting_rooms/new"}>
+            <.button>New Meeting room</.button>
+          </.link>
+        </:actions>
+      </.header>
 
-<.modal :if={@live_action in [:new, :edit]} id="meeting_room-modal" show on_cancel={JS.patch(~p"/meeting_rooms")}>
-  <.live_component
-    module={SpatoWeb.MeetingRoomLive.FormComponent}
-    id={@meeting_room.id || :new}
-    title={@page_title}
-    action={@live_action}
-    meeting_room={@meeting_room}
-    patch={~p"/meeting_rooms"}
-  />
-</.modal>
+      <.table
+        id="meeting_rooms"
+        rows={@streams.meeting_rooms}
+        row_click={fn {_id, meeting_room} -> JS.navigate(~p"/meeting_rooms/#{meeting_room}") end}
+      >
+        <:col :let={{_id, meeting_room}} label="Name">{meeting_room.name}</:col>
+        <:col :let={{_id, meeting_room}} label="Location">{meeting_room.location}</:col>
+        <:col :let={{_id, meeting_room}} label="Capacity">{meeting_room.capacity}</:col>
+        <:col :let={{_id, meeting_room}} label="Available facility">{meeting_room.available_facility}</:col>
+        <:col :let={{_id, meeting_room}} label="Photo url">{meeting_room.photo_url}</:col>
+        <:col :let={{_id, meeting_room}} label="Status">{meeting_room.status}</:col>
+        <:action :let={{_id, meeting_room}}>
+          <div class="sr-only">
+            <.link navigate={~p"/meeting_rooms/#{meeting_room}"}>Show</.link>
+          </div>
+          <.link patch={~p"/meeting_rooms/#{meeting_room}/edit"}>Edit</.link>
+        </:action>
+        <:action :let={{id, meeting_room}}>
+          <.link
+            phx-click={JS.push("delete", value: %{id: meeting_room.id}) |> hide("##{id}")}
+            data-confirm="Are you sure?"
+          >
+            Delete
+          </.link>
+        </:action>
+      </.table>
+
+      <.modal :if={@live_action in [:new, :edit]} id="meeting_room-modal" show on_cancel={JS.patch(~p"/meeting_rooms")}>
+        <.live_component
+          module={SpatoWeb.MeetingRoomLive.FormComponent}
+          id={@meeting_room.id || :new}
+          title={@page_title}
+          action={@live_action}
+          meeting_room={@meeting_room}
+          patch={~p"/meeting_rooms"}
+        />
+      </.modal>
+    </main>
+  </div>
   """
-  end
+end
 end

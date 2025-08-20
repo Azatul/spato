@@ -85,3 +85,31 @@ defmodule SpatoWeb.MeetingRoomLive.FormComponent do
 
   defp notify_parent(msg), do: send(self(), {__MODULE__, msg})
 end
+
+defmodule SpatoWeb.MeetingRoomModalComponent do
+  use SpatoWeb, :live_component
+
+  alias Spato.Assets
+
+  @impl true
+  def render(assigns) do
+    ~H"""
+    <div>
+      <!-- Modal content will go here -->
+      <div class="hidden">
+        <!-- Placeholder for modal functionality -->
+      </div>
+    </div>
+    """
+  end
+
+  @impl true
+  def update(%{id: id} = assigns, socket) do
+    {:ok, assign(socket, assigns)}
+  end
+
+  @impl true
+  def handle_event("close", _, socket) do
+    {:noreply, socket}
+  end
+end

@@ -674,3 +674,29 @@ defmodule SpatoWeb.CoreComponents do
     for {^field, {msg, opts}} <- errors, do: translate_error({msg, opts})
   end
 end
+
+defmodule SpatoWeb.DeleteConfirmComponent do
+  use SpatoWeb, :live_component
+
+  @impl true
+  def render(assigns) do
+    ~H"""
+    <div>
+      <!-- Delete confirmation modal content will go here -->
+      <div class="hidden">
+        <!-- Placeholder for delete confirmation functionality -->
+      </div>
+    </div>
+    """
+  end
+
+  @impl true
+  def update(%{id: _id} = assigns, socket) do
+    {:ok, assign(socket, assigns)}
+  end
+
+  @impl true
+  def handle_event("close", _, socket) do
+    {:noreply, socket}
+  end
+end

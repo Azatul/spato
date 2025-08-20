@@ -105,7 +105,7 @@ defmodule SpatoWeb.Components.Sidebar do
                 </summary>
 
                 <ul class="ml-8 mt-2 space-y-1">
-                  <li><.sidebar_link to="/manage_meeting_rooms" icon="door-open" active={@active_tab == "manage_meeting_rooms"} open={@open}>Urus Bilik Mesyuarat</.sidebar_link></li>
+                  <li><.sidebar_link to="/meeting_rooms" icon="door-open" active={@active_tab == "manage_meeting_rooms"} open={@open}>Urus Bilik Mesyuarat</.sidebar_link></li>
                   <li><.sidebar_link to="/manage_vehicles" icon="truck" active={@active_tab == "manage_vehicles"} open={@open}>Urus Kenderaan</.sidebar_link></li>
                   <li><.sidebar_link to="/manage_catering" icon="utensils" active={@active_tab == "manage_catering"} open={@open}>Urus Katering</.sidebar_link></li>
                   <li><.sidebar_link to="/manage_equipments" icon="tools" active={@active_tab == "manage_equipments"} open={@open}>Urus Peralatan</.sidebar_link></li>

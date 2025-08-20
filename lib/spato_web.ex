@@ -55,6 +55,8 @@ defmodule SpatoWeb do
       use Phoenix.LiveView,
         layout: {SpatoWeb.Layouts, :app}
 
+      import Phoenix.LiveView.Helpers
+
       unquote(html_helpers())
     end
   end
