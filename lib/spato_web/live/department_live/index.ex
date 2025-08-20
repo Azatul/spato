@@ -82,18 +82,22 @@ defmodule SpatoWeb.DepartmentLive.Index do
       />
 
       <!-- Main content -->
-      <main class="flex-1 p-6 transition-all duration-300">
-        <div class="w-full max-w-4xl bg-white p-6 rounded-lg shadow-md">
+       <main class="flex-1 p-6 transition-all duration-300">
+        <div class="bg-gray-100 p-4 md:p-8 rounded-lg">
+          <h1 class="text-xl font-bold mb-1">Senarai Pengguna</h1>
+          <p class="text-md text-gray-500 mb-6">Urus dan semak semua Pengguna Sistem</p>
 
-          <.header>
-            Senarai Jabatan
-            <:actions>
-              <.link patch={~p"/admin/departments/new"}>
-                <.button>Tambah Jabatan</.button>
+          <!-- Header -->
+          <header class="flex items-center justify-between mb-4">
+            <h1 class="text-xl font-semibold leading-7 text-gray-900">Senarai Jabatan</h1>
+            <div class="flex items-center gap-x-3">
+              <.link patch={~p"/admin/departments/new"} class="inline-flex items-center justify-center rounded-md border border-transparent bg-gray-900 px-4 py-2 text-sm font-semibold leading-6 text-white transition duration-150 ease-in-out hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-800 focus:ring-offset-2">
+                Tambah Jabatan
               </.link>
-            </:actions>
-          </.header>
+            </div>
+          </header>
 
+          <!-- Table -->
           <.table
             id="departments"
             rows={@streams.departments}

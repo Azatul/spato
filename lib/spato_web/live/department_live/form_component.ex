@@ -16,8 +16,8 @@ defmodule SpatoWeb.DepartmentLive.FormComponent do
         phx-change="validate"
         phx-submit="save"
       >
-        <.input field={@form[:name]} type="text" label="Nama" />
-        <.input field={@form[:code]} type="text" label="Kod" />
+        <.input field={@form[:name]} type="text" label="Nama Jabatan" />
+        <.input field={@form[:code]} type="text" label="Kod Jabatan" />
         <:actions>
           <.button phx-disable-with="Saving...">Simpan</.button>
         </:actions>
