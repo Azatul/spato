@@ -8,7 +8,7 @@ defmodule SpatoWeb.UserProfileLive.ShowComponent do
       <h2 class="text-xl md:text-2xl font-bold mb-6">Maklumat Pengguna</h2>
 
       <div class="flex flex-col items-center mb-6">
-        <img src="/images/giraffe.jpg" alt="User Profile" class="h-24 w-24 rounded-full border-2 border-gray-300 mb-4" />
+        <img src="/images/profile.jpg" alt="User Profile" class="h-24 w-24 rounded-full border-2 border-gray-300 mb-4" />
       </div>
 
       <div class="space-y-4">
