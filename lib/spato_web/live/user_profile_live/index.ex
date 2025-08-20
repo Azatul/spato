@@ -114,7 +114,7 @@ defmodule SpatoWeb.UserProfileLive.Index do
           <.header>
             Senarai Profil Pengguna
             <:actions>
-              <.link patch={~p"/user_profiles/new"}>
+              <.link patch={~p"/admin/user_profiles/new"}>
                 <.button>Tambah Pengguna</.button>
               </.link>
             </:actions>
@@ -123,7 +123,7 @@ defmodule SpatoWeb.UserProfileLive.Index do
           <.table
             id="user_profiles"
             rows={@streams.user_profiles}
-            row_click={fn {_id, user_profile} -> JS.navigate(~p"/user_profiles/#{user_profile}") end}
+            row_click={fn {_id, user_profile} -> JS.navigate(~p"/admin/user_profiles/#{user_profile}") end}
           >
             <:col :let={{_id, user_profile}} label="Nama Penuh">{user_profile.full_name}</:col>
             <:col :let={{_id, user_profile}} label="Email">{user_profile.user.email}</:col>
@@ -140,9 +140,9 @@ defmodule SpatoWeb.UserProfileLive.Index do
 
             <:action :let={{_id, user_profile}}>
               <div class="sr-only">
-                <.link navigate={~p"/user_profiles/#{user_profile}"}>Show</.link>
+                <.link navigate={~p"/admin/user_profiles/#{user_profile}"}>Show</.link>
               </div>
-              <.link patch={~p"/user_profiles/#{user_profile}/edit"}>Edit</.link>
+              <.link patch={~p"/admin/user_profiles/#{user_profile}/edit"}>Edit</.link>
             </:action>
             <:action :let={{id, user_profile}}>
               <.link
@@ -155,14 +155,14 @@ defmodule SpatoWeb.UserProfileLive.Index do
           </.table>
 
 
-          <.modal :if={@live_action in [:new, :edit]} id="user_profile-modal" show on_cancel={JS.patch(~p"/user_profiles")}>
+          <.modal :if={@live_action in [:new, :edit]} id="user_profile-modal" show on_cancel={JS.patch(~p"/admin/user_profiles")}>
             <.live_component
               module={SpatoWeb.UserProfileLive.FormComponent}
               id={@user_profile.id || :new}
               title={@page_title}
               action={@live_action}
               user_profile={@user_profile}
-              patch={~p"/user_profiles"}
+              patch={~p"/admin/user_profiles"}
             />
           </.modal>
         </div>

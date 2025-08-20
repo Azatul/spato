@@ -151,7 +151,7 @@ defmodule SpatoWeb.Components.Sidebar do
             <!-- Senarai Pengguna -->
             <li>
               <.link
-                href="/user_profiles"
+                href="/admin/user_profiles"
                 class={[
                   "flex items-center justify-between px-4 py-2 rounded-md hover:bg-gray-200 cursor-pointer transition-all duration-300",
                   @active_tab == "users" && "bg-gray-300 font-bold"
