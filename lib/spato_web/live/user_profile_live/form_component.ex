@@ -3,13 +3,23 @@ defmodule SpatoWeb.UserProfileLive.FormComponent do
   alias Spato.Accounts
 
   @impl true
+  def update(assigns, socket) do
+    # assigns will include: :user_profile, :current_user, :title, :action, :patch
+    departments = Accounts.list_departments()
+    changeset = Accounts.change_user_profile(assigns.user_profile)
+
+    {:ok,
+     socket
+     |> assign(assigns)
+     |> assign(:departments, departments)
+     |> assign(:form, to_form(changeset))}
+  end
+
+  @impl true
   def render(assigns) do
     ~H"""
     <div>
-      <.header>
-        {@title}
-        <:subtitle>Use this form to manage user_profile records in your database.</:subtitle>
-      </.header>
+      <.header>{@title}<:subtitle>Pengurusan profil pengguna.</:subtitle></.header>
 
       <.simple_form
         for={@form}
@@ -18,11 +28,11 @@ defmodule SpatoWeb.UserProfileLive.FormComponent do
         phx-change="validate"
         phx-submit="save"
       >
-        <.input field={@form[:full_name]} type="text" label="Full name" />
-        <.input field={@form[:dob]} type="date" label="Dob" />
-        <.input field={@form[:ic_number]} type="text" label="Ic number" />
+        <.input field={@form[:full_name]} type="text" label="Nama Penuh" />
+        <.input field={@form[:dob]} type="date" label="Tarikh Lahir" />
+        <.input field={@form[:ic_number]} type="text" label="No. Kad Pengenalan" />
 
-        <!-- Gender Dropdown -->
+        <!-- Gender -->
         <.input
           field={@form[:gender]}
           type="select"
@@ -30,11 +40,11 @@ defmodule SpatoWeb.UserProfileLive.FormComponent do
           options={[{"Lelaki", "male"}, {"Perempuan", "female"}]}
         />
 
-        <.input field={@form[:phone_number]} type="text" label="Phone number" />
-        <.input field={@form[:address]} type="text" label="Address" />
-        <.input field={@form[:position]} type="text" label="Position" />
+        <.input field={@form[:phone_number]} type="text" label="No.Telefon" />
+        <.input field={@form[:address]} type="text" label="Alamat" />
+        <.input field={@form[:position]} type="text" label="Jawatan" />
 
-        <!-- Employment Status Dropdown -->
+        <!-- Employment Status -->
         <.input
           field={@form[:employment_status]}
           type="select"
@@ -47,17 +57,12 @@ defmodule SpatoWeb.UserProfileLive.FormComponent do
           ]}
         />
 
-        <.input field={@form[:date_joined]} type="date" label="Date joined" />
+        <.input field={@form[:date_joined]} type="date" label="Tarikh Lantikan" />
 
-        <!-- User Dropdown -->
-        <.input
-          field={@form[:user_id]}
-          type="select"
-          label="Pengguna"
-          options={for u <- @users, do: {u.email, u.id}}
-        />
+        <!-- Automatically set user_id -->
+        <input type="hidden" name="user_profile[user_id]" value={@current_user.id} />
 
-        <!-- Department Dropdown -->
+        <!-- Department -->
         <.input
           field={@form[:department_id]}
           type="select"
@@ -66,7 +71,7 @@ defmodule SpatoWeb.UserProfileLive.FormComponent do
         />
 
         <:actions>
-          <.button phx-disable-with="Saving...">Save User profile</.button>
+          <.button phx-disable-with="Saving...">Simpan</.button>
         </:actions>
       </.simple_form>
     </div>
@@ -74,30 +79,21 @@ defmodule SpatoWeb.UserProfileLive.FormComponent do
   end
 
   @impl true
-  def update(%{user_profile: user_profile} = assigns, socket) do
-    users = Accounts.list_users()
-    departments = Accounts.list_departments()
+  def handle_event("validate", %{"user_profile" => params}, socket) do
+    changeset =
+      socket.assigns.user_profile
+      |> Accounts.change_user_profile(params)
 
-    {:ok,
-     socket
-     |> assign(assigns)
-     |> assign(:users, users)
-     |> assign(:departments, departments)
-     |> assign_new(:form, fn -> to_form(Accounts.change_user_profile(user_profile)) end)}
-  end
-
-  @impl true
-  def handle_event("validate", %{"user_profile" => user_profile_params}, socket) do
-    changeset = Accounts.change_user_profile(socket.assigns.user_profile, user_profile_params)
     {:noreply, assign(socket, form: to_form(changeset, action: :validate))}
   end
 
-  def handle_event("save", %{"user_profile" => user_profile_params}, socket) do
-    save_user_profile(socket, socket.assigns.action, user_profile_params)
+  @impl true
+  def handle_event("save", %{"user_profile" => params}, socket) do
+    save_user_profile(socket, socket.assigns.action, params)
   end
 
-  defp save_user_profile(socket, :edit, user_profile_params) do
-    case Accounts.update_user_profile(socket.assigns.user_profile, user_profile_params) do
+  defp save_user_profile(socket, :edit, params) do
+    case Accounts.update_user_profile(socket.assigns.user_profile, params) do
       {:ok, user_profile} ->
         notify_parent({:saved, user_profile})
 
@@ -106,13 +102,13 @@ defmodule SpatoWeb.UserProfileLive.FormComponent do
          |> put_flash(:info, "User profile updated successfully")
          |> push_patch(to: socket.assigns.patch)}
 
-      {:error, %Ecto.Changeset{} = changeset} ->
+      {:error, changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}
     end
   end
 
-  defp save_user_profile(socket, :new, user_profile_params) do
-    case Accounts.create_user_profile(user_profile_params) do
+  defp save_user_profile(socket, :new, params) do
+    case Accounts.create_user_profile(params) do
       {:ok, user_profile} ->
         notify_parent({:saved, user_profile})
 
@@ -121,7 +117,7 @@ defmodule SpatoWeb.UserProfileLive.FormComponent do
          |> put_flash(:info, "User profile created successfully")
          |> push_patch(to: socket.assigns.patch)}
 
-      {:error, %Ecto.Changeset{} = changeset} ->
+      {:error, changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}
     end
   end

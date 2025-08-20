@@ -26,8 +26,8 @@ defmodule SpatoWeb.DepartmentLiveTest do
     test "saves new department", %{conn: conn} do
       {:ok, index_live, _html} = live(conn, ~p"/departments")
 
-      assert index_live |> element("a", "New Department") |> render_click() =~
-               "New Department"
+      assert index_live |> element("a", "Jabatan Baru") |> render_click() =~
+               "Jabatan Baru"
 
       assert_patch(index_live, ~p"/departments/new")
 

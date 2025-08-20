@@ -56,9 +56,7 @@ defmodule SpatoWeb.Router do
       live "/departments", DepartmentLive.Index, :index
       live "/departments/new", DepartmentLive.Index, :new
       live "/departments/:id/edit", DepartmentLive.Index, :edit
-
-      live "/departments/:id", DepartmentLive.Show, :show
-      live "/departments/:id/show/edit", DepartmentLive.Show, :edit
+      live "/departments/:id", DepartmentLive.Index, :show
     end
   end
 

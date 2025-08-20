@@ -3,6 +3,7 @@ defmodule SpatoWeb.DepartmentLive.Index do
 
   alias Spato.Accounts
   alias Spato.Accounts.Department
+  alias SpatoWeb.DepartmentLive.{FormComponent, ShowComponent}
 
   @impl true
   def mount(_params, _session, socket) do
@@ -14,77 +15,83 @@ defmodule SpatoWeb.DepartmentLive.Index do
     {:noreply, apply_action(socket, socket.assigns.live_action, params)}
   end
 
+  # Handle modal actions
+  defp apply_action(socket, :new, _params) do
+    socket
+    |> assign(:page_title, "Jabatan Baru")
+    |> assign(:department, %Department{})
+  end
+
   defp apply_action(socket, :edit, %{"id" => id}) do
     socket
-    |> assign(:page_title, "Edit Department")
+    |> assign(:page_title, "Kemaskini Jabatan")
     |> assign(:department, Accounts.get_department!(id))
   end
 
-  defp apply_action(socket, :new, _params) do
+  defp apply_action(socket, :show, %{"id" => id}) do
     socket
-    |> assign(:page_title, "New Department")
-    |> assign(:department, %Department{})
+    |> assign(:page_title, "Lihat Jabatan")
+    |> assign(:department, Accounts.get_department!(id))
   end
 
   defp apply_action(socket, :index, _params) do
     socket
-    |> assign(:page_title, "Listing Departments")
+    |> assign(:page_title, "Senarai Jabatan")
     |> assign(:department, nil)
   end
 
+  # Handle saves from FormComponent
   @impl true
-  def handle_info({SpatoWeb.DepartmentLive.FormComponent, {:saved, department}}, socket) do
+  def handle_info({FormComponent, {:saved, department}}, socket) do
     {:noreply, stream_insert(socket, :departments, department)}
   end
 
+  # Delete department
   @impl true
   def handle_event("delete", %{"id" => id}, socket) do
     department = Accounts.get_department!(id)
     {:ok, _} = Accounts.delete_department(department)
-
     {:noreply, stream_delete(socket, :departments, department)}
   end
 
+  # Render
   @impl true
   def render(assigns) do
     ~H"""
     <div class="flex justify-center items-start min-h-screen bg-gray-100 p-6">
       <div class="w-full max-w-4xl bg-white p-6 rounded-lg shadow-md">
+
         <.header>
-          Listing Departments
+          Senarai Jabatan
           <:actions>
-            <.link patch={~p"/admin/departments/new"}>
-              <.button>New Department</.button>
-            </.link>
+            <.link patch={~p"/admin/departments/new"}><.button>Tambah Jabatan</.button></.link>
           </:actions>
         </.header>
 
         <.table
           id="departments"
           rows={@streams.departments}
-          row_click={fn {_id, department} -> JS.navigate(~p"/admin/departments/#{department}") end}
+          row_click={fn {_id, dept} -> JS.patch(~p"/admin/departments/#{dept}?action=show") end}
         >
-          <:col :let={{_id, department}} label="Name">{department.name}</:col>
-          <:col :let={{_id, department}} label="Code">{department.code}</:col>
-          <:action :let={{_id, department}} >
-            <div class="sr-only">
-              <.link navigate={~p"/admin/departments/#{department}"}>Show</.link>
-            </div>
-            <.link patch={~p"/admin/departments/#{department}/edit"}>Edit</.link>
+          <:col :let={{_id, dept}} label="Nama Jabatan">{dept.name}</:col>
+          <:col :let={{_id, dept}} label="Kod Jabatan">{dept.code}</:col>
+          <:action :let={{_id, dept}}>
+            <.link patch={~p"/admin/departments/#{dept}/edit"}>Edit</.link>
           </:action>
-          <:action :let={{id, department}} >
+          <:action :let={{id, dept}}>
             <.link
-              phx-click={JS.push("delete", value: %{id: department.id}) |> hide("##{id}")}
-              data-confirm="Are you sure?"
+              phx-click={JS.push("delete", value: %{id: dept.id}) |> hide("##{id}")}
+              data-confirm="Anda yakin?"
             >
               Delete
             </.link>
           </:action>
         </.table>
 
-        <.modal :if={@live_action in [:new, :edit]} id="department-modal" show on_cancel={JS.patch(~p"/admin/departments")}>
+        <!-- Form Modal (New/Edit) -->
+        <.modal :if={@live_action in [:new, :edit]} id="department-form-modal" show on_cancel={JS.patch(~p"/admin/departments")}>
           <.live_component
-            module={SpatoWeb.DepartmentLive.FormComponent}
+            module={FormComponent}
             id={@department.id || :new}
             title={@page_title}
             action={@live_action}
@@ -92,6 +99,16 @@ defmodule SpatoWeb.DepartmentLive.Index do
             patch={~p"/admin/departments"}
           />
         </.modal>
+
+        <!-- Show Modal (Read-only) -->
+        <.modal :if={@live_action == :show} id="department-show-modal" show on_cancel={JS.patch(~p"/admin/departments")}>
+          <.live_component
+            module={ShowComponent}
+            id={@department.id}
+            department={@department}
+          />
+        </.modal>
+
       </div>
     </div>
     """

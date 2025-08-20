@@ -167,7 +167,7 @@ defmodule SpatoWeb.Components.Sidebar do
             <!-- Senarai Jabatan -->
             <li>
               <.link
-                href="/departments"
+                href="/admin/departments"
                 class={[
                   "flex items-center justify-between px-4 py-2 rounded-md hover:bg-gray-200 cursor-pointer transition-all duration-300",
                   @active_tab == "departments" && "bg-gray-300 font-bold"

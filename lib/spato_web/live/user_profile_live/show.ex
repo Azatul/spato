@@ -88,7 +88,7 @@ defmodule SpatoWeb.UserProfileLive.Show do
                 </div>
               </div>
               <div>
-                <p class="text-sm text-gray-600 mb-1">Status Perkahwinan</p>
+                <p class="text-sm text-gray-600 mb-1">Status Pekerjaan</p>
                 <div class="bg-white p-3 rounded-lg border border-gray-300">
                   <%= @user_profile.employment_status %>
                 </div>
