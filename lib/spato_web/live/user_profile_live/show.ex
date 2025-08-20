@@ -135,7 +135,7 @@ defmodule SpatoWeb.UserProfileLive.Show do
           </div>
 
           <div class="flex justify-end mt-6">
-            <.link patch={~p"/user_profiles/#{@user_profile}/show/edit"}>
+            <.link patch={~p"/admin/user_profiles/#{@user_profile}/show/edit"}>
               <.button>Kemaskini Profil</.button>
             </.link>
           </div>
@@ -143,14 +143,14 @@ defmodule SpatoWeb.UserProfileLive.Show do
       </main>
     </div>
 
-    <.modal :if={@live_action == :edit} id="user_profile-modal" show on_cancel={JS.patch(~p"/user_profiles/#{@user_profile}")}>
+    <.modal :if={@live_action == :edit} id="user_profile-modal" show on_cancel={JS.patch(~p"/admin/user_profiles/#{@user_profile}")}>
       <.live_component
         module={SpatoWeb.UserProfileLive.FormComponent}
         id={@user_profile.id}
         title={@page_title}
         action={@live_action}
         user_profile={@user_profile}
-        patch={~p"/user_profiles/#{@user_profile}"}
+        patch={~p"/admin/user_profiles/#{@user_profile}"}
       />
     </.modal>
     """
