@@ -1,10 +1,10 @@
 defmodule SpatoWeb.UserProfileLive.FormComponent do
   use SpatoWeb, :live_component
+
   alias Spato.Accounts
 
   @impl true
   def update(assigns, socket) do
-    # assigns will include: :user_profile, :current_user, :title, :action, :patch
     departments = Accounts.list_departments()
     changeset = Accounts.change_user_profile(assigns.user_profile)
 
@@ -12,6 +12,13 @@ defmodule SpatoWeb.UserProfileLive.FormComponent do
      socket
      |> assign(assigns)
      |> assign(:departments, departments)
+     |> assign(:gender_options, [{"Lelaki", "male"}, {"Perempuan", "female"}])
+     |> assign(:employment_status_options, [
+       {"Sepenuh Masa", "full_time"},
+       {"Separuh Masa", "part_time"},
+       {"Kontrak", "contract"},
+       {"Pelatih", "intern"}
+     ])
      |> assign(:form, to_form(changeset))}
   end
 
@@ -31,32 +38,11 @@ defmodule SpatoWeb.UserProfileLive.FormComponent do
         <.input field={@form[:full_name]} type="text" label="Nama Penuh" />
         <.input field={@form[:dob]} type="date" label="Tarikh Lahir" />
         <.input field={@form[:ic_number]} type="text" label="No. Kad Pengenalan" />
-
-        <!-- Gender -->
-        <.input
-          field={@form[:gender]}
-          type="select"
-          label="Jantina"
-          options={[{"Lelaki", "male"}, {"Perempuan", "female"}]}
-        />
-
+        <.input field={@form[:gender]} type="select" label="Jantina" options={@gender_options} />
         <.input field={@form[:phone_number]} type="text" label="No.Telefon" />
         <.input field={@form[:address]} type="text" label="Alamat" />
         <.input field={@form[:position]} type="text" label="Jawatan" />
-
-        <!-- Employment Status -->
-        <.input
-          field={@form[:employment_status]}
-          type="select"
-          label="Status Pekerjaan"
-          options={[
-            {"Sepenuh Masa", "full_time"},
-            {"Separuh Masa", "part_time"},
-            {"Kontrak", "contract"},
-            {"Pelatih", "intern"}
-          ]}
-        />
-
+        <.input field={@form[:employment_status]} type="select" label="Status Pekerjaan" options={@employment_status_options} />
         <.input field={@form[:date_joined]} type="date" label="Tarikh Lantikan" />
 
         <!-- Automatically set user_id -->
@@ -99,11 +85,11 @@ defmodule SpatoWeb.UserProfileLive.FormComponent do
 
         {:noreply,
          socket
-         |> put_flash(:info, "User profile updated successfully")
+         |> put_flash(:info, "Profil pengguna berjaya dikemaskini.")
          |> push_patch(to: socket.assigns.patch)}
 
       {:error, changeset} ->
-        {:noreply, assign(socket, form: to_form(changeset))}
+        {:noreply, assign(socket, form: to_form(changeset, action: :validate))}
     end
   end
 
@@ -114,11 +100,11 @@ defmodule SpatoWeb.UserProfileLive.FormComponent do
 
         {:noreply,
          socket
-         |> put_flash(:info, "User profile created successfully")
+         |> put_flash(:info, "Profil pengguna berjaya dicipta.")
          |> push_patch(to: socket.assigns.patch)}
 
       {:error, changeset} ->
-        {:noreply, assign(socket, form: to_form(changeset))}
+        {:noreply, assign(socket, form: to_form(changeset, action: :validate))}
     end
   end
 

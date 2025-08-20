@@ -270,7 +270,10 @@ defmodule Spato.Accounts do
     |> Spato.Repo.preload([:user, :department])
   end
 
-  def get_user_profile!(id), do: Repo.get!(UserProfile, id)
+  def get_user_profile!(id) do
+    Repo.get!(UserProfile, id)
+    |> Repo.preload([:user, :department])
+  end
 
   def create_user_profile(attrs \\ %{}) do
     %UserProfile{}

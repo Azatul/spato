@@ -1,6 +1,7 @@
 defmodule SpatoWeb.UserProfileLive.Index do
   use SpatoWeb, :live_view
   import SpatoWeb.Components.Sidebar
+
   alias Spato.Accounts
   alias Spato.Accounts.UserProfile
   alias Spato.Repo
@@ -26,23 +27,32 @@ defmodule SpatoWeb.UserProfileLive.Index do
   end
 
   @impl true
-  def handle_params(params, _url, socket),
-    do: {:noreply, apply_action(socket, socket.assigns.live_action, params)}
+  def handle_params(params, _url, socket) do
+    {:noreply, apply_action(socket, socket.assigns.live_action, params)}
+  end
 
   defp apply_action(socket, :edit, %{"id" => id}) do
     user_profile = Accounts.get_user_profile!(id) |> Repo.preload([:user, :department])
     assign(socket, page_title: "Edit User Profile", user_profile: user_profile)
   end
 
-  defp apply_action(socket, :new, _params),
-    do: assign(socket, page_title: "New User Profile", user_profile: %UserProfile{})
+  defp apply_action(socket, :new, _params) do
+    assign(socket, page_title: "New User Profile", user_profile: %UserProfile{})
+  end
 
-  defp apply_action(socket, :index, _params),
-    do: assign(socket, page_title: "Listing User Profiles", user_profile: nil)
+  defp apply_action(socket, :show, %{"id" => id}) do
+    user_profile = Accounts.get_user_profile!(id) |> Repo.preload([:user, :department])
+    assign(socket, page_title: "User Profile", user_profile: user_profile)
+  end
+
+  defp apply_action(socket, :index, _params) do
+    assign(socket, page_title: "Listing User Profiles", user_profile: nil)
+  end
 
   @impl true
-  def handle_event("toggle_sidebar", _, socket),
-    do: {:noreply, update(socket, :sidebar_open, &(!&1))}
+  def handle_event("toggle_sidebar", _, socket) do
+    {:noreply, update(socket, :sidebar_open, &(!&1))}
+  end
 
   def handle_event("delete", %{"id" => id}, socket) do
     user_profile = Accounts.get_user_profile!(id)
@@ -51,8 +61,9 @@ defmodule SpatoWeb.UserProfileLive.Index do
   end
 
   @impl true
-  def handle_info({SpatoWeb.UserProfileLive.FormComponent, {:saved, user_profile}}, socket),
-    do: {:noreply, stream_insert(socket, :user_profiles, user_profile)}
+  def handle_info({SpatoWeb.UserProfileLive.FormComponent, {:saved, user_profile}}, socket) do
+    {:noreply, stream_insert(socket, :user_profiles, user_profile)}
+  end
 
   @impl true
   def render(assigns) do
@@ -83,7 +94,9 @@ defmodule SpatoWeb.UserProfileLive.Index do
           <.table
             id="user_profiles"
             rows={@streams.user_profiles}
-            row_click={fn {_id, user_profile} -> JS.navigate(~p"/admin/user_profiles/#{user_profile}") end}
+            row_click={fn {_id, user_profile} ->
+              JS.patch(~p"/admin/user_profiles/#{user_profile}")
+            end}
           >
             <:col :let={{_id, user_profile}} label="Nama Penuh">{user_profile.full_name}</:col>
             <:col :let={{_id, user_profile}} label="Emel">{user_profile.user && user_profile.user.email}</:col>
@@ -98,12 +111,17 @@ defmodule SpatoWeb.UserProfileLive.Index do
             <:col :let={{_id, user_profile}} label="Peranan">{user_profile.user && user_profile.user.role}</:col>
             <:col :let={{_id, user_profile}} label="Jabatan">{user_profile.department && user_profile.department.name}</:col>
 
-            <:action :let={{_id, user_profile}}><.link patch={~p"/admin/user_profiles/#{user_profile}/edit"}>Edit</.link></:action>
+            <:action :let={{_id, user_profile}}>
+              <.link patch={~p"/admin/user_profiles/#{user_profile}/edit"}>Edit</.link>
+            </:action>
             <:action :let={{id, user_profile}}>
-              <.link phx-click={JS.push("delete", value: %{id: user_profile.id}) |> hide("##{id}")} data-confirm="Are you sure?">Delete</.link>
+              <.link phx-click={JS.push("delete", value: %{id: user_profile.id}) |> hide("##{id}")} data-confirm="Are you sure?">
+                Delete
+              </.link>
             </:action>
           </.table>
 
+          <!-- Form Modal -->
           <.modal :if={@live_action in [:new, :edit]} id="user_profile-modal" show on_cancel={JS.patch(~p"/admin/user_profiles")}>
             <.live_component
               module={SpatoWeb.UserProfileLive.FormComponent}
@@ -113,6 +131,16 @@ defmodule SpatoWeb.UserProfileLive.Index do
               user_profile={@user_profile}
               current_user={@current_user}
               patch={~p"/admin/user_profiles"}
+            />
+          </.modal>
+
+          <!-- Show Modal -->
+          <.modal :if={@live_action == :show} id="user_profile-show-modal" show on_cancel={JS.patch(~p"/admin/user_profiles")}>
+            <.live_component
+              module={SpatoWeb.UserProfileLive.ShowComponent}
+              id={@user_profile.id}
+              title={@page_title}
+              user_profile={@user_profile}
             />
           </.modal>
         </div>
