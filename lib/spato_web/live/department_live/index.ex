@@ -53,7 +53,7 @@ defmodule SpatoWeb.DepartmentLive.Index do
         <.header>
           Listing Departments
           <:actions>
-            <.link patch={~p"/departments/new"}>
+            <.link patch={~p"/admin/departments/new"}>
               <.button>New Department</.button>
             </.link>
           </:actions>
@@ -62,15 +62,15 @@ defmodule SpatoWeb.DepartmentLive.Index do
         <.table
           id="departments"
           rows={@streams.departments}
-          row_click={fn {_id, department} -> JS.navigate(~p"/departments/#{department}") end}
+          row_click={fn {_id, department} -> JS.navigate(~p"/admin/departments/#{department}") end}
         >
           <:col :let={{_id, department}} label="Name">{department.name}</:col>
           <:col :let={{_id, department}} label="Code">{department.code}</:col>
           <:action :let={{_id, department}} >
             <div class="sr-only">
-              <.link navigate={~p"/departments/#{department}"}>Show</.link>
+              <.link navigate={~p"/admin/departments/#{department}"}>Show</.link>
             </div>
-            <.link patch={~p"/departments/#{department}/edit"}>Edit</.link>
+            <.link patch={~p"/admin/departments/#{department}/edit"}>Edit</.link>
           </:action>
           <:action :let={{id, department}} >
             <.link
@@ -82,14 +82,14 @@ defmodule SpatoWeb.DepartmentLive.Index do
           </:action>
         </.table>
 
-        <.modal :if={@live_action in [:new, :edit]} id="department-modal" show on_cancel={JS.patch(~p"/departments")}>
+        <.modal :if={@live_action in [:new, :edit]} id="department-modal" show on_cancel={JS.patch(~p"/admin/departments")}>
           <.live_component
             module={SpatoWeb.DepartmentLive.FormComponent}
             id={@department.id || :new}
             title={@page_title}
             action={@live_action}
             department={@department}
-            patch={~p"/departments"}
+            patch={~p"/admin/departments"}
           />
         </.modal>
       </div>

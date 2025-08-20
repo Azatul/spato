@@ -29,13 +29,6 @@ defmodule SpatoWeb.Router do
   scope "/", SpatoWeb do
     pipe_through :browser
 
-    live "/departments", DepartmentLive.Index, :index
-    live "/departments/new", DepartmentLive.Index, :new
-    live "/departments/:id/edit", DepartmentLive.Index, :edit
-
-    live "/departments/:id", DepartmentLive.Show, :show
-    live "/departments/:id/show/edit", DepartmentLive.Show, :edit
-
     live "/", UserLoginLive
   end
 
@@ -59,6 +52,13 @@ defmodule SpatoWeb.Router do
 
       live "/user_profiles/:id", UserProfileLive.Show, :show
       live "/user_profiles/:id/show/edit", UserProfileLive.Show, :edit
+
+      live "/departments", DepartmentLive.Index, :index
+      live "/departments/new", DepartmentLive.Index, :new
+      live "/departments/:id/edit", DepartmentLive.Index, :edit
+
+      live "/departments/:id", DepartmentLive.Show, :show
+      live "/departments/:id/show/edit", DepartmentLive.Show, :edit
     end
   end
 

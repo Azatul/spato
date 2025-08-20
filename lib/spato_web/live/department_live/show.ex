@@ -26,7 +26,7 @@ defmodule SpatoWeb.DepartmentLive.Show do
   Department {@department.id}
   <:subtitle>This is a department record from your database.</:subtitle>
   <:actions>
-    <.link patch={~p"/departments/#{@department}/show/edit"} phx-click={JS.push_focus()}>
+    <.link patch={~p"/admin/departments/#{@department}/show/edit"} phx-click={JS.push_focus()}>
       <.button>Edit department</.button>
     </.link>
   </:actions>
@@ -37,16 +37,16 @@ defmodule SpatoWeb.DepartmentLive.Show do
   <:item title="Code">{@department.code}</:item>
 </.list>
 
-<.back navigate={~p"/departments"}>Back to departments</.back>
+<.back navigate={~p"/admin/departments"}>Back to departments</.back>
 
-<.modal :if={@live_action == :edit} id="department-modal" show on_cancel={JS.patch(~p"/departments/#{@department}")}>
+<.modal :if={@live_action == :edit} id="department-modal" show on_cancel={JS.patch(~p"/admin/departments/#{@department}")}>
   <.live_component
     module={SpatoWeb.DepartmentLive.FormComponent}
     id={@department.id}
     title={@page_title}
     action={@live_action}
     department={@department}
-    patch={~p"/departments/#{@department}"}
+    patch={~p"/admin/departments/#{@department}"}
   />
 </.modal>
 """
