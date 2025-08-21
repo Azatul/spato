@@ -10,6 +10,9 @@ defmodule Spato.Accounts.User do
     field :confirmed_at, :utc_datetime
     field :role, :string, default: "user"
 
+    has_many :catering_menus, Spato.Assets.CateringMenu,
+    foreign_key: :created_by_user_id
+
     timestamps(type: :utc_datetime)
   end
 

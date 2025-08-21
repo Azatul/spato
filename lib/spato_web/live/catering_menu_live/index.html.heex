@@ -1,0 +1,46 @@
+<.header>
+  Listing Catering menus
+  <:actions>
+    <.link patch={~p"/catering_menus/new"}>
+      <.button>New Catering menu</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.table
+  id="catering_menus"
+  rows={@streams.catering_menus}
+  row_click={fn {_id, catering_menu} -> JS.navigate(~p"/catering_menus/#{catering_menu}") end}
+>
+  <:col :let={{_id, catering_menu}} label="Name">{catering_menu.name}</:col>
+  <:col :let={{_id, catering_menu}} label="Type">{catering_menu.type}</:col>
+  <:col :let={{_id, catering_menu}} label="Description">{catering_menu.description}</:col>
+  <:col :let={{_id, catering_menu}} label="Price per head">{catering_menu.price_per_head}</:col>
+  <:col :let={{_id, catering_menu}} label="Photo url">{catering_menu.photo_url}</:col>
+  <:col :let={{_id, catering_menu}} label="Status">{catering_menu.status}</:col>
+  <:action :let={{_id, catering_menu}}>
+    <div class="sr-only">
+      <.link navigate={~p"/catering_menus/#{catering_menu}"}>Show</.link>
+    </div>
+    <.link patch={~p"/catering_menus/#{catering_menu}/edit"}>Edit</.link>
+  </:action>
+  <:action :let={{id, catering_menu}}>
+    <.link
+      phx-click={JS.push("delete", value: %{id: catering_menu.id}) |> hide("##{id}")}
+      data-confirm="Are you sure?"
+    >
+      Delete
+    </.link>
+  </:action>
+</.table>
+
+<.modal :if={@live_action in [:new, :edit]} id="catering_menu-modal" show on_cancel={JS.patch(~p"/catering_menus")}>
+  <.live_component
+    module={SpatoWeb.CateringMenuLive.FormComponent}
+    id={@catering_menu.id || :new}
+    title={@page_title}
+    action={@live_action}
+    catering_menu={@catering_menu}
+    patch={~p"/catering_menus"}
+  />
+</.modal>

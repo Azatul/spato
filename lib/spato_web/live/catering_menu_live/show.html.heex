@@ -1,0 +1,31 @@
+<.header>
+  Catering menu {@catering_menu.id}
+  <:subtitle>This is a catering_menu record from your database.</:subtitle>
+  <:actions>
+    <.link patch={~p"/catering_menus/#{@catering_menu}/show/edit"} phx-click={JS.push_focus()}>
+      <.button>Edit catering_menu</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.list>
+  <:item title="Name">{@catering_menu.name}</:item>
+  <:item title="Type">{@catering_menu.type}</:item>
+  <:item title="Description">{@catering_menu.description}</:item>
+  <:item title="Price per head">{@catering_menu.price_per_head}</:item>
+  <:item title="Photo url">{@catering_menu.photo_url}</:item>
+  <:item title="Status">{@catering_menu.status}</:item>
+</.list>
+
+<.back navigate={~p"/catering_menus"}>Back to catering_menus</.back>
+
+<.modal :if={@live_action == :edit} id="catering_menu-modal" show on_cancel={JS.patch(~p"/catering_menus/#{@catering_menu}")}>
+  <.live_component
+    module={SpatoWeb.CateringMenuLive.FormComponent}
+    id={@catering_menu.id}
+    title={@page_title}
+    action={@live_action}
+    catering_menu={@catering_menu}
+    patch={~p"/catering_menus/#{@catering_menu}"}
+  />
+</.modal>

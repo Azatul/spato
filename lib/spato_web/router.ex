@@ -29,6 +29,13 @@ defmodule SpatoWeb.Router do
   scope "/", SpatoWeb do
     pipe_through :browser
 
+    live "/catering_menus", CateringMenuLive.Index, :index
+    live "/catering_menus/new", CateringMenuLive.Index, :new
+    live "/catering_menus/:id/edit", CateringMenuLive.Index, :edit
+
+    live "/catering_menus/:id", CateringMenuLive.Show, :show
+    live "/catering_menus/:id/show/edit", CateringMenuLive.Show, :edit
+
     live "/", UserLoginLive
   end
 
