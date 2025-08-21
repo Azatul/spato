@@ -46,6 +46,12 @@ defmodule SpatoWeb.Router do
 
       live "/dashboard", AdminDashboardLive
       # Add more admin-only LiveViews here
+      live "/departments", DepartmentLive.Index, :index
+      live "/departments/new", DepartmentLive.Index, :new
+      live "/departments/:id/edit", DepartmentLive.Index, :edit
+
+      live "/departments/:id", DepartmentLive.Index, :show
+
     end
   end
 
