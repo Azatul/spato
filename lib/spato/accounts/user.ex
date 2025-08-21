@@ -9,7 +9,7 @@ defmodule Spato.Accounts.User do
     field :current_password, :string, virtual: true, redact: true
     field :confirmed_at, :utc_datetime
     field :role, :string, default: "user"
-
+    has_many :meeting_rooms_created, Spato.Assets.MeetingRoom, foreign_key: :created_by_user_id
     timestamps(type: :utc_datetime)
   end
 

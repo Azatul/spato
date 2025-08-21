@@ -9,7 +9,7 @@ defmodule Spato.Assets.MeetingRoom do
     field :capacity, :integer
     field :available_facility, :string
     field :photo_url, :string
-    field :created_by_user_id, :id
+    belongs_to :created_by, Spato.Accounts.User, foreign_key: :created_by_user_id
 
     timestamps(type: :utc_datetime)
   end
@@ -17,7 +17,7 @@ defmodule Spato.Assets.MeetingRoom do
   @doc false
   def changeset(meeting_room, attrs) do
     meeting_room
-    |> cast(attrs, [:name, :location, :capacity, :available_facility, :photo_url, :status])
+    |> cast(attrs, [:name, :location, :capacity, :available_facility, :photo_url, :status, :craeted_by_user_id])
     |> validate_required([:name, :location, :capacity, :available_facility, :photo_url, :status])
   end
 end
