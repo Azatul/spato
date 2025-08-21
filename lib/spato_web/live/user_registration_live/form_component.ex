@@ -57,17 +57,4 @@ defmodule SpatoWeb.UserRegistrationLive.FormComponent do
     end
   end
 
-  defp save_user(socket, :new, params) do
-    case Accounts.register_user(params) do
-      {:ok, user} ->
-        send(self(), {__MODULE__, {:saved, user}})
-        {:noreply,
-         socket
-         |> push_event("close_modal", %{})}  # <- trigger JS to hide modal
-
-      {:error, changeset} ->
-        {:noreply, assign(socket, form: to_form(changeset), check_errors: true)}
-    end
-  end
-
 end
