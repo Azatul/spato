@@ -17,7 +17,7 @@ defmodule Spato.Assets.MeetingRoom do
   @doc false
   def changeset(meeting_room, attrs) do
     meeting_room
-    |> cast(attrs, [:name, :location, :capacity, :available_facility, :photo_url, :status, :craeted_by_user_id])
+    |> cast(attrs, [:name, :location, :capacity, :available_facility, :photo_url, :status, :created_by_user_id])
     |> validate_required([:name, :location, :capacity, :available_facility, :photo_url, :status])
   end
 end
