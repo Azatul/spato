@@ -29,9 +29,15 @@ defmodule SpatoWeb.UserProfileLive.Index do
 
   # Modal show action
   defp apply_action(socket, :show, %{"id" => id}) do
-    user_profile = Accounts.get_user_profile!(id) # preload inside context
-    assign(socket, page_title: "Lihat Profil Pengguna", user_profile: user_profile)
+    user = Accounts.get_user_with_profile!(id)
+
+    assign(socket,
+      page_title: "Lihat Pengguna",
+      user: user,
+      user_profile: user.user_profile
+    )
   end
+
 
   defp apply_action(socket, :index, _params) do
     assign(socket, page_title: "Senarai Pengguna", user_profile: nil)
@@ -43,18 +49,25 @@ defmodule SpatoWeb.UserProfileLive.Index do
     {:noreply, update(socket, :sidebar_open, &(!&1))}
   end
 
-  # Delete only if user hasn't updated their profile
   def handle_event("delete", %{"id" => id}, socket) do
-    user_profile = Accounts.get_user_profile!(id)
+    user = Accounts.get_user_with_profile!(id)
 
-    if is_nil(user_profile.last_seen_at) do
-      {:ok, _} = Accounts.delete_user_profile(user_profile)
-      {:noreply, stream_delete(socket, :user_profiles, user_profile)}
-    else
-      {:noreply, socket
-       |> put_flash(:error, "Tidak boleh padam profil yang telah dikemaskini oleh pengguna")}
+    case Accounts.delete_user(user) do
+      {:ok, _} ->
+        # if the user has a profile, remove that from stream
+        if user.user_profile do
+          {:noreply, stream_delete(socket, :user_profiles, user.user_profile)}
+        else
+          # if no profile, just remove the user by id
+          {:noreply, stream_delete(socket, :user_profiles, %{id: user.id})}
+        end
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Tidak boleh padam pengguna")}
     end
   end
+
+
 
   @impl true
   def render(assigns) do
@@ -92,14 +105,54 @@ defmodule SpatoWeb.UserProfileLive.Index do
             rows={@streams.user_profiles}
             row_click={fn {_id, u} -> JS.patch(~p"/admin/user_profiles/#{u.id}?action=show") end}
           >
-            <:col :let={{_id, u}} label="Nama Penuh">{u.full_name}</:col>
-            <:col :let={{_id, u}} label="Emel">{u.user && u.user.email}</:col>
-            <:col :let={{_id, u}} label="Jabatan">{u.department && u.department.name}</:col>
-            <:col :let={{_id, u}} label="Jawatan">{u.position}</:col>
-            <:col :let={{_id, u}} label="Status Pekerjaan">{UserProfile.human_employment_status(u.employment_status)}</:col>
-            <:col :let={{_id, u}} label="Jantina">{UserProfile.human_gender(u.gender)}</:col>
-            <:col :let={{_id, u}} label="No. Telefon">{u.phone_number}</:col>
-            <:col :let={{_id, u}} label="Alamat">{u.address}</:col>
+            <:col :let={{_id, u}} label="Nama Penuh">
+            <%= if u.user_profile && u.user_profile.full_name do %>
+              <%= u.user_profile.full_name %>
+            <% else %>
+              Belum diisi
+            <% end %>
+          </:col>
+
+          <:col :let={{_id, u}} label="Emel">
+            <%= u.email %>
+          </:col>
+
+          <:col :let={{_id, u}} label="Jabatan">
+            <%= if u.user_profile && u.user_profile.department do %>
+              <%= u.user_profile.department.name %>
+            <% else %>
+              Belum diisi
+            <% end %>
+          </:col>
+
+          <:col :let={{_id, u}} label="Jawatan">
+            <%= u.user_profile && u.user_profile.position || "Belum diisi" %>
+          </:col>
+
+          <:col :let={{_id, u}} label="Status Pekerjaan">
+            <%= if u.user_profile && u.user_profile.employment_status do %>
+              <%= UserProfile.human_employment_status(u.user_profile.employment_status) %>
+            <% else %>
+              Belum diisi
+            <% end %>
+          </:col>
+
+          <:col :let={{_id, u}} label="Jantina">
+            <%= if u.user_profile && u.user_profile.gender do %>
+              <%= UserProfile.human_gender(u.user_profile.gender) %>
+            <% else %>
+              Belum diisi
+            <% end %>
+          </:col>
+
+          <:col :let={{_id, u}} label="No. Telefon">
+            <%= u.user_profile && u.user_profile.phone_number || "Belum diisi" %>
+          </:col>
+
+          <:col :let={{_id, u}} label="Alamat">
+            <%= u.user_profile && u.user_profile.address || "Belum diisi" %>
+          </:col>
+
 
             <:action :let={{id, u}}>
               <.link phx-click={JS.push("delete", value: %{id: u.id}) |> hide("##{id}")} data-confirm="Anda yakin?">
@@ -112,11 +165,12 @@ defmodule SpatoWeb.UserProfileLive.Index do
           <.modal :if={@live_action == :show} id="user_profile-show-modal" show on_cancel={JS.patch(~p"/admin/user_profiles")}>
             <.live_component
               module={SpatoWeb.UserProfileLive.ShowComponent}
-              id={@user_profile.id}
+              id={@user.id}
               title={@page_title}
-              user_profile={@user_profile}
-            />
+              user={@user}
+              user_profile={@user_profile} />
           </.modal>
+
         </div>
       </main>
     </div>

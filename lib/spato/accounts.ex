@@ -15,6 +15,11 @@ defmodule Spato.Accounts do
   # Get all users
   def list_users, do: Repo.all(User)
 
+  def delete_user(%User{} = user) do
+    Repo.delete(user)
+  end
+
+
   # Get user by email
   def get_user_by_email(email) when is_binary(email), do: Repo.get_by(User, email: email)
 
@@ -200,10 +205,19 @@ defmodule Spato.Accounts do
   ## UserProfile functions
   ## ----------------------
 
-  @doc "List all user profiles with preloaded user and department"
+  @doc """
+List all users, with their profile (if any) and department preloaded.
+If a user has no profile, you’ll still get the user with `user_profile = nil`.
+"""
   def list_user_profiles do
-    Repo.all(UserProfile)
-    |> Repo.preload([:user, :department])
+    import Ecto.Query
+
+    from(u in Spato.Accounts.User,
+      left_join: p in assoc(u, :user_profile),
+      left_join: d in assoc(p, :department),
+      preload: [user_profile: {p, department: d}]
+    )
+    |> Spato.Repo.all()
   end
 
   @doc "Get a single user profile by ID"
@@ -213,6 +227,10 @@ defmodule Spato.Accounts do
     |> Repo.preload([:user, :department])
   end
 
+  def get_user_with_profile!(id) do
+    Repo.get!(User, id)
+    |> Repo.preload(user_profile: [:department])
+  end
 
   @doc "Delete a user profile"
   def delete_user_profile(%UserProfile{} = user_profile), do: Repo.delete(user_profile)

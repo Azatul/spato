@@ -10,7 +10,7 @@ defmodule Spato.Accounts.User do
     field :confirmed_at, :utc_datetime
     field :role, :string, default: "user"
 
-    has_one :user_profile, Spato.Accounts.UserProfile
+    has_one :user_profile, Spato.Accounts.UserProfile, on_delete: :delete_all
 
     timestamps(type: :utc_datetime)
   end
