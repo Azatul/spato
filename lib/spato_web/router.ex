@@ -53,6 +53,7 @@ defmodule SpatoWeb.Router do
       on_mount: [{SpatoWeb.UserAuth, :ensure_admin}] do
 
       live "/dashboard", AdminDashboardLive
+      live "/meeting_rooms", MeetingRoomLive.Index, :index
       # Add more admin-only LiveViews here
     end
   end
