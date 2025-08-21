@@ -44,28 +44,4 @@ defmodule Spato.AccountsFixtures do
     department
   end
 
-  @doc """
-  Generate a user_profile.
-  """
-  def user_profile_fixture(attrs \\ %{}) do
-    {:ok, user_profile} =
-      attrs
-      |> Enum.into(%{
-        address: "some address",
-        date_joined: ~D[2025-08-17],
-        dob: ~D[2025-08-17],
-        employment_status: "some employment_status",
-        full_name: "some full_name",
-        gender: "some gender",
-        ic_number: "some ic_number",
-        is_active: true,
-        last_login_at: ~U[2025-08-17 04:31:00Z],
-        phone_number: "some phone_number",
-        position: "some position",
-        profile_picture_url: "some profile_picture_url"
-      })
-      |> Spato.Accounts.create_user_profile()
-
-    user_profile
-  end
 end

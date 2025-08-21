@@ -260,38 +260,4 @@ defmodule Spato.Accounts do
     Department.changeset(department, attrs)
   end
 
-  ## =====================
-  ## User profiles
-  ## =====================
-
-  def list_user_profiles do
-    Spato.Accounts.UserProfile
-    |> Spato.Repo.all()
-    |> Spato.Repo.preload([:user, :department])
-  end
-
-  def get_user_profile!(id) do
-    Repo.get!(UserProfile, id)
-    |> Repo.preload([:user, :department])
-  end
-
-  def create_user_profile(attrs \\ %{}) do
-    %UserProfile{}
-    |> UserProfile.changeset(attrs)
-    |> Repo.insert()
-  end
-
-  def update_user_profile(%UserProfile{} = user_profile, attrs) do
-    user_profile
-    |> UserProfile.changeset(attrs)
-    |> Repo.update()
-  end
-
-  def delete_user_profile(%UserProfile{} = user_profile) do
-    Repo.delete(user_profile)
-  end
-
-  def change_user_profile(%UserProfile{} = user_profile, attrs \\ %{}) do
-    UserProfile.changeset(user_profile, attrs)
-  end
 end
