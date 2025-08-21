@@ -1,6 +1,7 @@
 defmodule SpatoWeb.DepartmentLive.Index do
   use SpatoWeb, :live_view
   import SpatoWeb.Components.Sidebar
+  import SpatoWeb.Components.Headbar
 
   alias Spato.Accounts
   alias Spato.Accounts.Department
@@ -80,9 +81,10 @@ defmodule SpatoWeb.DepartmentLive.Index do
         open={@sidebar_open}
         toggle_event="toggle_sidebar"
       />
+      <.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title={@page_title} />
 
       <!-- Main content -->
-       <main class="flex-1 p-6 transition-all duration-300">
+       <main class="flex-1 pt-16 p-6 transition-all duration-300">
         <div class="bg-gray-100 p-4 md:p-8 rounded-lg">
           <h1 class="text-xl font-bold mb-1">Senarai Jabatan</h1>
           <p class="text-md text-gray-500 mb-6">Urus dan semak semua jabatan dalam sistem</p>

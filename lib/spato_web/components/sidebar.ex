@@ -157,16 +157,6 @@ defmodule SpatoWeb.Components.Sidebar do
             </li>
           <% end %>
 
-          <!-- Logout -->
-          <li class="mt-auto">
-            <.link href="/users/log_out" method="delete"
-                   class="flex items-center justify-between px-4 py-2 rounded-md hover:bg-gray-200 cursor-pointer transition-all duration-300 text-red-600">
-              <div class="flex items-center gap-2">
-                <.icon name="hero-arrow-left-on-rectangle-solid" class="transition-all duration-300 w-5 h-5" />
-                <%= if @open, do: "Log Out" %>
-              </div>
-            </.link>
-          </li>
         </ul>
       </nav>
     </aside>

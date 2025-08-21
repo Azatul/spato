@@ -1,6 +1,7 @@
 defmodule SpatoWeb.AdminDashboardLive do
   use SpatoWeb, :live_view
   import SpatoWeb.Components.Sidebar
+  import SpatoWeb.Components.Headbar
 
   on_mount {SpatoWeb.UserAuth, :ensure_authenticated}
 
@@ -33,7 +34,9 @@ defmodule SpatoWeb.AdminDashboardLive do
         toggle_event="toggle_sidebar"
       />
 
-      <main class="flex-1 p-6 transition-all duration-300">
+      <.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title={@page_title} />
+
+      <main class="flex-1 pt-16 p-6 transition-all duration-300">
 
 
     <body class="bg-gray-100 p-4 md:p-8">
