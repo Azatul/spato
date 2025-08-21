@@ -6,6 +6,7 @@ defmodule Spato.Accounts.Department do
     field :code, :string
     field :name, :string
 
+    has_many :user_profiles, Spato.Accounts.UserProfile
     timestamps(type: :utc_datetime)
   end
 
