@@ -120,7 +120,10 @@ defmodule Spato.Accounts do
 
   def get_user_by_session_token(token) do
     {:ok, query} = UserToken.verify_session_token_query(token)
-    Repo.one(query)
+    case Repo.one(query) do
+      nil -> nil
+      user -> Repo.preload(user, user_profile: [:department])
+    end
   end
 
   def delete_user_session_token(token) do
@@ -240,6 +243,41 @@ If a user has no profile, you’ll still get the user with `user_profile = nil`.
 
   @doc "Returns changeset for a user profile"
   def change_user_profile(%UserProfile{} = user_profile, attrs \\ %{}), do: UserProfile.changeset(user_profile, attrs)
+
+  @doc """
+  Returns the user's profile if it exists; otherwise returns a new struct
+  with `user_id` prefilled. Useful for forms.
+  """
+  def get_or_init_user_profile_for_user(%User{id: user_id} = user) do
+    user = Repo.preload(user, :user_profile)
+
+    case user.user_profile do
+      %UserProfile{} = profile -> profile
+      _ -> %UserProfile{user_id: user_id}
+    end
+  end
+
+  @doc """
+  Creates or updates the profile for the given user.
+
+  Ensures required fields such as `user_id` and `last_seen_at` are present
+  to satisfy validations in the profile changeset.
+  """
+  def upsert_user_profile_for_user(%User{} = user, attrs) when is_map(attrs) do
+    profile = get_or_init_user_profile_for_user(user)
+
+    attrs =
+      attrs
+      |> Map.put_new("user_id", user.id)
+      |> Map.put_new("last_seen_at", profile.last_seen_at || DateTime.utc_now())
+
+    changeset = UserProfile.changeset(profile, attrs)
+
+    case profile do
+      %UserProfile{id: nil} -> Repo.insert(changeset)
+      %UserProfile{} -> Repo.update(changeset)
+    end
+  end
 
   ## ----------------------
   ## User statistics
