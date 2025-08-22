@@ -18,6 +18,7 @@ defmodule SpatoWeb.Components.Headbar do
   attr :toggle_image_alt, :string, default: "Toggle sidebar"
   attr :class, :string, default: nil
   attr :title, :string, default: nil
+  attr :full_width, :boolean, default: false
 
   slot :actions
 
@@ -26,8 +27,9 @@ defmodule SpatoWeb.Components.Headbar do
     <header
       class={[
         "fixed top-0 right-0 z-40 bg-white border-b border-gray-200 h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8 transition-all duration-300",
-        @open && "left-64",
-        !@open && "left-20",
+        @full_width && "left-0",
+        !@full_width && @open && "left-64",
+        !@full_width && !@open && "left-20",
         @class
       ]}
     >
