@@ -171,5 +171,28 @@ defmodule Spato.Accounts.User do
     end
   end
 
+  def display_role(%__MODULE__{role: role}) do
+    case role do
+      "admin" -> "Admin"
+      "user" -> "Staf"
+      _ -> "Tidak diketahui"
+    end
+  end
+
+  def display_name(%__MODULE__{} = user) do
+    cond do
+      # Prefer full_name from profile if set
+      user.user_profile && is_binary(user.user_profile.full_name) && byte_size(user.user_profile.full_name) > 0 ->
+        user.user_profile.full_name
+
+      # Otherwise, fallback to email
+      is_binary(user.email) && byte_size(user.email) > 0 ->
+        user.email
+
+      # Last fallback
+      true ->
+        "Pengguna"
+    end
+  end
 
 end

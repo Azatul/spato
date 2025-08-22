@@ -58,15 +58,18 @@ defmodule SpatoWeb.Components.Headbar do
       </div>
 
       <div class="flex items-center gap-4">
-        <span :if={Map.get(@current_user, :role)} class="hidden sm:inline text-sm text-gray-600">
-          {Map.get(@current_user, :role)}
+        <span :if={@current_user.role} class="hidden sm:inline text-sm text-gray-600">
+          {Spato.Accounts.User.display_role(@current_user)}
         </span>
+
 
         <details class="relative group">
           <summary class="list-none cursor-pointer flex items-center gap-2 select-none">
             <span class="hidden sm:inline text-sm font-medium text-gray-900">
-              {Map.get(@current_user, :name) || Map.get(@current_user, :email) || "Pengguna"}
+              {Spato.Accounts.User.display_name(@current_user)}
             </span>
+
+
             <img
               src={
                 case Map.get(@current_user, :user_profile) do
