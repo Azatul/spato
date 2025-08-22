@@ -9,7 +9,7 @@ defmodule Spato.Assets.MeetingRoom do
     field :capacity, :integer
     field :available_facility, :string
     field :photo_url, :string
-    belongs_to :created_by, Spato.Accounts.User, foreign_key: :created_by_user_id
+    belongs_to :admin, Spato.Accounts.User, foreign_key: :created_by_user_id
 
     timestamps(type: :utc_datetime)
   end
