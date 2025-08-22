@@ -212,12 +212,15 @@ If a user has no profile, you’ll still get the user with `user_profile = nil`.
   def list_user_profiles do
     import Ecto.Query
 
-    from(u in Spato.Accounts.User,
-      left_join: p in assoc(u, :user_profile),
-      left_join: d in assoc(p, :department),
-      preload: [user_profile: {p, department: d}]
-    )
-    |> Spato.Repo.all()
+    # Get all users first
+    users = Repo.all(User)
+
+    # Then preload profiles and departments for each user individually
+    # This handles the case where user_profile might be nil
+    users
+    |> Enum.map(fn user ->
+      Repo.preload(user, user_profile: [:department])
+    end)
   end
 
   @doc "Get a single user profile by ID"
