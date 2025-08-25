@@ -292,7 +292,7 @@ defmodule SpatoWeb.UserSettingsLive do
     # Save uploaded image (if present) and inject URL into params
     uploaded_urls =
       consume_uploaded_entries(socket, :profile_image, fn %{path: path}, _entry ->
-        uploads_dir = Path.join(["priv", "static", "uploads"]) |> Path.expand()
+        uploads_dir = Path.expand("./uploads")
         File.mkdir_p!(uploads_dir)
         dest = Path.join(uploads_dir, Path.basename(path))
         File.cp!(path, dest)
