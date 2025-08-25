@@ -30,15 +30,19 @@ defmodule SpatoWeb.Components.Sidebar do
         <ul class="space-y-2">
           <!-- Dashboard -->
           <li>
-            <.link patch={if @current_user.role == "admin", do: "/admin/dashboard", else: "/dashboard"}
-                   class={[ "flex items-center justify-between px-4 py-2 rounded-md hover:bg-gray-200 cursor-pointer transition-all duration-300",
-                            @active_tab == "dashboard" && "bg-gray-300 font-bold" ]}>
-              <div class="flex items-center gap-2">
-                <.icon name="hero-home" class="transition-all duration-300 w-5 h-5" />
-                <%= if @open, do: "Dashboard" %>
-              </div>
-            </.link>
-          </li>
+          <.link
+            patch={if @current_user.role == "admin", do: "/admin/dashboard", else: "/dashboard"}
+            class={[
+              "flex items-center justify-between px-4 py-2 rounded-md hover:bg-gray-200 cursor-pointer transition-all duration-300",
+              @active_tab in ["dashboard", "admin_dashboard"] && "bg-gray-300 font-bold"
+            ]}
+          >
+            <div class="flex items-center gap-2">
+              <.icon name="hero-home" class="transition-all duration-300 w-5 h-5" />
+              <%= if @open, do: "Dashboard" %>
+            </div>
+          </.link>
+        </li>
 
           <!-- Tempahan Menu -->
           <li>
@@ -130,7 +134,7 @@ defmodule SpatoWeb.Components.Sidebar do
                 patch="/admin/user_profiles"
                 class={[
                   "flex items-center justify-between px-4 py-2 rounded-md hover:bg-gray-200 cursor-pointer transition-all duration-300",
-                  @active_tab == "users" && "bg-gray-300 font-bold"
+                  @active_tab == "user_profiles" && "bg-gray-300 font-bold"
                 ]}
               >
                 <div class="flex items-center gap-2">
