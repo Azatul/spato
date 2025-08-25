@@ -34,6 +34,33 @@ defmodule SpatoWeb.MeetingRoomLive.Index do
     {:noreply, update(socket, :sidebar_open, &(!&1))}
   end
 
+# Search input
+@impl true
+def handle_event("search", %{"keyword" => keyword}, socket) do
+  rooms =
+    Spato.Assets.list_meeting_rooms_filtered(socket.assigns.filter_status || "", keyword || "")
+
+  {:noreply,
+   socket
+   |> assign(:keyword, keyword)
+   |> assign(:all_rooms, rooms)
+   |> stream(:meeting_rooms, rooms, reset: true)}
+end
+
+# Status filter
+@impl true
+def handle_event("filter", %{"status" => status}, socket) do
+  rooms =
+    Spato.Assets.list_meeting_rooms_filtered(status, socket.assigns.keyword || "")
+
+  {:noreply,
+   socket
+   |> assign(:filter_status, status)
+   |> assign(:all_rooms, rooms)
+   |> stream(:meeting_rooms, rooms, reset: true)}
+end
+
+
 
 
   # Open modal tambah bilik
@@ -176,29 +203,28 @@ defmodule SpatoWeb.MeetingRoomLive.Index do
           </div>
         </div>
 
-        <!-- Search & Filter -->
-        <div class="flex items-center justify-between mb-4">
-          <input
-            type="text"
-            placeholder="Cari bilik..."
-            phx-debounce="300"
-            phx-change="search"
-            name="keyword"
-            value={@keyword || ""}
-            class="w-1/2 px-3 py-2 border rounded-lg"
-          />
+      <form phx-change="search" class="flex items-center justify-between mb-4 space-x-4">
+  <input
+    type="text"
+    name="keyword"
+    value={@keyword || ""}
+    placeholder="Cari bilik..."
+    phx-debounce="300"
+    class="w-1/2 px-3 py-2 border rounded-lg"
+  />
 
-         <select
-        name="status"
-          phx-change="filter"
-          class="px-3 py-2 border rounded-lg"
-        >
-          <option value="">Semua Status</option>
-          <option value="maintenance" selected={@filter_status == "maintenance"}>Dalam Penyelenggaraan</option>
-          <option value="available" selected={@filter_status == "available"}>Tersedia</option>
-        </select>
+  <select
+    name="status"
+    phx-change="filter"
+    class="px-3 py-2 border rounded-lg"
+  >
+    <option value="">Semua Status</option>
+    <option value="available" selected={@filter_status == "available"}>Tersedia</option>
+    <option value="maintenance" selected={@filter_status == "maintenance"}>Dalam Penyelenggaraan</option>
+  </select>
+</form>
 
-        </div>
+
 
       <!-- Table -->
 <div class="overflow-x-auto bg-white shadow rounded-xl">

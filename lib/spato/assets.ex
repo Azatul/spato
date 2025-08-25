@@ -89,6 +89,30 @@ defmodule Spato.Assets do
     Repo.delete(meeting_room)
   end
 
+  def list_meeting_rooms_filtered(status, keyword) do
+    query =
+      from r in MeetingRoom,
+        order_by: [asc: r.name]
+
+    query =
+      if status in ["available", "maintenance"] do
+        db_status = if status == "available", do: "Tersedia", else: "Dalam Penyelenggaraan"
+        from r in query, where: r.status == ^db_status
+      else
+        query
+      end
+
+    query =
+      if keyword != "" do
+        from r in query, where: ilike(r.name, ^"%#{keyword}%")
+      else
+        query
+      end
+
+    Repo.all(query)
+  end
+
+
   @doc """
   Returns an `%Ecto.Changeset{}` for tracking meeting_room changes.
 
