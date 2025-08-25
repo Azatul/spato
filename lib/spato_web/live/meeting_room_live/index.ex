@@ -1,10 +1,10 @@
 defmodule SpatoWeb.MeetingRoomLive.Index do
   use SpatoWeb, :live_view
   import SpatoWeb.Components.Sidebar
+  import Phoenix.LiveView.JS
 
   alias Spato.Assets
   alias Spato.Assets.MeetingRoom
-  import Phoenix.LiveView.JS
 
   on_mount {SpatoWeb.UserAuth, :ensure_authenticated}
 
@@ -20,45 +20,30 @@ defmodule SpatoWeb.MeetingRoomLive.Index do
      |> assign(:all_rooms, rooms)
      |> stream(:meeting_rooms, rooms)
      |> assign(:keyword, "")
-     |> assign(:filter_status, "all")
-     |> assign(:new_room_changeset, to_form(Assets.change_meeting_room(%MeetingRoom{})))
-     |> assign(:modal_open, false)}
+     |> assign(:filter_status, "")
+     |> assign(:edit_modal_open, false)
+     |> assign(:modal_open, false)
+     |> assign(:edit_room, nil)
+     |> assign(:edit_room_changeset, nil)
+     |> assign(:new_room_changeset, to_form(Assets.change_meeting_room(%MeetingRoom{})))}
   end
 
- # Sidebar toggle
- @impl true
- def handle_event("toggle_sidebar", _, socket) do
-   {:noreply, update(socket, :sidebar_open, &(!&1))}
- end
-
-  def handle_event("search", %{"keyword" => keyword}, socket) do
-    rooms =
-      socket.assigns.all_rooms
-      |> Enum.filter(fn r ->
-        String.contains?(String.downcase(r.name), String.downcase(keyword)) or
-        String.contains?(String.downcase(r.location), String.downcase(keyword))
-      end)
-
-    {:noreply,
-     socket
-     |> assign(:keyword, keyword)
-     |> stream(:meeting_rooms, rooms, reset: true)}
-  end
-
-
+  # Sidebar toggle
   @impl true
-  def handle_event("open_modal", _, socket) do
-    {:noreply, assign(socket, :modal_open, true)}
+  def handle_event("toggle_sidebar", _, socket) do
+    {:noreply, update(socket, :sidebar_open, &(!&1))}
   end
 
-  def handle_event("close_modal", _, socket) do
-    {:noreply, assign(socket, :modal_open, false)}
-  end
 
+
+  # Open modal tambah bilik
+  @impl true
+  def handle_event("open_modal", _, socket), do: {:noreply, assign(socket, :modal_open, true)}
+  def handle_event("close_modal", _, socket), do: {:noreply, assign(socket, :modal_open, false)}
+
+  # Save new room
   @impl true
   def handle_event("save_room", %{"meeting_room" => room_params}, socket) do
-    IO.inspect(room_params, label: ">>> save_room params")
-
     case Assets.create_meeting_room(room_params) do
       {:ok, room} ->
         {:noreply,
@@ -66,7 +51,6 @@ defmodule SpatoWeb.MeetingRoomLive.Index do
          |> stream_insert(:meeting_rooms, room)
          |> assign(:all_rooms, [room | socket.assigns.all_rooms])
          |> assign(:modal_open, false)
-         # reset balik form kosong
          |> assign(:new_room_changeset, to_form(Assets.change_meeting_room(%MeetingRoom{})))}
 
       {:error, %Ecto.Changeset{} = changeset} ->
@@ -74,39 +58,40 @@ defmodule SpatoWeb.MeetingRoomLive.Index do
     end
   end
 
-#modal edit
-@impl true
-def handle_event("update_room", %{"room" => room_params}, socket) do
-  case Spato.MeetingRooms.update_room(socket.assigns.room, room_params) do
-    {:ok, _room} ->
-      {:noreply,
-       socket
-       |> put_flash(:info, "Bilik berjaya dikemaskini")
-       |> assign(:show_modal, false)  # tutup modal selepas berjaya
-       |> assign(:room, nil)}
+  # Open edit modal
+  @impl true
+  def handle_event("edit_room", %{"id" => id}, socket) do
+    room = Assets.get_meeting_room!(id)
 
-    {:error, %Ecto.Changeset{} = changeset} ->
-      {:noreply, assign(socket, form: to_form(changeset))}
+    {:noreply,
+     socket
+     |> assign(:edit_room, room)
+     |> assign(:edit_room_changeset, to_form(Assets.change_meeting_room(room)))
+     |> assign(:edit_modal_open, true)}
   end
-end
 
-#untuk simpan update
-@impl true
-def handle_event("update_room", %{"room" => room_params}, socket) do
-  case Spato.MeetingRooms.update_room(socket.assigns.room, room_params) do
-    {:ok, _room} ->
-      {:noreply,
-       socket
-       |> put_flash(:info, "Bilik berjaya dikemaskini")
-       |> assign(:show_modal, false)  # tutup modal selepas berjaya
-       |> assign(:room, nil)}
+  # Close edit modal
+  def handle_event("close_edit_modal", _, socket), do: {:noreply, assign(socket, :edit_modal_open, false)}
 
-    {:error, %Ecto.Changeset{} = changeset} ->
-      {:noreply, assign(socket, form: to_form(changeset))}
+  # Update room
+  @impl true
+  def handle_event("update_room", %{"meeting_room" => room_params}, socket) do
+    case Assets.update_meeting_room(socket.assigns.edit_room, room_params) do
+      {:ok, room} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Bilik berjaya dikemaskini")
+         |> stream_insert(:meeting_rooms, room)
+         |> assign(:edit_modal_open, false)
+         |> assign(:edit_room, nil)}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply, assign(socket, :edit_room_changeset, to_form(changeset))}
+    end
   end
-end
 
 
+  # Render function tetap sama, boleh copy dari kod lama awak
   @impl true
   def render(assigns) do
     ~H"""
@@ -174,19 +159,19 @@ end
           <div class="bg-white shadow-md rounded-lg p-6 text-lg">
             <p class="text-gray-500 text-sm">Bilik Mesyuarat Tersedia</p>
             <p class="text-2xl font-bold text-green-600">
-              <%= Enum.count(@all_rooms, &(&1.status == "available")) %>
+              <%= Enum.count(@all_rooms, &(&1.status == "Tersedia")) %>
             </p>
           </div>
           <div class="bg-white shadow-md rounded-lg p-6 text-lg">
             <p class="text-gray-500 text-sm">Dalam Penyelenggaraan</p>
             <p class="text-2xl font-bold text-green-600">
-              <%= Enum.count(@all_rooms, &(&1.status == "booked")) %>
+              <%= Enum.count(@all_rooms, &(&1.status == "Dalam Penyelenggaraan")) %>
             </p>
           </div>
           <div class="bg-white shadow-md rounded-lg p-6 text-lg">
             <p class="text-gray-500 text-sm">Bilik Mesyuarat Aktif</p>
             <p class="text-2xl font-bold text-red-600">
-              <%= Enum.count(@all_rooms, &(&1.status == "available")) %>
+              <%= Enum.count(@all_rooms, &(&1.status == "booked")) %>
             </p>
           </div>
         </div>
@@ -270,7 +255,7 @@ end
             "px-2 py-1 text-xs rounded-full " <>
             case room.status do
               "Tersedia" -> "bg-green-100 text-green-700"
-              "maintenance" -> "bg-yellow-100 text-yellow-700"
+              "Dalam Penyelenggaraan" -> "bg-yellow-100 text-yellow-700"
               _ -> "bg-gray-100 text-gray-600"
             end
           }>
@@ -288,12 +273,43 @@ end
             Edit
           </button>
         </td>
-
         </tr>
       <% end %>
     </tbody>
   </table>
 </div>
+
+<%= if @edit_modal_open do %>
+  <div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg p-8 relative">
+      <button type="button"
+              phx-click={JS.push("close_edit_modal")}
+              class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">✕</button>
+
+      <h2 class="text-2xl font-bold mb-6">Kemaskini Bilik</h2>
+
+      <.simple_form
+        for={@edit_room_changeset}
+        id="edit-room-form"
+        phx-submit="update_room"
+      >
+        <.input field={@edit_room_changeset[:name]} type="text" label="Nama Bilik" />
+        <.input field={@edit_room_changeset[:location]} type="text" label="Lokasi" />
+        <.input field={@edit_room_changeset[:capacity]} type="number" label="Kapasiti" />
+        <.input field={@edit_room_changeset[:status]} type="text" label="Status" />
+        <.input field={@edit_room_changeset[:available_facility]} type="text" label="Fasiliti" />
+        <.input field={@edit_room_changeset[:photo_url]} type="text" label="URL Foto" />
+
+        <:actions>
+          <button type="submit"
+                  class="w-full py-2.5 bg-blue-600 text-white rounded-xl">
+            Simpan Perubahan
+          </button>
+        </:actions>
+      </.simple_form>
+    </div>
+  </div>
+<% end %>
       </main>
 
         <!-- Modal Tambah Bilik -->
@@ -338,5 +354,5 @@ end
     <% end %>
   </div>
 """
-end
+  end
 end
