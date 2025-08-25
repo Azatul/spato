@@ -25,7 +25,7 @@ defmodule Spato.Accounts.UserProfile do
   def changeset(user_profile, attrs) do
     user_profile
     |> cast(attrs, [:user_id, :department_id, :full_name, :dob, :ic_number, :position, :gender, :employment_status, :date_joined, :profile_picture_url, :last_seen_at, :address, :phone_number])
-    |> validate_required([:full_name, :dob, :ic_number, :position, :gender, :employment_status, :date_joined, :profile_picture_url, :last_seen_at])
+    |> validate_required([:full_name, :dob, :ic_number, :position, :gender, :employment_status, :date_joined, :last_seen_at])
   end
 
   def human_employment_status(:full_time), do: "Sepenuh Masa"

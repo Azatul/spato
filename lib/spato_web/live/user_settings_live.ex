@@ -31,6 +31,7 @@ defmodule SpatoWeb.UserSettingsLive do
                 <.input field={@profile_form[:ic_number]} type="text" label="Nombor Kad Pengenalan" required />
                 <.input field={@profile_form[:dob]} type="date" label="Tarikh Lahir" required />
                 <.input field={@profile_form[:phone_number]} type="text" label="No. Telefon" />
+                <.input field={@profile_form[:address]} type="textarea" label="Alamat" rows="2" />
               </div>
 
               <div class="space-y-6">
@@ -38,6 +39,7 @@ defmodule SpatoWeb.UserSettingsLive do
                 <.input field={@profile_form[:position]} type="text" label="Jawatan" required />
                 <.input field={@profile_form[:gender]} type="select" label="Jantina" options={@gender_options} required />
                 <.input field={@profile_form[:employment_status]} type="select" label="Status Pekerjaan" options={@employment_status_options} required />
+                <.input field={@profile_form[:date_joined]} type="date" label="Tarikh Lantikan" required />
               </div>
 
               <div class="hidden lg:flex flex-col items-center space-y-4">
@@ -53,7 +55,7 @@ defmodule SpatoWeb.UserSettingsLive do
                     <%= if @profile_image_preview_url do %>
                       <img src={@profile_image_preview_url} class="object-cover w-full h-full rounded-full" />
                     <% else %>
-                      <div class="text-xs text-gray-400">Tiada gambar</div>
+                      <img src="/images/default-image.jpg" class="object-cover w-full h-full rounded-full" />
                     <% end %>
                   <% end %>
 
@@ -67,13 +69,7 @@ defmodule SpatoWeb.UserSettingsLive do
                     </button>
                   </div>
                 </div>
-
-                <.input field={@profile_form[:date_joined]} type="date" label="Tarikh Lantikan" required />
               </div>
-            </div>
-
-            <div class="mt-6">
-              <.input field={@profile_form[:address]} type="textarea" label="Alamat" rows="2" />
             </div>
 
             <:actions>
@@ -208,6 +204,7 @@ defmodule SpatoWeb.UserSettingsLive do
       |> assign(:employment_status_options, employment_status_options)
       |> assign(:gender_options, gender_options)
       |> assign(:profile_image_preview_url, profile_struct.profile_picture_url)
+      |> assign(:remove_profile_image, false)
       |> allow_upload(:profile_image, accept: ~w(.jpg .jpeg .png), max_entries: 1)
       |> assign(:dashboard_path, if(user.role == "admin", do: ~p"/admin/dashboard", else: ~p"/dashboard"))
       |> assign(:trigger_submit, false)
@@ -305,7 +302,12 @@ defmodule SpatoWeb.UserSettingsLive do
     profile_params =
       case uploaded_urls do
         [url | _] -> Map.put(profile_params, "profile_picture_url", url)
-        _ -> profile_params
+        _ ->
+          if socket.assigns.remove_profile_image do
+            Map.put(profile_params, "profile_picture_url", nil)
+          else
+            profile_params
+          end
       end
 
     case Accounts.upsert_user_profile_for_user(user, profile_params) do
@@ -314,7 +316,8 @@ defmodule SpatoWeb.UserSettingsLive do
           socket
           |> put_flash(:info, "Profil berjaya dikemas kini.")
           |> assign(:profile_form, to_form(Accounts.change_user_profile(profile), as: "profile"))
-          |> assign(:profile_image_preview_url, profile.profile_picture_url)}
+          |> assign(:profile_image_preview_url, profile.profile_picture_url)
+          |> assign(:remove_profile_image, false)}
 
       {:error, changeset} ->
         {:noreply, assign(socket, profile_form: to_form(Map.put(changeset, :action, :insert), as: "profile"))}
@@ -327,12 +330,21 @@ defmodule SpatoWeb.UserSettingsLive do
     {:noreply,
       socket
       |> assign(:profile_form, to_form(Accounts.change_user_profile(profile), as: "profile"))
-      |> assign(:profile_image_preview_url, profile.profile_picture_url)}
+      |> assign(:profile_image_preview_url, profile.profile_picture_url)
+      |> assign(:remove_profile_image, false)}
   end
 
   def handle_event("remove_profile_image", _params, socket) do
-    # Only affects preview; user must save to persist removal
-    {:noreply, assign(socket, :profile_image_preview_url, nil)}
+    # Cancel any in-flight uploads and clear preview; persist on save
+    socket =
+      Enum.reduce(socket.assigns.uploads.profile_image.entries, socket, fn entry, acc ->
+        Phoenix.LiveView.cancel_upload(acc, :profile_image, entry.ref)
+      end)
+
+    {:noreply,
+      socket
+      |> assign(:profile_image_preview_url, nil)
+      |> assign(:remove_profile_image, true)}
   end
 
   def handle_event("cancel_email", _params, socket) do

@@ -76,7 +76,7 @@ defmodule SpatoWeb.Components.Headbar do
               src={
                 case Map.get(@current_user, :user_profile) do
                   %{profile_picture_url: url} when is_binary(url) and byte_size(url) > 0 -> url
-                  _ -> Map.get(@current_user, :avatar_url) || "/images/avatar-placeholder.png"
+                  _ -> Map.get(@current_user, :avatar_url) || "/images/default-image.jpg"
                 end
               }
               alt="Avatar"
