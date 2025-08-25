@@ -1,6 +1,7 @@
 defmodule SpatoWeb.UserDashboardLive do
   use SpatoWeb, :live_view
   import SpatoWeb.Components.Sidebar
+  import SpatoWeb.Components.Headbar
 
   on_mount {SpatoWeb.UserAuth, :ensure_authenticated}
 
@@ -27,8 +28,10 @@ def render(assigns) do
         toggle_event="toggle_sidebar"
       />
 
+    <.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title={@page_title} />
+
     <!-- Main Content -->
-    <main class="flex-1 p-8 overflow-y-auto bg-gray-50">
+    <main class="flex-1 pt-16 p-8 overflow-y-auto bg-gray-50">
       <!-- Header -->
       <div class="flex justify-between items-center pb-4 mb-8 border-b border-gray-200">
         <h2 class="text-xl font-semibold">User Panel</h2>

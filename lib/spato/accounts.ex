@@ -6,126 +6,53 @@ defmodule Spato.Accounts do
   import Ecto.Query, warn: false
   alias Spato.Repo
 
-  alias Spato.Accounts.{User, UserToken, UserNotifier}
+  alias Spato.Accounts.{User, UserToken, UserNotifier, Department, UserProfile}
 
-  ## Database getters
+  ## ----------------------
+  ## User functions
+  ## ----------------------
 
-  @doc """
-  Gets a user by email.
+  # Get all users
+  def list_users, do: Repo.all(User)
 
-  ## Examples
-
-      iex> get_user_by_email("foo@example.com")
-      %User{}
-
-      iex> get_user_by_email("unknown@example.com")
-      nil
-
-  """
-
-  def list_users do
-    Repo.all(User)
+  def delete_user(%User{} = user) do
+    Repo.delete(user)
   end
 
-  def get_user_by_email(email) when is_binary(email) do
-    Repo.get_by(User, email: email)
-  end
 
-  @doc """
-  Gets a user by email and password.
+  # Get user by email
+  def get_user_by_email(email) when is_binary(email), do: Repo.get_by(User, email: email)
 
-  ## Examples
-
-      iex> get_user_by_email_and_password("foo@example.com", "correct_password")
-      %User{}
-
-      iex> get_user_by_email_and_password("foo@example.com", "invalid_password")
-      nil
-
-  """
+  # Get user by email and password
   def get_user_by_email_and_password(email, password)
       when is_binary(email) and is_binary(password) do
-    user = Repo.get_by(User, email: email)
-    if User.valid_password?(user, password), do: user
+    case Repo.get_by(User, email: email) do
+      nil -> nil
+      user -> if User.valid_password?(user, password), do: user
+    end
   end
 
-  @doc """
-  Gets a single user.
-
-  Raises `Ecto.NoResultsError` if the User does not exist.
-
-  ## Examples
-
-      iex> get_user!(123)
-      %User{}
-
-      iex> get_user!(456)
-      ** (Ecto.NoResultsError)
-
-  """
+  # Get single user
   def get_user!(id), do: Repo.get!(User, id)
 
-  ## User registration
-
-  @doc """
-  Registers a user.
-
-  ## Examples
-
-      iex> register_user(%{field: value})
-      {:ok, %User{}}
-
-      iex> register_user(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
+  # Register user
   def register_user(attrs) do
     %User{}
     |> User.registration_changeset(attrs)
     |> Repo.insert()
   end
 
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking user changes.
-
-  ## Examples
-
-      iex> change_user_registration(user)
-      %Ecto.Changeset{data: %User{}}
-
-  """
+  # Change user registration (tracking changes)
   def change_user_registration(%User{} = user, attrs \\ %{}) do
     User.registration_changeset(user, attrs, hash_password: false, validate_email: false)
   end
 
-  ## Settings
+  ## ----------------------
+  ## Email / Settings
+  ## ----------------------
 
-  @doc """
-  Returns an `%Ecto.Changeset{}` for changing the user email.
+  def change_user_email(user, attrs \\ %{}), do: User.email_changeset(user, attrs, validate_email: false)
 
-  ## Examples
-
-      iex> change_user_email(user)
-      %Ecto.Changeset{data: %User{}}
-
-  """
-  def change_user_email(user, attrs \\ %{}) do
-    User.email_changeset(user, attrs, validate_email: false)
-  end
-
-  @doc """
-  Emulates that the email will change without actually changing
-  it in the database.
-
-  ## Examples
-
-      iex> apply_user_email(user, "valid password", %{email: ...})
-      {:ok, %User{}}
-
-      iex> apply_user_email(user, "invalid password", %{email: ...})
-      {:error, %Ecto.Changeset{}}
-
-  """
   def apply_user_email(user, password, attrs) do
     user
     |> User.email_changeset(attrs)
@@ -133,12 +60,6 @@ defmodule Spato.Accounts do
     |> Ecto.Changeset.apply_action(:update)
   end
 
-  @doc """
-  Updates the user email using the given token.
-
-  If the token matches, the user email is updated and the token is deleted.
-  The confirmed_at date is also updated to the current time.
-  """
   def update_user_email(user, token) do
     context = "change:#{user.email}"
 
@@ -162,48 +83,19 @@ defmodule Spato.Accounts do
     |> Ecto.Multi.delete_all(:tokens, UserToken.by_user_and_contexts_query(user, [context]))
   end
 
-  @doc ~S"""
-  Delivers the update email instructions to the given user.
-
-  ## Examples
-
-      iex> deliver_user_update_email_instructions(user, current_email, &url(~p"/users/settings/confirm_email/#{&1}"))
-      {:ok, %{to: ..., body: ...}}
-
-  """
   def deliver_user_update_email_instructions(%User{} = user, current_email, update_email_url_fun)
       when is_function(update_email_url_fun, 1) do
     {encoded_token, user_token} = UserToken.build_email_token(user, "change:#{current_email}")
-
     Repo.insert!(user_token)
     UserNotifier.deliver_update_email_instructions(user, update_email_url_fun.(encoded_token))
   end
 
-  @doc """
-  Returns an `%Ecto.Changeset{}` for changing the user password.
+  ## ----------------------
+  ## Password / Session
+  ## ----------------------
 
-  ## Examples
+  def change_user_password(user, attrs \\ %{}), do: User.password_changeset(user, attrs, hash_password: false)
 
-      iex> change_user_password(user)
-      %Ecto.Changeset{data: %User{}}
-
-  """
-  def change_user_password(user, attrs \\ %{}) do
-    User.password_changeset(user, attrs, hash_password: false)
-  end
-
-  @doc """
-  Updates the user password.
-
-  ## Examples
-
-      iex> update_user_password(user, "valid password", %{password: ...})
-      {:ok, %User{}}
-
-      iex> update_user_password(user, "invalid password", %{password: ...})
-      {:error, %Ecto.Changeset{}}
-
-  """
   def update_user_password(user, password, attrs) do
     changeset =
       user
@@ -220,47 +112,29 @@ defmodule Spato.Accounts do
     end
   end
 
-  ## Session
-
-  @doc """
-  Generates a session token.
-  """
   def generate_user_session_token(user) do
     {token, user_token} = UserToken.build_session_token(user)
     Repo.insert!(user_token)
     token
   end
 
-  @doc """
-  Gets the user with the given signed token.
-  """
   def get_user_by_session_token(token) do
     {:ok, query} = UserToken.verify_session_token_query(token)
-    Repo.one(query)
+    case Repo.one(query) do
+      nil -> nil
+      user -> Repo.preload(user, user_profile: [:department])
+    end
   end
 
-  @doc """
-  Deletes the signed token with the given context.
-  """
   def delete_user_session_token(token) do
     Repo.delete_all(UserToken.by_token_and_context_query(token, "session"))
     :ok
   end
 
-  ## Confirmation
+  ## ----------------------
+  ## Confirmation / Reset
+  ## ----------------------
 
-  @doc ~S"""
-  Delivers the confirmation email instructions to the given user.
-
-  ## Examples
-
-      iex> deliver_user_confirmation_instructions(user, &url(~p"/users/confirm/#{&1}"))
-      {:ok, %{to: ..., body: ...}}
-
-      iex> deliver_user_confirmation_instructions(confirmed_user, &url(~p"/users/confirm/#{&1}"))
-      {:error, :already_confirmed}
-
-  """
   def deliver_user_confirmation_instructions(%User{} = user, confirmation_url_fun)
       when is_function(confirmation_url_fun, 1) do
     if user.confirmed_at do
@@ -272,12 +146,6 @@ defmodule Spato.Accounts do
     end
   end
 
-  @doc """
-  Confirms a user by the given token.
-
-  If the token matches, the user account is marked as confirmed
-  and the token is deleted.
-  """
   def confirm_user(token) do
     with {:ok, query} <- UserToken.verify_email_token_query(token, "confirm"),
          %User{} = user <- Repo.one(query),
@@ -294,17 +162,6 @@ defmodule Spato.Accounts do
     |> Ecto.Multi.delete_all(:tokens, UserToken.by_user_and_contexts_query(user, ["confirm"]))
   end
 
-  ## Reset password
-
-  @doc ~S"""
-  Delivers the reset password email to the given user.
-
-  ## Examples
-
-      iex> deliver_user_reset_password_instructions(user, &url(~p"/users/reset_password/#{&1}"))
-      {:ok, %{to: ..., body: ...}}
-
-  """
   def deliver_user_reset_password_instructions(%User{} = user, reset_password_url_fun)
       when is_function(reset_password_url_fun, 1) do
     {encoded_token, user_token} = UserToken.build_email_token(user, "reset_password")
@@ -312,39 +169,11 @@ defmodule Spato.Accounts do
     UserNotifier.deliver_reset_password_instructions(user, reset_password_url_fun.(encoded_token))
   end
 
-  @doc """
-  Gets the user by reset password token.
-
-  ## Examples
-
-      iex> get_user_by_reset_password_token("validtoken")
-      %User{}
-
-      iex> get_user_by_reset_password_token("invalidtoken")
-      nil
-
-  """
   def get_user_by_reset_password_token(token) do
     with {:ok, query} <- UserToken.verify_email_token_query(token, "reset_password"),
-         %User{} = user <- Repo.one(query) do
-      user
-    else
-      _ -> nil
-    end
+         %User{} = user <- Repo.one(query), do: user
   end
 
-  @doc """
-  Resets the user password.
-
-  ## Examples
-
-      iex> reset_user_password(user, %{password: "new long password", password_confirmation: "new long password"})
-      {:ok, %User{}}
-
-      iex> reset_user_password(user, %{password: "valid", password_confirmation: "not the same"})
-      {:error, %Ecto.Changeset{}}
-
-  """
   def reset_user_password(user, attrs) do
     Ecto.Multi.new()
     |> Ecto.Multi.update(:user, User.password_changeset(user, attrs))
@@ -355,4 +184,147 @@ defmodule Spato.Accounts do
       {:error, :user, changeset, _} -> {:error, changeset}
     end
   end
+
+  ## ----------------------
+  ## Department functions
+  ## ----------------------
+
+  def list_departments, do: Repo.all(Department)
+  def get_department!(id), do: Repo.get!(Department, id)
+  def create_department(attrs \\ %{}) do
+    %Department{}
+    |> Department.changeset(attrs)
+    |> Repo.insert()
+  end
+  def update_department(%Department{} = department, attrs) do
+    department
+    |> Department.changeset(attrs)
+    |> Repo.update()
+  end
+  def delete_department(%Department{} = department), do: Repo.delete(department)
+  def change_department(%Department{} = department, attrs \\ %{}), do: Department.changeset(department, attrs)
+
+  ## ----------------------
+  ## UserProfile functions
+  ## ----------------------
+
+  @doc """
+List all users, with their profile (if any) and department preloaded.
+If a user has no profile, you’ll still get the user with `user_profile = nil`.
+"""
+  def list_user_profiles do
+    import Ecto.Query
+
+    # Get all users first
+    users = Repo.all(User)
+
+    # Then preload profiles and departments for each user individually
+    # This handles the case where user_profile might be nil
+    users
+    |> Enum.map(fn user ->
+      Repo.preload(user, user_profile: [:department])
+    end)
+  end
+
+  @doc "Get a single user profile by ID"
+  def get_user_profile!(id) do
+    UserProfile
+    |> Repo.get!(id)
+    |> Repo.preload([:user, :department])
+  end
+
+  def get_user_with_profile!(id) do
+    Repo.get!(User, id)
+    |> Repo.preload(user_profile: [:department])
+  end
+
+  @doc "Delete a user profile"
+  def delete_user_profile(%UserProfile{} = user_profile), do: Repo.delete(user_profile)
+
+  @doc "Returns changeset for a user profile"
+  def change_user_profile(%UserProfile{} = user_profile, attrs \\ %{}), do: UserProfile.changeset(user_profile, attrs)
+
+  @doc """
+  Returns the user's profile if it exists; otherwise returns a new struct
+  with `user_id` prefilled. Useful for forms.
+  """
+  def get_or_init_user_profile_for_user(%User{id: user_id} = user) do
+    user = Repo.preload(user, :user_profile)
+
+    case user.user_profile do
+      %UserProfile{} = profile -> profile
+      _ -> %UserProfile{user_id: user_id}
+    end
+  end
+
+  @doc """
+  Creates or updates the profile for the given user.
+
+  Ensures required fields such as `user_id` and `last_seen_at` are present
+  to satisfy validations in the profile changeset.
+  """
+  def upsert_user_profile_for_user(%User{} = user, attrs) when is_map(attrs) do
+    profile = get_or_init_user_profile_for_user(user)
+
+    attrs =
+      attrs
+      |> Map.put_new("user_id", user.id)
+      |> Map.put_new("last_seen_at", profile.last_seen_at || DateTime.utc_now())
+
+    changeset = UserProfile.changeset(profile, attrs)
+
+    case profile do
+      %UserProfile{id: nil} -> Repo.insert(changeset)
+      %UserProfile{} -> Repo.update(changeset)
+    end
+  end
+
+  ## ----------------------
+  ## User statistics
+  ## ----------------------
+
+  @doc """
+  Returns user statistics as a map:
+    - total_users: total number of users
+    - admins: number of users with role "admin"
+    - users: number of users with role "user" (staff)
+    - active_users: number of users who were active in last 30 days
+  """
+  def user_stats do
+    # Total users
+    total_users = Repo.aggregate(User, :count, :id)
+
+    # Admin users
+    admins =
+      from(u in User,
+        where: u.role == "admin"
+      )
+      |> Repo.aggregate(:count, :id)
+
+    # Staff (non-admin) users
+    staff =
+      from(u in User,
+        where: u.role != "admin"
+      )
+      |> Repo.aggregate(:count, :id)
+
+    # Active users: last_seen_at within last 30 days (from UserProfile)
+    thirty_days_ago =
+      DateTime.utc_now() |> DateTime.add(-30 * 24 * 60 * 60, :second)
+
+    active_users =
+      from(u in User,
+        join: p in UserProfile, on: p.user_id == u.id,
+        where: not is_nil(p.last_seen_at) and p.last_seen_at >= ^thirty_days_ago
+      )
+      |> Repo.aggregate(:count, :id)
+
+    %{
+      total_users: total_users,
+      admins: admins,
+      users: staff,
+      active_users: active_users
+    }
+  end
+
 end
