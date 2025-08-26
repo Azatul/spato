@@ -63,8 +63,6 @@ defmodule SpatoWeb.UserProfileLive.Index do
     |> assign(show_registration_modal: false, check_errors: false)}
   end
 
-
-
   # Sidebar toggle
   @impl true
   def handle_event("toggle_sidebar", _, socket) do
@@ -98,46 +96,53 @@ defmodule SpatoWeb.UserProfileLive.Index do
   def render(assigns) do
     ~H"""
     <div class="flex h-screen">
-      <.sidebar active_tab={@active_tab} current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar"/><.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title={@page_title} />
+      <.sidebar active_tab={@active_tab} current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar"/>
       <.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title={@page_title} />
 
-      <main class="flex-1 pt-16 p-6 transition-all duration-300">
-        <div class="bg-gray-100 p-4 md:p-8 rounded-lg">
-          <h1 class="text-xl font-bold mb-1">Senarai Pengguna</h1>
-          <p class="text-md text-gray-500 mb-6">Semak semua pengguna dalam sistem</p>
+      <main class="flex-1 pt-16 p-6 transition-all duration-300 bg-gray-100">
 
-          <!-- Stats cards -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div class="bg-white shadow rounded-lg p-4 text-center">
-              <div class="text-2xl font-bold"><%= @stats.total_users %></div>
-              <div class="text-gray-600">Jumlah Pengguna</div>
-            </div>
-            <div class="bg-white shadow rounded-lg p-4 text-center">
-              <div class="text-2xl font-bold"><%= @stats.admins %></div>
-              <div class="text-gray-600">Admin</div>
-            </div>
-            <div class="bg-white shadow rounded-lg p-4 text-center">
-              <div class="text-2xl font-bold"><%= @stats.users %></div>
-              <div class="text-gray-600">Staf</div>
-            </div>
-            <div class="bg-white shadow rounded-lg p-4 text-center">
-              <div class="text-2xl font-bold"><%= @stats.active_users %></div>
-              <div class="text-gray-600">Aktif 30 Hari</div>
-            </div>
+      <section class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-900">Senarai Pengguna</h1>
+        <p class="text-gray-500 text-sm mt-1">Urus dan semak pengguna dalam sistem</p>
+      </section>
+
+        <!-- Top Section: Stats Cards -->
+        <section class="mb-6">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <%= for {label, value} <- [{"Jumlah Pengguna Berdaftar", @stats.total_users},
+                                      {"Admin", @stats.admins},
+                                      {"Staf Biasa", @stats.users},
+                                      {"Pengguna Aktif", @stats.active_users}] do %>
+              <% number_color =
+                case label do
+                  "Jumlah Pengguna Berdaftar" -> "text-gray-700"
+                  "Admin" -> "text-green-500"
+                  "Staf Biasa" -> "text-purple-500"
+                  "Pengguna Aktif" -> "text-blue-500"
+                end %>
+              <div class="bg-white p-4 rounded-xl shadow-md flex flex-col justify-between h-30 transition-transform hover:scale-105">
+                <div>
+                  <p class="text-sm text-gray-500"><%= label %></p>
+                  <p class={"text-3xl font-bold mt-1 #{number_color}"}><%= value %></p>
+                </div>
+              </div>
+            <% end %>
           </div>
+        </section>
 
-          <!-- Add User Button -->
-          <header class="flex items-center justify-between mb-4">
-            <h2 class="text-lg font-semibold text-gray-900">Senarai Profil Pengguna</h2>
-            <.button
-              phx-click="show_registration_modal"
-              class="inline-flex items-center justify-center rounded-md border border-transparent bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-800 focus:ring-offset-2"
-            >
-              Tambah Pengguna
-            </.button>
-          </header>
+        <!-- Middle Section: Add User Button -->
+        <section class="mb-6 flex justify-end">
+          <.button
+            phx-click="show_registration_modal"
+            class="inline-flex items-center justify-center rounded-md border border-transparent bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-800 focus:ring-offset-2"
+          >
+            Tambah Pengguna
+          </.button>
+        </section>
 
-          <!-- Table -->
+        <!-- Bottom Section: User Table -->
+        <section class="bg-white p-4 md:p-6 rounded-xl shadow-md">
+          <h2 class="text-lg font-semibold text-gray-900 mb-4">Senarai Profil Pengguna</h2>
           <.table
             id="user_profiles"
             rows={@streams.user_profiles}
@@ -157,33 +162,33 @@ defmodule SpatoWeb.UserProfileLive.Index do
               <.link phx-click={JS.push("delete", value: %{id: u.id}) |> hide("##{id}")} data-confirm="Anda yakin?">Delete</.link>
             </:action>
           </.table>
+        </section>
 
-          <!-- Show Modal -->
-          <.modal :if={@live_action == :show} id="user-profile-show-modal" show on_cancel={JS.patch(~p"/admin/user_profiles")}>
-            <.live_component
-              module={SpatoWeb.UserProfileLive.ShowComponent}
-              id={@user.id}
-              title={@page_title}
-              user={@user}
-              user_profile={@user_profile}
-            />
-          </.modal>
-
-          <!-- Registration Modal -->
-          <.modal :if={@show_registration_modal} id="new-user-modal" show on_cancel={JS.push("hide_registration_modal")}>
-           <.live_component
-            module={FormComponent}
-            id="new-user"
-            title="Daftar Pengguna Baru"
-            action={:new}
-            user={%Accounts.User{}}
-            patch={~p"/admin/user_profiles"}
-            form={@form}
-            roles={@roles}
-            check_errors={@check_errors}
+        <!-- Modals (Show & Registration) -->
+        <.modal :if={@live_action == :show} id="user-profile-show-modal" show on_cancel={JS.patch(~p"/admin/user_profiles")}>
+          <.live_component
+            module={SpatoWeb.UserProfileLive.ShowComponent}
+            id={@user.id}
+            title={@page_title}
+            user={@user}
+            user_profile={@user_profile}
           />
-          </.modal>
-        </div>
+        </.modal>
+
+        <.modal :if={@show_registration_modal} id="new-user-modal" show on_cancel={JS.push("hide_registration_modal")}>
+        <.live_component
+          module={FormComponent}
+          id="new-user"
+          title="Daftar Pengguna Baru"
+          action={:new}
+          user={%Accounts.User{}}
+          patch={~p"/admin/user_profiles"}
+          form={@form}
+          roles={@roles}
+          check_errors={@check_errors}
+        />
+        </.modal>
+
       </main>
     </div>
     """
