@@ -19,15 +19,15 @@ defmodule SpatoWeb.VehicleLiveTest do
     test "lists all vehicles", %{conn: conn, vehicle: vehicle} do
       {:ok, _index_live, html} = live(conn, ~p"/vehicles")
 
-      assert html =~ "Listing Vehicles"
+      assert html =~ "Senarai Kenderaan"
       assert html =~ vehicle.name
     end
 
     test "saves new vehicle", %{conn: conn} do
       {:ok, index_live, _html} = live(conn, ~p"/vehicles")
 
-      assert index_live |> element("a", "New Vehicle") |> render_click() =~
-               "New Vehicle"
+      assert index_live |> element("a", "Kenderaan Baru") |> render_click() =~
+               "Kenderaan Baru"
 
       assert_patch(index_live, ~p"/vehicles/new")
 
@@ -42,7 +42,7 @@ defmodule SpatoWeb.VehicleLiveTest do
       assert_patch(index_live, ~p"/vehicles")
 
       html = render(index_live)
-      assert html =~ "Vehicle created successfully"
+      assert html =~ "Kenderaan berjaya dicipta"
       assert html =~ "some name"
     end
 
@@ -50,7 +50,7 @@ defmodule SpatoWeb.VehicleLiveTest do
       {:ok, index_live, _html} = live(conn, ~p"/vehicles")
 
       assert index_live |> element("#vehicles-#{vehicle.id} a", "Edit") |> render_click() =~
-               "Edit Vehicle"
+               "Kemaskini Kenderaan"
 
       assert_patch(index_live, ~p"/vehicles/#{vehicle}/edit")
 
@@ -65,7 +65,7 @@ defmodule SpatoWeb.VehicleLiveTest do
       assert_patch(index_live, ~p"/vehicles")
 
       html = render(index_live)
-      assert html =~ "Vehicle updated successfully"
+      assert html =~ "Kenderaan berjaya dikemaskini"
       assert html =~ "some updated name"
     end
 
@@ -83,7 +83,7 @@ defmodule SpatoWeb.VehicleLiveTest do
     test "displays vehicle", %{conn: conn, vehicle: vehicle} do
       {:ok, _show_live, html} = live(conn, ~p"/vehicles/#{vehicle}")
 
-      assert html =~ "Show Vehicle"
+      assert html =~ "Lihat Kenderaan"
       assert html =~ vehicle.name
     end
 
@@ -91,7 +91,7 @@ defmodule SpatoWeb.VehicleLiveTest do
       {:ok, show_live, _html} = live(conn, ~p"/vehicles/#{vehicle}")
 
       assert show_live |> element("a", "Edit") |> render_click() =~
-               "Edit Vehicle"
+               "Kemaskini Kenderaan"
 
       assert_patch(show_live, ~p"/vehicles/#{vehicle}/show/edit")
 
@@ -106,7 +106,7 @@ defmodule SpatoWeb.VehicleLiveTest do
       assert_patch(show_live, ~p"/vehicles/#{vehicle}")
 
       html = render(show_live)
-      assert html =~ "Vehicle updated successfully"
+      assert html =~ "Kenderaan berjaya dikemaskini"
       assert html =~ "some updated name"
     end
   end

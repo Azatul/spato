@@ -9,7 +9,7 @@ defmodule SpatoWeb.VehicleLive.FormComponent do
     <div>
       <.header>
         {@title}
-        <:subtitle>Use this form to manage vehicle records in your database.</:subtitle>
+        <:subtitle>Gunakan borang ini untuk menguruskan rekod kenderaan dalam sistem.</:subtitle>
       </.header>
 
       <.simple_form
@@ -19,10 +19,8 @@ defmodule SpatoWeb.VehicleLive.FormComponent do
         phx-change="validate"
         phx-submit="save"
       >
-        <.input field={@form[:name]} type="text" label="Name" />
-        <.input field={@form[:type]} type="text" label="Type" />
         <div class="space-y-4">
-          <div class="text-sm font-medium text-gray-700">Vehicle Photo</div>
+          <div class="text-sm font-medium text-gray-700">Gambar Kenderaan</div>
           <div class="relative w-40 h-40 rounded-md bg-gray-200 flex items-center justify-center overflow-hidden">
             <%= if Enum.any?(@uploads.vehicle_image.entries) do %>
               <%= for entry <- @uploads.vehicle_image.entries do %>
@@ -47,11 +45,15 @@ defmodule SpatoWeb.VehicleLive.FormComponent do
             </div>
           </div>
         </div>
-        <.input field={@form[:vehicle_model]} type="text" label="Vehicle model" />
-        <.input field={@form[:plate_number]} type="text" label="Plate number" />
-        <.input field={@form[:status]} type="text" label="Status" />
+        <.input field={@form[:name]} type="text" label="Nama Kenderaan" placeholder="e.g. Proton Saga" />
+        <.input field={@form[:type]} type="text" label="Jenis" placeholder="e.g. Car, Van, Bus" />
+        <.input field={@form[:vehicle_model]} type="text" label="Model" placeholder="e.g. Saga 1.3 Standard" />
+        <.input field={@form[:plate_number]} type="text" label="Nombor Plat" placeholder="e.g. ABC1234" />
+        <.input field={@form[:capacity]} type="number" label="Kapasiti" placeholder="e.g. 4" />
+        <.input field={@form[:status]} type="text" label="Status" placeholder="e.g. Active, In Service" />
+        <.input field={@form[:last_services_at]} type="date" label="Tarikh Servis Terakhir" placeholder="e.g. 2025-01-01" />
         <:actions>
-          <.button phx-disable-with="Saving...">Save Vehicle</.button>
+          <.button phx-disable-with="Menyimpan...">Simpan Kenderaan</.button>
         </:actions>
       </.simple_form>
     </div>

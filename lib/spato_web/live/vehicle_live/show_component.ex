@@ -20,8 +20,11 @@ defmodule SpatoWeb.VehicleLive.ShowComponent do
         <:item title="Nama">{@vehicle.name}</:item>
         <:item title="Jenis">{@vehicle.type}</:item>
         <:item title="Model">{@vehicle.vehicle_model}</:item>
-        <:item title="No. Pendaftaran">{@vehicle.plate_number}</:item>
+        <:item title="Nombor Plat">{@vehicle.plate_number}</:item>
+        <:item title="Kapasiti">{@vehicle.capacity}</:item>
         <:item title="Status">{@vehicle.status}</:item>
+        <:item title="Kapasiti">{@vehicle.capacity}</:item>
+        <:item title="Tarikh Servis Terakhir">{@vehicle.last_services_at}</:item>
       </.list>
     </div>
     """
