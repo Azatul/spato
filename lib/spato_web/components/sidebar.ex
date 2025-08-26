@@ -45,13 +45,69 @@ defmodule SpatoWeb.Components.Sidebar do
         </li>
 
           <!-- Tempahan Menu -->
-          <li>
-            <details class="group">
-              <summary class={[ "flex items-center justify-between px-4 py-2 rounded-md hover:bg-gray-200 cursor-pointer",
-                                @active_tab in ["meeting_rooms", "vehicles", "catering", "equipments", "history"] && "bg-gray-300 font-bold" ]}>
+         <li>
+          <details
+            class="group"
+            open={@active_tab in ["meeting_rooms", "vehicles_booking", "catering", "equipments", "history"]}
+          >
+            <summary class={[
+              "flex items-center justify-between px-4 py-2 rounded-md hover:bg-gray-200 cursor-pointer",
+              @active_tab in ["meeting_rooms", "vehicles_booking", "catering", "equipments", "history"] && "bg-gray-300 font-bold"
+            ]}>
+              <div class="flex items-center gap-2">
+                <.icon name="hero-calendar" class="transition-all duration-300 w-5 h-5" />
+                <%= if @open, do: "Tempahan" %>
+              </div>
+              <%= if @open do %>
+                <.icon name="hero-chevron-down-solid" class="w-4 h-4 transition-transform group-open:rotate-180" />
+              <% end %>
+            </summary>
+
+            <ul class="ml-8 mt-2 space-y-1">
+              <li>
+                <.sidebar_link patch="/meeting_rooms" active={@active_tab == "meeting_rooms"} open={@open}>
+                  Tempahan Bilik Mesyuarat
+                </.sidebar_link>
+              </li>
+              <li>
+                <.sidebar_link patch="/vehicles" active={@active_tab == "vehicles"} open={@open}>
+                  Tempahan Kenderaan
+                </.sidebar_link>
+              </li>
+              <li>
+                <.sidebar_link patch="/catering" active={@active_tab == "catering"} open={@open}>
+                  Tempahan Katering
+                </.sidebar_link>
+              </li>
+              <li>
+                <.sidebar_link patch="/equipments" active={@active_tab == "equipments"} open={@open}>
+                  Tempahan Peralatan
+                </.sidebar_link>
+              </li>
+              <li>
+                <.sidebar_link patch="/history" active={@active_tab == "history"} open={@open}>
+                  Sejarah Tempahan
+                </.sidebar_link>
+              </li>
+            </ul>
+          </details>
+        </li>
+
+
+          <!-- Admin Menu -->
+          <%= if is_admin?(@current_user) do %>
+           <li>
+            <details
+              class="group"
+              open={@active_tab in ["manage_meeting_rooms", "manage_vehicles", "manage_catering", "manage_equipments"]}
+            >
+              <summary class={[
+                "flex items-center justify-between px-4 py-2 rounded-md hover:bg-gray-200 cursor-pointer",
+                @active_tab in ["manage_meeting_rooms", "manage_vehicles", "manage_catering", "manage_equipments"] && "bg-gray-300 font-bold"
+              ]}>
                 <div class="flex items-center gap-2">
-                  <.icon name="hero-calendar" class="transition-all duration-300 w-5 h-5" />
-                  <%= if @open, do: "Tempahan" %>
+                  <.icon name="hero-cube-transparent-solid" class="transition-all duration-300 w-5 h-5" />
+                  <%= if @open, do: "Pengurusan Aset" %>
                 </div>
                 <%= if @open do %>
                   <.icon name="hero-chevron-down-solid" class="w-4 h-4 transition-transform group-open:rotate-180" />
@@ -60,73 +116,29 @@ defmodule SpatoWeb.Components.Sidebar do
 
               <ul class="ml-8 mt-2 space-y-1">
                 <li>
-                  <.sidebar_link patch="/meeting_rooms" active={@active_tab == "meeting_rooms"} open={@open}>
-                    Tempahan Bilik Mesyuarat
+                  <.sidebar_link patch="/manage_meeting_rooms" active={@active_tab == "manage_meeting_rooms"} open={@open}>
+                    Urus Bilik Mesyuarat
                   </.sidebar_link>
                 </li>
                 <li>
-                  <.sidebar_link patch="/vehicles" active={@active_tab == "vehicles"} open={@open}>
-                    Tempahan Kenderaan
+                  <.sidebar_link patch="/admin/vehicles" active={@active_tab == "manage_vehicles"} open={@open}>
+                    Urus Kenderaan
                   </.sidebar_link>
                 </li>
                 <li>
-                  <.sidebar_link patch="/catering" active={@active_tab == "catering"} open={@open}>
-                    Tempahan Katering
+                  <.sidebar_link patch="/manage_catering" active={@active_tab == "manage_catering"} open={@open}>
+                    Urus Katering
                   </.sidebar_link>
                 </li>
                 <li>
-                  <.sidebar_link patch="/equipments" active={@active_tab == "equipments"} open={@open}>
-                    Tempahan Peralatan
-                  </.sidebar_link>
-                </li>
-                <li>
-                  <.sidebar_link patch="/history" active={@active_tab == "history"} open={@open}>
-                    Sejarah Tempahan
+                  <.sidebar_link patch="/manage_equipments" active={@active_tab == "manage_equipments"} open={@open}>
+                    Urus Peralatan
                   </.sidebar_link>
                 </li>
               </ul>
             </details>
           </li>
 
-          <!-- Admin Menu -->
-          <%= if is_admin?(@current_user) do %>
-            <li>
-              <details class="group">
-                <summary class={[ "flex items-center justify-between px-4 py-2 rounded-md hover:bg-gray-200 cursor-pointer",
-                                  @active_tab in ["manage_meeting_rooms", "manage_vehicles", "manage_catering", "manage_equipments"] && "bg-gray-300 font-bold" ]}>
-                  <div class="flex items-center gap-2">
-                    <.icon name="hero-cube-transparent-solid" class="transition-all duration-300 w-5 h-5" />
-                    <%= if @open, do: "Pengurusan Aset" %>
-                  </div>
-                  <%= if @open do %>
-                    <.icon name="hero-chevron-down-solid" class="w-4 h-4 transition-transform group-open:rotate-180" />
-                  <% end %>
-                </summary>
-
-                <ul class="ml-8 mt-2 space-y-1">
-                  <li>
-                    <.sidebar_link patch="/manage_meeting_rooms" active={@active_tab == "manage_meeting_rooms"} open={@open}>
-                      Urus Bilik Mesyuarat
-                    </.sidebar_link>
-                  </li>
-                  <li>
-                    <.sidebar_link patch="/manage_vehicles" active={@active_tab == "manage_vehicles"} open={@open}>
-                      Urus Kenderaan
-                    </.sidebar_link>
-                  </li>
-                  <li>
-                    <.sidebar_link patch="/manage_catering" active={@active_tab == "manage_catering"} open={@open}>
-                      Urus Katering
-                    </.sidebar_link>
-                  </li>
-                  <li>
-                    <.sidebar_link patch="/manage_equipments" active={@active_tab == "manage_equipments"} open={@open}>
-                      Urus Peralatan
-                    </.sidebar_link>
-                  </li>
-                </ul>
-              </details>
-            </li>
 
            <!-- Senarai Pengguna -->
             <li>

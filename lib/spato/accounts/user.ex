@@ -11,7 +11,7 @@ defmodule Spato.Accounts.User do
     field :role, :string, default: "user"
 
     has_one :user_profile, Spato.Accounts.UserProfile, on_delete: :delete_all
-
+    has_many :vehicles, Spato.Assets.Vehicle, on_delete: :delete_all
     timestamps(type: :utc_datetime)
   end
 

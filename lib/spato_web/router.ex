@@ -54,6 +54,11 @@ defmodule SpatoWeb.Router do
       live "/user_profiles", UserProfileLive.Index, :index
       live "/user_profiles/:id", UserProfileLive.Index, :show
 
+      live "/vehicles", VehicleLive.Index, :index
+      live "/vehicles/new", VehicleLive.Index, :new
+      live "/vehicles/:id/edit", VehicleLive.Index, :edit
+      live "/vehicles/:id", VehicleLive.Index, :show
+
     end
   end
 
