@@ -107,32 +107,22 @@ defmodule SpatoWeb.Components.Sidebar do
             </li>
 
             <!-- Senarai Pengguna -->
-            <li>
-              <%= if @open do %>
-                <.link patch="/admin/user_profiles"
-                  class="flex items-center gap-2 px-4 py-2 rounded-md hover:bg-gray-200 transition-all duration-300">
-                  <.icon name="hero-users" class="w-5 h-5" /> Senarai Pengguna
-                </.link>
-              <% else %>
-                <div class="flex items-center justify-center px-4 py-2">
-                  <.icon name="hero-users" class="w-5 h-5" />
-                </div>
-              <% end %>
-            </li>
+            <.link patch="/admin/user_profiles"
+              class={[
+                "flex items-center gap-2 px-4 py-2 rounded-md hover:bg-gray-200 transition-all duration-300",
+                @active_tab == "user_profiles" && "bg-gray-300 font-bold"
+              ]}>
+              <.icon name="hero-users" class="w-5 h-5" /> Senarai Pengguna
+            </.link>
 
-            <!-- Senarai Jabatan -->
-            <li>
-              <%= if @open do %>
-                <.link patch="/admin/departments"
-                  class="flex items-center gap-2 px-4 py-2 rounded-md hover:bg-gray-200 transition-all duration-300">
-                  <.icon name="hero-building-office-2" class="w-5 h-5" /> Senarai Jabatan
-                </.link>
-              <% else %>
-                <div class="flex items-center justify-center px-4 py-2">
-                  <.icon name="hero-building-office-2" class="w-5 h-5" />
-                </div>
-              <% end %>
-            </li>
+            <.link patch="/admin/departments"
+              class={[
+                "flex items-center gap-2 px-4 py-2 rounded-md hover:bg-gray-200 transition-all duration-300",
+                @active_tab == "departments" && "bg-gray-300 font-bold"
+              ]}>
+              <.icon name="hero-building-office-2" class="w-5 h-5" /> Senarai Jabatan
+            </.link>
+
           <% end %>
         </ul>
       </nav>
