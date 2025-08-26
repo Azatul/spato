@@ -10,6 +10,12 @@ defmodule SpatoWeb.VehicleLive.ShowComponent do
         <:subtitle>Maklumat kenderaan.</:subtitle>
       </.header>
 
+      <div class="mb-4">
+        <%= if @vehicle.photo_url do %>
+          <img src={@vehicle.photo_url} alt="Vehicle photo" class="w-full max-w-sm rounded-md shadow" />
+        <% end %>
+      </div>
+
       <.list>
         <:item title="Nama">{@vehicle.name}</:item>
         <:item title="Jenis">{@vehicle.type}</:item>
