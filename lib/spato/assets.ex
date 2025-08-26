@@ -19,6 +19,7 @@ defmodule Spato.Assets do
   """
   def list_vehicles do
     Repo.all(Vehicle)
+    |> Repo.preload(user: :user_profile)
   end
 
   @doc """

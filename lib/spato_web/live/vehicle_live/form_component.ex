@@ -49,8 +49,16 @@ defmodule SpatoWeb.VehicleLive.FormComponent do
         <.input field={@form[:type]} type="text" label="Jenis" placeholder="e.g. Car, Van, Bus" />
         <.input field={@form[:vehicle_model]} type="text" label="Model" placeholder="e.g. Saga 1.3 Standard" />
         <.input field={@form[:plate_number]} type="text" label="Nombor Plat" placeholder="e.g. ABC1234" />
-        <.input field={@form[:capacity]} type="number" label="Kapasiti" placeholder="e.g. 4" />
-        <.input field={@form[:status]} type="text" label="Status" placeholder="e.g. Active, In Service" />
+        <.input field={@form[:capacity]} type="number" label="Kapasiti Penumpang" placeholder="e.g. 4" />
+        <.input
+          field={@form[:status]}
+          type="select"
+          label="Status"
+          options={[
+            {"Tersedia", "tersedia"},
+            {"Dalam Penyelenggaraan", "dalam_penyelenggaraan"}
+          ]}
+        />
         <.input field={@form[:last_services_at]} type="date" label="Tarikh Servis Terakhir" placeholder="e.g. 2025-01-01" />
         <:actions>
           <.button phx-disable-with="Menyimpan...">Simpan Kenderaan</.button>

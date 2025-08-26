@@ -21,9 +21,19 @@ defmodule SpatoWeb.VehicleLive.ShowComponent do
         <:item title="Jenis">{@vehicle.type}</:item>
         <:item title="Model">{@vehicle.vehicle_model}</:item>
         <:item title="Nombor Plat">{@vehicle.plate_number}</:item>
-        <:item title="Kapasiti">{@vehicle.capacity}</:item>
-        <:item title="Status">{@vehicle.status}</:item>
-        <:item title="Kapasiti">{@vehicle.capacity}</:item>
+        <:item title="Kapasiti Penumpang">{@vehicle.capacity}</:item>
+        <:item title="Status">
+          <span class={
+            "px-2 py-1 rounded-full text-white text-xs font-semibold " <>
+            case @vehicle.status do
+              "tersedia" -> "bg-green-500"
+              "dalam_penyelenggaraan" -> "bg-yellow-500"
+              _ -> "bg-gray-400"
+            end
+          }>
+            <%= Spato.Assets.Vehicle.human_status(@vehicle.status) %>
+          </span>
+        </:item>
         <:item title="Tarikh Servis Terakhir">{@vehicle.last_services_at}</:item>
       </.list>
     </div>
