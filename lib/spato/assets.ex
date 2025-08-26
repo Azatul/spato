@@ -5,101 +5,97 @@ defmodule Spato.Assets do
 
   import Ecto.Query, warn: false
   alias Spato.Repo
-
   alias Spato.Assets.Vehicle
 
-  @doc """
-  Returns the list of vehicles.
+  @per_page 10
 
-  ## Examples
+  # --- CRUD FUNCTIONS ---
 
-      iex> list_vehicles()
-      [%Vehicle{}, ...]
-
-  """
   def list_vehicles do
     Repo.all(Vehicle)
     |> Repo.preload(user: :user_profile)
   end
 
-  @doc """
-  Gets a single vehicle.
+  def get_vehicle!(id), do: Repo.get!(Vehicle, id) |> Repo.preload(user: :user_profile)
 
-  Raises `Ecto.NoResultsError` if the Vehicle does not exist.
-
-  ## Examples
-
-      iex> get_vehicle!(123)
-      %Vehicle{}
-
-      iex> get_vehicle!(456)
-      ** (Ecto.NoResultsError)
-
-  """
-  def get_vehicle!(id), do: Repo.get!(Vehicle, id)
-
-  @doc """
-  Creates a vehicle.
-
-  ## Examples
-
-      iex> create_vehicle(%{field: value})
-      {:ok, %Vehicle{}}
-
-      iex> create_vehicle(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
   def create_vehicle(attrs \\ %{}) do
     %Vehicle{}
     |> Vehicle.changeset(attrs)
     |> Repo.insert()
   end
 
-  @doc """
-  Updates a vehicle.
-
-  ## Examples
-
-      iex> update_vehicle(vehicle, %{field: new_value})
-      {:ok, %Vehicle{}}
-
-      iex> update_vehicle(vehicle, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
   def update_vehicle(%Vehicle{} = vehicle, attrs) do
     vehicle
     |> Vehicle.changeset(attrs)
     |> Repo.update()
   end
 
-  @doc """
-  Deletes a vehicle.
+  def delete_vehicle(%Vehicle{} = vehicle), do: Repo.delete(vehicle)
 
-  ## Examples
+  def change_vehicle(%Vehicle{} = vehicle, attrs \\ %{}), do: Vehicle.changeset(vehicle, attrs)
 
-      iex> delete_vehicle(vehicle)
-      {:ok, %Vehicle{}}
-
-      iex> delete_vehicle(vehicle)
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def delete_vehicle(%Vehicle{} = vehicle) do
-    Repo.delete(vehicle)
-  end
+  # --- FILTER, SEARCH & PAGINATION ---
 
   @doc """
-  Returns an `%Ecto.Changeset{}` for tracking vehicle changes.
+  Lists vehicles with optional filtering, search, and pagination.
 
-  ## Examples
+  Params can include:
+    - "page" => integer or string
+    - "search" => string
+    - "status" => string ("all", "tersedia", "dalam_penyelenggaraan")
 
-      iex> change_vehicle(vehicle)
-      %Ecto.Changeset{data: %Vehicle{}}
-
+  Returns a map with:
+    - vehicles_page: list of vehicles for the current page
+    - total: total number of vehicles matching filters
+    - total_pages: total number of pages
+    - page: current page
   """
-  def change_vehicle(%Vehicle{} = vehicle, attrs \\ %{}) do
-    Vehicle.changeset(vehicle, attrs)
+  def list_vehicles_paginated(params \\ %{}) do
+    page = Map.get(params, "page", 1) |> to_int()
+    search = Map.get(params, "search", "")
+    status = Map.get(params, "status", "all")
+
+    query =
+      from v in Vehicle,
+        order_by: [desc: v.inserted_at]
+
+    # Filter by status
+    query =
+      if status != "all" do
+        from v in query, where: v.status == ^status
+      else
+        query
+      end
+
+    # Search by name, type, plate_number, or capacity
+    query =
+      if search != "" do
+        like_search = "%#{search}%"
+        from v in query,
+          where: ilike(v.name, ^like_search) or
+                 ilike(v.type, ^like_search) or
+                 ilike(v.plate_number, ^like_search) or
+                 fragment("?::text LIKE ?", v.capacity, ^like_search)
+      else
+        query
+      end
+
+    vehicles = Repo.all(query) |> Repo.preload(user: :user_profile)
+    vehicles_page = paginate_list(vehicles, page)
+    total_pages = total_pages(vehicles)
+
+    %{
+      vehicles_page: vehicles_page,
+      total: length(vehicles),
+      total_pages: total_pages,
+      page: page
+    }
   end
+
+  # --- HELPERS ---
+  defp paginate_list(list, page), do: list |> Enum.chunk_every(@per_page) |> Enum.at(page - 1, [])
+  defp total_pages(list), do: (Enum.count(list) / @per_page) |> Float.ceil() |> trunc()
+  defp to_int(val) when is_integer(val), do: val
+  defp to_int(val) when is_binary(val), do: String.to_integer(val)
+  defp to_int(_), do: 1
 end

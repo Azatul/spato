@@ -6,182 +6,104 @@ defmodule SpatoWeb.VehicleLive.Index do
   alias Spato.Assets
   alias Spato.Assets.Vehicle
 
-  @per_page 10
   on_mount {SpatoWeb.UserAuth, :ensure_authenticated}
 
   @impl true
   def mount(_params, _session, socket) do
-    vehicles = Assets.list_vehicles()
-    stats = %{
-      total: length(vehicles),
-      available: Enum.count(vehicles, &(&1.status == "tersedia")),
-      maintenance: Enum.count(vehicles, &(&1.status == "dalam_penyelenggaraan")),
-      active: Enum.count(vehicles, &(&1.status == "tersedia"))
+    {:ok,
+     socket
+     |> assign(:page_title, "Senarai Kenderaan")
+     |> assign(:active_tab, "manage_vehicles")
+     |> assign(:sidebar_open, true)
+     |> assign(:current_user, socket.assigns.current_user)
+     |> assign(:filter_status, "all")
+     |> assign(:search_query, "")
+     |> assign(:page, 1)
+     |> load_vehicles()}
+  end
+
+  # --- LOAD VEHICLES ---
+  defp load_vehicles(socket) do
+    params = %{
+      "page" => socket.assigns.page,
+      "search" => socket.assigns.search_query,
+      "status" => socket.assigns.filter_status
     }
 
-    socket =
-      socket
-      |> assign(:page_title, "Senarai Kenderaan")
-      |> assign(:active_tab, "manage_vehicles")
-      |> assign(:sidebar_open, true)
-      |> assign(:current_user, socket.assigns.current_user)
-      |> assign(:stats, stats)
-      |> assign(:filter_status, "all")
-      |> assign(:search_query, "")
-      |> assign(:vehicles, vehicles)
-      |> assign(:page, 1)
-      |> assign(:vehicle, nil)
+    data = Assets.list_vehicles_paginated(params)
 
-    {:ok, assign_pagination(socket)}
+    stats = %{
+      total: data.total,
+      available: Enum.count(data.vehicles_page, &(&1.status == "tersedia")),
+      maintenance: Enum.count(data.vehicles_page, &(&1.status == "dalam_penyelenggaraan")),
+      active: Enum.count(data.vehicles_page, &(&1.status == "tersedia"))
+    }
+
+    socket
+    |> assign(:vehicles_page, data.vehicles_page)
+    |> assign(:total_pages, data.total_pages)
+    |> assign(:stats, stats)
   end
 
-  @impl true
-  def handle_params(params, _url, socket) do
-    page = Map.get(params, "page", "1") |> String.to_integer()
-
-    socket =
-      socket
-      |> assign(:page, page)
-      |> update_filtered_vehicles()
-      |> assign_pagination()
-      |> apply_action(socket.assigns.live_action, params)
-
-    {:noreply, socket}
-  end
-
-  # Filter & search events
-  @impl true
-  def handle_event("filter_status", %{"status" => status}, socket) do
-    socket =
-      socket
-      |> assign(:filter_status, status)
-      |> assign(:page, 1)
-      |> update_filtered_vehicles()
-      |> assign_pagination()
-
-    {:noreply, socket}
-  end
-
+  # --- HANDLE EVENTS ---
   @impl true
   def handle_event("search", %{"q" => query}, socket) do
-    socket =
-      socket
-      |> assign(:search_query, query)
-      |> assign(:page, 1)
-      |> update_filtered_vehicles()
-      |> assign_pagination()
+    {:noreply,
+     socket
+     |> assign(:search_query, query)
+     |> assign(:page, 1)
+     |> load_vehicles()}
+  end
 
-    {:noreply, socket}
+  @impl true
+  def handle_event("filter_status", %{"status" => status}, socket) do
+    {:noreply,
+     socket
+     |> assign(:filter_status, status)
+     |> assign(:page, 1)
+     |> load_vehicles()}
   end
 
   @impl true
   def handle_event("paginate", %{"page" => page}, socket) do
-    page = String.to_integer(page)
-
-    socket =
-      socket
-      |> assign(:page, page)
-      |> assign(:vehicles_page, paginated_vehicles(socket.assigns.vehicles, page))
-
-    {:noreply, push_patch(socket, to: ~p"/admin/vehicles?page=#{page}")}
+    {:noreply,
+     socket
+     |> assign(:page, String.to_integer(page))
+     |> load_vehicles()}
   end
 
   @impl true
-  def handle_event("toggle_sidebar", _, socket) do
-    {:noreply, update(socket, :sidebar_open, &(!&1))}
-  end
+  def handle_event("toggle_sidebar", _, socket), do: {:noreply, update(socket, :sidebar_open, &(!&1))}
 
   @impl true
   def handle_event("delete", %{"id" => id}, socket) do
     vehicle = Assets.get_vehicle!(id)
     {:ok, _} = Assets.delete_vehicle(vehicle)
-
-    vehicles = Enum.reject(socket.assigns.vehicles, fn v -> v.id == vehicle.id end)
-
-    socket =
-      socket
-      |> assign(:vehicles, vehicles)
-      |> assign_pagination()
-
-    {:noreply, socket}
+    {:noreply, load_vehicles(socket)}
   end
 
-  # Form saved
   @impl true
-  def handle_info({SpatoWeb.VehicleLive.FormComponent, {:saved, vehicle}}, socket) do
-    vehicles = [vehicle | socket.assigns.vehicles]
-
-    socket =
-      socket
-      |> assign(:vehicles, vehicles)
-      |> assign_pagination()
-
-    {:noreply, socket}
+  def handle_info({SpatoWeb.VehicleLive.FormComponent, {:saved, _vehicle}}, socket) do
+    {:noreply, load_vehicles(socket)}
   end
 
-  # --- Helpers ---
-  defp apply_action(socket, :edit, %{"id" => id}) do
-    assign(socket,
-      page_title: "Kemaskini Kenderaan",
-      vehicle: Assets.get_vehicle!(id)
-    )
+  # --- ACTIONS FOR MODALS ---
+  defp apply_action(socket, :new, _params), do: assign(socket, page_title: "Tambah Kenderaan", vehicle: %Vehicle{})
+  defp apply_action(socket, :edit, %{"id" => id}), do: assign(socket, page_title: "Kemaskini Kenderaan", vehicle: Assets.get_vehicle!(id))
+  defp apply_action(socket, :show, %{"id" => id}), do: assign(socket, page_title: "Lihat Kenderaan", vehicle: Assets.get_vehicle!(id))
+  defp apply_action(socket, :index, _params), do: assign(socket, page_title: "Senarai Kenderaan", vehicle: nil)
+
+  @impl true
+  def handle_params(params, _url, socket) do
+    page = Map.get(params, "page", "1") |> String.to_integer()
+    {:noreply,
+     socket
+     |> assign(:page, page)
+     |> load_vehicles()
+     |> apply_action(socket.assigns.live_action, params)}
   end
 
-  defp apply_action(socket, :new, _params) do
-    assign(socket,
-      page_title: "Tambah Kenderaan",
-      vehicle: %Vehicle{}
-    )
-  end
-
-  defp apply_action(socket, :index, _params) do
-    assign(socket,
-      page_title: "Senarai Kenderaan",
-      vehicle: nil
-    )
-  end
-
-  defp apply_action(socket, :show, %{"id" => id}) do
-    assign(socket,
-      page_title: "Lihat Kenderaan",
-      vehicle: Assets.get_vehicle!(id)
-    )
-  end
-
-  # Combine filter and search
-  defp update_filtered_vehicles(socket) do
-    filtered =
-      Assets.list_vehicles()
-      |> Enum.filter(fn v ->
-        (socket.assigns.filter_status == "all" or v.status == socket.assigns.filter_status) and
-          (socket.assigns.search_query == "" or
-             String.contains?(String.downcase(v.name), String.downcase(socket.assigns.search_query)) or
-             String.contains?(String.downcase(v.type), String.downcase(socket.assigns.search_query)) or
-             String.contains?(Integer.to_string(v.capacity), socket.assigns.search_query) or
-             String.contains?(String.downcase(v.plate_number), String.downcase(socket.assigns.search_query)))
-      end)
-
-    assign(socket, :vehicles, filtered)
-  end
-
-  # Pagination helpers
-  defp paginated_vehicles(vehicles, page) do
-    vehicles
-    |> Enum.chunk_every(@per_page)
-    |> Enum.at(page - 1, [])
-  end
-
-  defp total_pages(vehicles) do
-    (Enum.count(vehicles) / @per_page) |> Float.ceil() |> trunc()
-  end
-
-  defp assign_pagination(socket) do
-    vehicles_page = paginated_vehicles(socket.assigns.vehicles, socket.assigns.page)
-    total_pages = total_pages(socket.assigns.vehicles)
-    assign(socket, vehicles_page: vehicles_page, total_pages: total_pages)
-  end
-
-  # --- Render ---
+  # --- RENDER ---
   @impl true
   def render(assigns) do
     ~H"""
@@ -196,35 +118,50 @@ defmodule SpatoWeb.VehicleLive.Index do
 
           <!-- Stats Cards -->
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <%= for {label, value} <- [{"Jumlah Kenderaan Berdaftar", @stats.total}, {"Kenderaan Tersedia", @stats.available}, {"Dalam Penyelenggaraan", @stats.maintenance}, {"Kenderaan Aktif", @stats.active}] do %>
+            <%= for {label, value} <- [{"Jumlah Kenderaan Berdaftar", @stats.total},
+                                      {"Kenderaan Tersedia", @stats.available},
+                                      {"Dalam Penyelenggaraan", @stats.maintenance},
+                                      {"Kenderaan Aktif", @stats.active}] do %>
+
+              <% number_color =
+                case label do
+                  "Jumlah Kenderaan Berdaftar" -> "text-gray-700"
+                  "Kenderaan Tersedia" -> "text-green-500"
+                  "Dalam Penyelenggaraan" -> "text-red-500"
+                  "Kenderaan Aktif" -> "text-blue-500"
+                end %>
+
               <div class="bg-white p-4 rounded-xl shadow-md flex flex-col justify-between h-30 transition-transform hover:scale-105">
                 <div>
                   <p class="text-sm text-gray-500"><%= label %></p>
-                  <p class="text-3xl font-bold mt-1"><%= value %></p>
+                  <p class={"text-3xl font-bold mt-1 #{number_color}"}><%= value %></p>
                 </div>
               </div>
             <% end %>
           </div>
 
-          <!-- Header: Search + Add + Filter -->
-          <div class="flex items-center justify-between mb-4 space-x-2">
-            <h2 class="text-lg font-semibold text-gray-900">Senarai Kenderaan</h2>
+          <!-- Header: Add + Search + Filter -->
+          <div class="flex flex-col mb-4 gap-2">
+            <div class="flex items-center justify-between">
+              <h2 class="text-lg font-semibold text-gray-900">Senarai Kenderaan</h2>
+              <.link patch={~p"/admin/vehicles/new"}>
+                <.button class="bg-gray-900 text-white px-4 py-2 rounded-md hover:bg-gray-700">Tambah Kenderaan</.button>
+              </.link>
+            </div>
 
-            <form phx-change="search">
-              <input type="text" name="q" value={@search_query} placeholder="Cari nama, jenis atau kapasiti..." class="border rounded-md px-2 py-1 text-sm"/>
-            </form>
+            <div class="flex flex-wrap gap-2 mt-2">
+              <form phx-change="search" class="flex-1 min-w-[200px]">
+                <input type="text" name="q" value={@search_query} placeholder="Cari nama, jenis atau kapasiti..." class="w-full border rounded-md px-2 py-1 text-sm"/>
+              </form>
 
-            <.link patch={~p"/admin/vehicles/new"}>
-              <.button class="bg-gray-900 text-white px-4 py-2 rounded-md hover:bg-gray-700">Tambah Kenderaan</.button>
-            </.link>
-
-            <form phx-change="filter_status" class="inline-block">
-              <select name="status" class="border rounded-md px-2 py-1 text-sm">
-                <option value="all" selected={@filter_status in [nil, "all"]}>Semua Status</option>
-                <option value="tersedia" selected={@filter_status == "tersedia"}>Tersedia</option>
-                <option value="dalam_penyelenggaraan" selected={@filter_status == "dalam_penyelenggaraan"}>Dalam Penyelenggaraan</option>
-              </select>
-            </form>
+              <form phx-change="filter_status">
+                <select name="status" class="border rounded-md px-2 py-1 text-sm">
+                  <option value="all" selected={@filter_status in [nil, "all"]}>Semua Status</option>
+                  <option value="tersedia" selected={@filter_status == "tersedia"}>Tersedia</option>
+                  <option value="dalam_penyelenggaraan" selected={@filter_status == "dalam_penyelenggaraan"}>Dalam Penyelenggaraan</option>
+                </select>
+              </form>
+            </div>
           </div>
 
           <!-- Vehicles Table -->
@@ -233,20 +170,11 @@ defmodule SpatoWeb.VehicleLive.Index do
             <:col :let={vehicle} label="Nombor Plat">{vehicle.plate_number}</:col>
             <:col :let={vehicle} label="Jenis">{vehicle.type}</:col>
             <:col :let={vehicle} label="Kapasiti Penumpang">{vehicle.capacity}</:col>
-            <:col :let={vehicle} label="Tarikh & Masa Dikemaskini">
-              <%= "#{String.pad_leading(Integer.to_string(vehicle.updated_at.day), 2, "0")}/" <>
-                  "#{String.pad_leading(Integer.to_string(vehicle.updated_at.month), 2, "0")}/" <>
-                  "#{vehicle.updated_at.year} " <>
-                  "#{String.pad_leading(Integer.to_string(vehicle.updated_at.hour), 2, "0")}:" <>
-                  "#{String.pad_leading(Integer.to_string(vehicle.updated_at.minute), 2, "0")}:" <>
-                  "#{String.pad_leading(Integer.to_string(vehicle.updated_at.second), 2, "0")}" %>
-            </:col>
-
             <:col :let={vehicle} label="Status">
               <span class={"px-2 py-1 rounded-full text-white text-xs font-semibold " <>
                 case vehicle.status do
                   "tersedia" -> "bg-green-500"
-                  "dalam_penyelenggaraan" -> "bg-yellow-500"
+                  "dalam_penyelenggaraan" -> "bg-red-500"
                   _ -> "bg-gray-400"
                 end
               }>
@@ -261,14 +189,10 @@ defmodule SpatoWeb.VehicleLive.Index do
             </:action>
           </.table>
 
-          <!-- Pagination -->
-          <div class="flex space-x-1 mt-4">
-            <%= for p <- 1..@total_pages do %>
-              <.link patch={~p"/admin/vehicles?page=#{p}"} class={"px-3 py-1 border rounded #{if p == @page, do: "bg-gray-700 text-white", else: "bg-white text-gray-700"}"}>
-                <%= p %>
-              </.link>
-            <% end %>
-          </div>
+          <!-- Pagination --> <div class="relative flex items-center mt-4">
+          <!-- Previous button -->
+            <div class="flex-1"> <.link patch={~p"/admin/vehicles?page=#{max(@page - 1, 1)}"} class={"px-3 py-1 border rounded #{if @page == 1, do: "bg-gray-200 text-gray-500 cursor-not-allowed", else: "bg-white text-gray-700 hover:bg-gray-100"}"} > Sebelumnya </.link> </div>
+            <!-- Page numbers (centered) --> <div class="absolute left-1/2 transform -translate-x-1/2 flex space-x-1"> <%= for p <- 1..@total_pages do %> <.link patch={~p"/admin/vehicles?page=#{p}"} class={"px-3 py-1 border rounded #{if p == @page, do: "bg-gray-700 text-white", else: "bg-white text-gray-700 hover:bg-gray-100"}"} > <%= p %> </.link> <% end %> </div> <!-- Next button --> <div class="flex-1 text-right"> <.link patch={~p"/admin/vehicles?page=#{min(@page + 1, @total_pages)}"} class={"px-3 py-1 border rounded #{if @page == @total_pages, do: "bg-gray-200 text-gray-500 cursor-not-allowed", else: "bg-white text-gray-700 hover:bg-gray-100"}"} > Seterusnya </.link> </div> </div>
 
           <!-- Modals -->
           <.modal :if={@live_action in [:new, :edit]} id="vehicle-modal" show on_cancel={JS.patch(~p"/admin/vehicles")}>
