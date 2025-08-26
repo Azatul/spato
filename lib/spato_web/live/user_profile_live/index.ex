@@ -106,25 +106,18 @@ defmodule SpatoWeb.UserProfileLive.Index do
           <h1 class="text-xl font-bold mb-1">Senarai Pengguna</h1>
           <p class="text-md text-gray-500 mb-6">Semak semua pengguna dalam sistem</p>
 
-          <!-- Stats cards -->
+         <!-- Stats Cards -->
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div class="bg-white shadow rounded-lg p-4 text-center">
-              <div class="text-2xl font-bold"><%= @stats.total_users %></div>
-              <div class="text-gray-600">Jumlah Pengguna</div>
-            </div>
-            <div class="bg-white shadow rounded-lg p-4 text-center">
-              <div class="text-2xl font-bold"><%= @stats.admins %></div>
-              <div class="text-gray-600">Admin</div>
-            </div>
-            <div class="bg-white shadow rounded-lg p-4 text-center">
-              <div class="text-2xl font-bold"><%= @stats.users %></div>
-              <div class="text-gray-600">Staf</div>
-            </div>
-            <div class="bg-white shadow rounded-lg p-4 text-center">
-              <div class="text-2xl font-bold"><%= @stats.active_users %></div>
-              <div class="text-gray-600">Aktif 30 Hari</div>
-            </div>
+            <%= for {label, value} <- [{"Jumlah Pengguna", @stats.total_users}, {"Admin", @stats.admins}, {"Staf", @stats.users}, {"Aktif 30 Hari", @stats.active_users}] do %>
+              <div class="bg-white p-4 rounded-xl shadow-md flex flex-col justify-between h-30 transition-transform hover:scale-105">
+                <div>
+                  <p class="text-sm text-gray-500"><%= label %></p>
+                  <p class="text-3xl font-bold mt-1"><%= value %></p>
+                </div>
+              </div>
+            <% end %>
           </div>
+
 
           <!-- Add User Button -->
           <header class="flex items-center justify-between mb-4">

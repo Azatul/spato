@@ -197,7 +197,7 @@ defmodule SpatoWeb.VehicleLive.Index do
           <!-- Stats Cards -->
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <%= for {label, value} <- [{"Jumlah Kenderaan Berdaftar", @stats.total}, {"Kenderaan Tersedia", @stats.available}, {"Dalam Penyelenggaraan", @stats.maintenance}, {"Kenderaan Aktif", @stats.active}] do %>
-              <div class="bg-white p-6 rounded-xl shadow-md flex flex-col justify-between h-40 transition-transform hover:scale-105">
+              <div class="bg-white p-4 rounded-xl shadow-md flex flex-col justify-between h-30 transition-transform hover:scale-105">
                 <div>
                   <p class="text-sm text-gray-500"><%= label %></p>
                   <p class="text-3xl font-bold mt-1"><%= value %></p>
