@@ -32,17 +32,20 @@ defmodule SpatoWeb.VehicleLive.Index do
 
     data = Assets.list_vehicles_paginated(params)
 
-    stats = %{
-      total: data.total,
-      available: Enum.count(data.vehicles_page, &(&1.status == "tersedia")),
-      maintenance: Enum.count(data.vehicles_page, &(&1.status == "dalam_penyelenggaraan")),
-      active: Enum.count(data.vehicles_page, &(&1.status == "tersedia"))
-    }
+     # Global stats (not affected by filters)
+      all_vehicles = Assets.list_vehicles()
+      stats = %{
+        total: length(all_vehicles),
+        available: Enum.count(all_vehicles, &(&1.status == "tersedia")),
+        maintenance: Enum.count(all_vehicles, &(&1.status == "dalam_penyelenggaraan")),
+        active: Enum.count(all_vehicles, &(&1.status == "tersedia"))
+      }
 
     socket
     |> assign(:vehicles_page, data.vehicles_page)
     |> assign(:total_pages, data.total_pages)
     |> assign(:stats, stats)
+    |> assign(:filtered_count, data.total)
   end
 
   # --- HANDLE EVENTS ---
@@ -164,14 +167,56 @@ defmodule SpatoWeb.VehicleLive.Index do
             </div>
           </div>
 
+          <!-- Vehicles count message -->
+          <div class="mb-2 text-sm text-gray-600">
+            <%= if @filtered_count == 0 do %>
+              Tiada kenderaan ditemui
+            <% else %>
+              <%= @filtered_count %> kenderaan ditemui
+            <% end %>
+          </div>
+
           <!-- Vehicles Table -->
           <.table id="vehicles" rows={@vehicles_page} row_click={fn vehicle -> JS.patch(~p"/admin/vehicles/#{vehicle.id}?action=show") end}>
-            <:col :let={vehicle} label="Nama Kenderaan">{vehicle.name}</:col>
-            <:col :let={vehicle} label="Nombor Plat">{vehicle.plate_number}</:col>
-            <:col :let={vehicle} label="Jenis">{vehicle.type}</:col>
-            <:col :let={vehicle} label="Kapasiti Penumpang">{vehicle.capacity}</:col>
+            <:col :let={vehicle} label="Kenderaan">
+              <div class="flex flex-col">
+                <!-- Vehicle Name -->
+                <div class="font-semibold text-gray-900">
+                  <%= vehicle.name %>
+                </div>
+
+                <!-- Plate Number -->
+                <div class="text-sm text-gray-500">
+                  <%= vehicle.plate_number %>
+                </div>
+
+                <!-- Vehicle Type (colored pill badge) -->
+                <div class="mt-1">
+                  <%= case vehicle.type do %>
+                    <% "kereta" -> %>
+                      <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-blue-500">Kereta</span>
+                    <% "mpv" -> %>
+                      <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-indigo-500">SUV / MPV</span>
+                    <% "pickup" -> %>
+                      <span class="px-1.5 py-0.5 rounded-full text-black text-xs font-semibold bg-yellow-400">Pickup / 4WD</span>
+                    <% "van" -> %>
+                      <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-green-500">Van</span>
+                    <% "bas" -> %>
+                      <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-purple-600">Bas</span>
+                    <% "motosikal" -> %>
+                      <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-red-500">Motosikal</span>
+                    <% _ -> %>
+                      <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-gray-400">Lain</span>
+                  <% end %>
+                </div>
+              </div>
+            </:col>
+            <:col :let={vehicle} label="Kapasiti">{vehicle.capacity}</:col>
+            <:col :let={vehicle} label="Tarikh & Masa Kemaskini">
+              <%= Calendar.strftime(vehicle.updated_at, "%d/%m/%Y %H:%M:%S") %>
+            </:col>
             <:col :let={vehicle} label="Status">
-              <span class={"px-2 py-1 rounded-full text-white text-xs font-semibold " <>
+              <span class={"px-1.5 py-0.5 rounded-full text-white text-xs font-semibold " <>
                 case vehicle.status do
                   "tersedia" -> "bg-green-500"
                   "dalam_penyelenggaraan" -> "bg-red-500"

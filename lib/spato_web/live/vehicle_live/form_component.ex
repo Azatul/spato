@@ -46,7 +46,20 @@ defmodule SpatoWeb.VehicleLive.FormComponent do
           </div>
         </div>
         <.input field={@form[:name]} type="text" label="Nama Kenderaan" placeholder="e.g. Proton Saga" />
-        <.input field={@form[:type]} type="text" label="Jenis" placeholder="e.g. Car, Van, Bus" />
+        <.input
+          field={@form[:type]}
+          type="select"
+          label="Jenis"
+          options={[
+            {"Kereta", "kereta"},
+            {"SUV / MPV", "mpv"},
+            {"Pickup / 4WD", "pickup"},
+            {"Van", "van"},
+            {"Bas", "bas"},
+            {"Motosikal", "motosikal"}
+          ]}
+          prompt="Pilih jenis kenderaan"
+        />
         <.input field={@form[:vehicle_model]} type="text" label="Model" placeholder="e.g. Saga 1.3 Standard" />
         <.input field={@form[:plate_number]} type="text" label="Nombor Plat" placeholder="e.g. ABC1234" />
         <.input field={@form[:capacity]} type="number" label="Kapasiti Penumpang" placeholder="e.g. 4" />

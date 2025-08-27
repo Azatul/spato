@@ -16,7 +16,10 @@ defmodule Spato.Assets do
     |> Repo.preload(user: :user_profile)
   end
 
-  def get_vehicle!(id), do: Repo.get!(Vehicle, id) |> Repo.preload(user: :user_profile)
+  def get_vehicle!(id) do
+    Repo.get!(Vehicle, id)
+    |> Repo.preload(user: :user_profile)
+  end
 
   def create_vehicle(attrs \\ %{}) do
     %Vehicle{}
