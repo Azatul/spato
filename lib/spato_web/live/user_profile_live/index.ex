@@ -95,12 +95,11 @@ defmodule SpatoWeb.UserProfileLive.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="flex h-screen">
+    <div class="flex h-screen overflow-hidden">
       <.sidebar active_tab={@active_tab} current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar"/>
       <.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title={@page_title} />
 
-      <main class="flex-1 pt-16 p-6 transition-all duration-300 bg-gray-100">
-
+      <main class="flex-1 pt-16 p-6 transition-all duration-300 overflow-y-auto bg-gray-100">
       <section class="mb-6">
         <h1 class="text-2xl font-bold text-gray-900">Senarai Pengguna</h1>
         <p class="text-gray-500 text-sm mt-1">Urus dan semak pengguna dalam sistem</p>
