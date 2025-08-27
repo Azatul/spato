@@ -33,7 +33,7 @@ defmodule SpatoWeb.VehicleLive.ShowComponent do
             <% "van" -> %>
               <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-green-500">Van</span>
             <% "bas" -> %>
-              <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-purple-600">Bas / Bus</span>
+              <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-purple-600">Bas</span>
             <% "motosikal" -> %>
               <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-red-500">Motosikal</span>
             <% _ -> %>

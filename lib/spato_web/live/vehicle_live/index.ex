@@ -193,6 +193,7 @@ defmodule SpatoWeb.VehicleLive.Index do
               ~p"/admin/vehicles/#{vehicle.id}?action=show&page=#{@page}&q=#{@search_query}&status=#{@filter_status}"
             )
           end}>
+            <:col :let={vehicle} label="ID"><%= vehicle.id %></:col>
             <:col :let={vehicle} label="Kenderaan">
               <div class="flex flex-col">
                 <!-- Vehicle Name -->
@@ -227,6 +228,9 @@ defmodule SpatoWeb.VehicleLive.Index do
               </div>
             </:col>
             <:col :let={vehicle} label="Kapasiti">{vehicle.capacity}</:col>
+            <:col :let={vehicle} label="Tarikh Servis Terakhir">
+              <%= Calendar.strftime(vehicle.last_services_at, "%d/%m/%Y") %>
+            </:col>
             <:col :let={vehicle} label="Tarikh & Masa Kemaskini">
               <%= Calendar.strftime(vehicle.updated_at, "%d/%m/%Y %H:%M") %>
             </:col>
