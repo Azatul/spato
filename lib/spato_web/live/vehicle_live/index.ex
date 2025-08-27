@@ -253,10 +253,40 @@ defmodule SpatoWeb.VehicleLive.Index do
             </:action>
           </.table>
 
-          <!-- Pagination --> <div class="relative flex items-center mt-4">
-          <!-- Previous button -->
-            <div class="flex-1"> <.link patch={~p"/admin/vehicles?page=#{max(@page - 1, 1)}"} class={"px-3 py-1 border rounded #{if @page == 1, do: "bg-gray-200 text-gray-500 cursor-not-allowed", else: "bg-white text-gray-700 hover:bg-gray-100"}"} > Sebelumnya </.link> </div>
-            <!-- Page numbers (centered) --> <div class="absolute left-1/2 transform -translate-x-1/2 flex space-x-1"> <%= for p <- 1..@total_pages do %> <.link patch={~p"/admin/vehicles?page=#{p}"} class={"px-3 py-1 border rounded #{if p == @page, do: "bg-gray-700 text-white", else: "bg-white text-gray-700 hover:bg-gray-100"}"} > <%= p %> </.link> <% end %> </div> <!-- Next button --> <div class="flex-1 text-right"> <.link patch={~p"/admin/vehicles?page=#{min(@page + 1, @total_pages)}"} class={"px-3 py-1 border rounded #{if @page == @total_pages, do: "bg-gray-200 text-gray-500 cursor-not-allowed", else: "bg-white text-gray-700 hover:bg-gray-100"}"} > Seterusnya </.link> </div> </div>
+          <!-- Pagination -->
+          <div class="relative flex items-center mt-4">
+            <!-- Previous button -->
+            <div class="flex-1">
+              <.link
+                patch={~p"/admin/vehicles?page=#{max(@page - 1, 1)}&q=#{@search_query}&status=#{@filter_status}"}
+                class={"px-3 py-1 border rounded #{if @page == 1, do: "bg-gray-200 text-gray-500 cursor-not-allowed", else: "bg-white text-gray-700 hover:bg-gray-100"}"}
+              >
+                Sebelumnya
+              </.link>
+            </div>
+
+            <!-- Page numbers (centered) -->
+            <div class="absolute left-1/2 transform -translate-x-1/2 flex space-x-1">
+              <%= for p <- 1..@total_pages do %>
+                <.link
+                  patch={~p"/admin/vehicles?page=#{p}&q=#{@search_query}&status=#{@filter_status}"}
+                  class={"px-3 py-1 border rounded #{if p == @page, do: "bg-gray-700 text-white", else: "bg-white text-gray-700 hover:bg-gray-100"}"}
+                >
+                  <%= p %>
+                </.link>
+              <% end %>
+            </div>
+
+            <!-- Next button -->
+            <div class="flex-1 text-right">
+              <.link
+                patch={~p"/admin/vehicles?page=#{min(@page + 1, @total_pages)}&q=#{@search_query}&status=#{@filter_status}"}
+                class={"px-3 py-1 border rounded #{if @page == @total_pages, do: "bg-gray-200 text-gray-500 cursor-not-allowed", else: "bg-white text-gray-700 hover:bg-gray-100"}"}
+              >
+                Seterusnya
+              </.link>
+            </div>
+          </div>
 
           <!-- Modals -->
           <.modal :if={@live_action in [:new, :edit]} id="vehicle-modal" show on_cancel={JS.patch(~p"/admin/vehicles")}>
