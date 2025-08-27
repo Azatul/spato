@@ -1,128 +1,63 @@
 defmodule Spato.Assets do
-  @moduledoc """
-  The Assets context.
-  """
-
   import Ecto.Query, warn: false
   alias Spato.Repo
-
   alias Spato.Assets.MeetingRoom
 
-  @doc """
-  Returns the list of meeting_rooms.
+  @page_size 10
 
-  ## Examples
-
-      iex> list_meeting_rooms()
-      [%MeetingRoom{}, ...]
-
-  """
-  def list_meeting_rooms do
-    Repo.all(MeetingRoom)
+  # List rooms with filter, search, pagination
+  def list_meeting_rooms_filtered(status \\ "", keyword \\ "", page \\ 1, page_size \\ @page_size) do
+    MeetingRoom
+    |> filter_by_status(status)
+    |> search_by_keyword(keyword)
+    |> order_by([m], desc: m.updated_at)
+    |> limit(^page_size)
+    |> offset(^((page - 1) * page_size))
+    |> Repo.all()
   end
 
-  @doc """
-  Gets a single meeting_room.
+  # Count total rooms matching filter & search (for pagination)
+  def count_meeting_rooms_filtered(status \\ "", keyword \\ "") do
+    MeetingRoom
+    |> filter_by_status(status)
+    |> search_by_keyword(keyword)
+    |> Repo.aggregate(:count, :id)
+  end
 
-  Raises `Ecto.NoResultsError` if the Meeting room does not exist.
+  # --- Helper Functions ---
 
-  ## Examples
+  # Status filter
+  defp filter_by_status(query, ""), do: query
+  defp filter_by_status(query, "available"), do: where(query, [m], m.status == "Tersedia")
+  defp filter_by_status(query, "maintenance"), do: where(query, [m], m.status == "Dalam Penyelenggaraan")
+  defp filter_by_status(query, _other), do: query
 
-      iex> get_meeting_room!(123)
-      %MeetingRoom{}
+  # Keyword search
+  defp search_by_keyword(query, ""), do: query
+  defp search_by_keyword(query, keyword) do
+    pattern = "%#{keyword}%"
+    where(query, [m], ilike(m.name, ^pattern) or ilike(m.location, ^pattern))
+  end
 
-      iex> get_meeting_room!(456)
-      ** (Ecto.NoResultsError)
+  # --- Existing CRUD functions ---
 
-  """
-  def get_meeting_room!(id), do: Repo.get!(MeetingRoom, id)
+  def change_meeting_room(%MeetingRoom{} = meeting_room, attrs \\ %{}) do
+    MeetingRoom.changeset(meeting_room, attrs)
+  end
 
-  @doc """
-  Creates a meeting_room.
 
-  ## Examples
-
-      iex> create_meeting_room(%{field: value})
-      {:ok, %MeetingRoom{}}
-
-      iex> create_meeting_room(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
   def create_meeting_room(attrs \\ %{}) do
     %MeetingRoom{}
     |> MeetingRoom.changeset(attrs)
     |> Repo.insert()
   end
 
-  @doc """
-  Updates a meeting_room.
 
-  ## Examples
+  def get_meeting_room!(id), do: Repo.get!(MeetingRoom, id)
 
-      iex> update_meeting_room(meeting_room, %{field: new_value})
-      {:ok, %MeetingRoom{}}
-
-      iex> update_meeting_room(meeting_room, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def update_meeting_room(%MeetingRoom{} = meeting_room, attrs) do
-    meeting_room
+  def update_meeting_room(%MeetingRoom{} = room, attrs) do
+    room
     |> MeetingRoom.changeset(attrs)
     |> Repo.update()
-  end
-
-  @doc """
-  Deletes a meeting_room.
-
-  ## Examples
-
-      iex> delete_meeting_room(meeting_room)
-      {:ok, %MeetingRoom{}}
-
-      iex> delete_meeting_room(meeting_room)
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def delete_meeting_room(%MeetingRoom{} = meeting_room) do
-    Repo.delete(meeting_room)
-  end
-
-  def list_meeting_rooms_filtered(status, keyword) do
-    query =
-      from r in MeetingRoom,
-        order_by: [asc: r.name]
-
-    query =
-      if status in ["available", "maintenance"] do
-        db_status = if status == "available", do: "Tersedia", else: "Dalam Penyelenggaraan"
-        from r in query, where: r.status == ^db_status
-      else
-        query
-      end
-
-    query =
-      if keyword != "" do
-        from r in query, where: ilike(r.name, ^"%#{keyword}%")
-      else
-        query
-      end
-
-    Repo.all(query)
-  end
-
-
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking meeting_room changes.
-
-  ## Examples
-
-      iex> change_meeting_room(meeting_room)
-      %Ecto.Changeset{data: %MeetingRoom{}}
-
-  """
-  def change_meeting_room(%MeetingRoom{} = meeting_room, attrs \\ %{}) do
-    MeetingRoom.changeset(meeting_room, attrs)
   end
 end
