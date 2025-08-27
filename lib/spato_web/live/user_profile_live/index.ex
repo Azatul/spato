@@ -149,14 +149,59 @@ defmodule SpatoWeb.UserProfileLive.Index do
             row_click={fn {_id, u} -> JS.patch(~p"/admin/user_profiles/#{u.id}?action=show") end}
           >
             <:col :let={{_id, u}} label="Nama Penuh"><%= if u.user_profile && Map.has_key?(u.user_profile, :full_name), do: u.user_profile.full_name, else: "Belum diisi" %></:col>
-            <:col :let={{_id, u}} label="Emel"><%= u.email %></:col>
-            <:col :let={{_id, u}} label="Jabatan"><%= if u.user_profile && u.user_profile.department && Map.has_key?(u.user_profile.department, :name), do: u.user_profile.department.name, else: "Belum diisi" %></:col>
             <:col :let={{_id, u}} label="Jawatan"><%= if u.user_profile && Map.has_key?(u.user_profile, :position), do: u.user_profile.position, else: "Belum diisi" %></:col>
-            <:col :let={{_id, u}} label="Status Pekerjaan"><%= if u.user_profile && u.user_profile.employment_status, do: UserProfile.human_employment_status(u.user_profile.employment_status), else: "Belum diisi" %></:col>
+            <:col :let={{_id, u}} label="Jabatan"><%= if u.user_profile && u.user_profile.department && Map.has_key?(u.user_profile.department, :name), do: u.user_profile.department.name, else: "Belum diisi" %></:col>
             <:col :let={{_id, u}} label="Jantina"><%= if u.user_profile && u.user_profile.gender, do: UserProfile.human_gender(u.user_profile.gender), else: "Belum diisi" %></:col>
-            <:col :let={{_id, u}} label="No. Telefon"><%= if u.user_profile && Map.has_key?(u.user_profile, :phone_number), do: u.user_profile.phone_number, else: "Belum diisi" %></:col>
+            <:col :let={{_id, u}} label="Emel & No. Telefon">
+              <div class="flex flex-col">
+                <!-- Emel -->
+                <div class="text-sm font-medium text-gray-900">
+                  <%= u.email %>
+                </div>
+
+                <!-- No. Telefon (slightly lighter color) -->
+                <div class="text-xs text-gray-500">
+                  <%= if u.user_profile && u.user_profile.phone_number do %>
+                    <%= u.user_profile.phone_number %>
+                  <% else %>
+                    Belum diisi
+                  <% end %>
+                </div>
+              </div>
+            </:col>
             <:col :let={{_id, u}} label="Alamat"><%= if u.user_profile && Map.has_key?(u.user_profile, :address), do: u.user_profile.address, else: "Belum diisi" %></:col>
-            <:col :let={{_id, u}} label="Peranan"><%= u.role || "Belum diisi" %></:col>
+            <:col :let={{_id, u}} label="Status Pekerjaan">
+              <%= if u.user_profile && u.user_profile.employment_status do %>
+                <span class={"px-1.5 py-0.5 rounded-full text-white text-xs font-semibold " <>
+                  case u.user_profile.employment_status do
+                    :full_time -> "bg-green-500"
+                    :part_time -> "bg-blue-500"
+                    :contract -> "bg-yellow-500 text-black"
+                    :intern -> "bg-gray-500"
+                    _ -> "bg-gray-400"
+                  end
+                }>
+                  <%= UserProfile.human_employment_status(u.user_profile.employment_status) %>
+                </span>
+              <% else %>
+                <span class="px-1.5 py-0.5 rounded-full text-xs font-semibold bg-gray-300 text-gray-700">
+                  Belum diisi
+                </span>
+              <% end %>
+            </:col>
+
+            <:col :let={{_id, u}} label="Peranan">
+              <span class={"px-1.5 py-0.5 rounded-full text-white text-xs font-semibold " <>
+                case u.role do
+                  "admin" -> "bg-green-500"
+                  "user" -> "bg-purple-500"
+                  _ -> "bg-gray-400"
+                end
+              }>
+                <%= if u.role, do: UserProfile.human_role(u.role), else: "Belum diisi" %>
+              </span>
+            </:col>
+            <:col :let={{_id, u}} label="Tarikh Lantikan"><%= if u.user_profile && Map.has_key?(u.user_profile, :date_joined), do: u.user_profile.date_joined, else: "Belum diisi" %></:col>
 
             <:action :let={{id, u}}>
               <.link phx-click={JS.push("delete", value: %{id: u.id}) |> hide("##{id}")} data-confirm="Anda yakin?">Delete</.link>

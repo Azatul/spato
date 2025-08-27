@@ -16,7 +16,7 @@ defmodule SpatoWeb.UserProfileLive.ShowComponent do
         <%= if @user_profile && @user_profile.full_name, do: @user_profile.full_name, else: "Belum diisi" %>
       </h2>
       <h3 class="text-md font-medium mb-4">
-        <%= @user && @user.role || "Belum diisi" %>
+        <%= if @user && @user.role, do: UserProfile.human_role(@user.role), else: "Belum diisi" %>
       </h3>
 
       <!-- Profile Picture -->
@@ -50,7 +50,7 @@ defmodule SpatoWeb.UserProfileLive.ShowComponent do
           </p>
           <p><b>No. Telefon:</b> <%= @user_profile.phone_number || "Belum diisi" %></p>
           <p><b>Alamat:</b> <%= @user_profile.address || "Belum diisi" %></p>
-          <p><b>Peranan:</b> <%= @user && @user.role || "Belum diisi" %></p>
+          <p><b>Peranan:</b> <%= if @user && @user.role, do: UserProfile.human_role(@user.role), else: "Belum diisi" %></p>
           <p><b>Emel:</b> <%= @user && @user.email || "Belum diisi" %></p>
         </div>
       <% else %>
