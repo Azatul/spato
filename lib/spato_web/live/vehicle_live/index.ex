@@ -104,12 +104,17 @@ defmodule SpatoWeb.VehicleLive.Index do
 
   @impl true
   def handle_params(params, _url, socket) do
-    page = Map.get(params, "page", "1") |> String.to_integer()
+    page   = Map.get(params, "page", "1") |> String.to_integer()
+    search = Map.get(params, "q", "")
+    status = Map.get(params, "status", "all")
+
     {:noreply,
-     socket
-     |> assign(:page, page)
-     |> load_vehicles()
-     |> apply_action(socket.assigns.live_action, params)}
+    socket
+    |> assign(:page, page)
+    |> assign(:search_query, search)
+    |> assign(:filter_status, status)
+    |> load_vehicles()
+    |> apply_action(socket.assigns.live_action, params)}
   end
 
   # --- RENDER ---
@@ -183,7 +188,11 @@ defmodule SpatoWeb.VehicleLive.Index do
           </div>
 
           <!-- Vehicles Table -->
-          <.table id="vehicles" rows={@vehicles_page} row_click={fn vehicle -> JS.patch(~p"/admin/vehicles/#{vehicle.id}?action=show") end}>
+          <.table id="vehicles" rows={@vehicles_page} row_click={fn vehicle ->
+            JS.patch(
+              ~p"/admin/vehicles/#{vehicle.id}?action=show&page=#{@page}&q=#{@search_query}&status=#{@filter_status}"
+            )
+          end}>
             <:col :let={vehicle} label="Kenderaan">
               <div class="flex flex-col">
                 <!-- Vehicle Name -->
@@ -259,7 +268,7 @@ defmodule SpatoWeb.VehicleLive.Index do
             />
           </.modal>
 
-          <.modal :if={@live_action == :show} id="vehicle-show-modal" show on_cancel={JS.patch(~p"/admin/vehicles")}>
+          <.modal :if={@live_action == :show} id="vehicle-show-modal" show on_cancel={JS.patch(~p"/admin/vehicles?page=#{@page}&q=#{@search_query}&status=#{@filter_status}")}>
             <.live_component module={SpatoWeb.VehicleLive.ShowComponent} id={@vehicle.id} vehicle={@vehicle} />
           </.modal>
         </div>
