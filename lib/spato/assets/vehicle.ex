@@ -21,7 +21,7 @@ defmodule Spato.Assets.Vehicle do
   def changeset(vehicle, attrs) do
     vehicle
     |> cast(attrs, [:user_id, :name, :type, :photo_url, :vehicle_model, :plate_number, :status, :capacity, :last_services_at])
-    |> validate_required([:name, :type, :photo_url, :vehicle_model, :plate_number, :status, :capacity, :last_services_at])
+    |> validate_required([:name, :type, :vehicle_model, :plate_number, :status, :capacity, :last_services_at])
     |> validate_inclusion(:status, ["tersedia", "dalam_penyelenggaraan"])
   end
 

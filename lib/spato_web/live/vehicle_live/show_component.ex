@@ -43,6 +43,9 @@ defmodule SpatoWeb.VehicleLive.ShowComponent do
         <:item title="Model">{@vehicle.vehicle_model}</:item>
         <:item title="Nombor Plat">{@vehicle.plate_number}</:item>
         <:item title="Kapasiti Penumpang">{@vehicle.capacity}</:item>
+        <:item title="Ditambah Oleh">
+          <%= @vehicle.user && @vehicle.user.user_profile && @vehicle.user.user_profile.full_name || "N/A" %>
+        </:item>
         <:item title="Status">
           <span class={
             "px-1.5 py-0.5 rounded-full text-white text-xs font-semibold " <>

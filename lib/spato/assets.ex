@@ -21,9 +21,9 @@ defmodule Spato.Assets do
     |> Repo.preload(user: :user_profile)
   end
 
-  def create_vehicle(attrs \\ %{}) do
+  def create_vehicle(attrs, user) do
     %Vehicle{}
-    |> Vehicle.changeset(attrs)
+    |> Vehicle.changeset(Map.put(attrs, "user_id", user.id))
     |> Repo.insert()
   end
 

@@ -10,6 +10,7 @@ defmodule SpatoWeb.VehicleLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
+    if connected?(socket), do: :timer.send_interval(5_000, self(), :reload_vehicles)
     {:ok,
      socket
      |> assign(:page_title, "Senarai Kenderaan")
@@ -87,6 +88,11 @@ defmodule SpatoWeb.VehicleLive.Index do
 
   @impl true
   def handle_info({SpatoWeb.VehicleLive.FormComponent, {:saved, _vehicle}}, socket) do
+    {:noreply, load_vehicles(socket)}
+  end
+
+  @impl true
+  def handle_info(:reload_vehicles, socket) do
     {:noreply, load_vehicles(socket)}
   end
 
@@ -241,7 +247,16 @@ defmodule SpatoWeb.VehicleLive.Index do
 
           <!-- Modals -->
           <.modal :if={@live_action in [:new, :edit]} id="vehicle-modal" show on_cancel={JS.patch(~p"/admin/vehicles")}>
-            <.live_component module={SpatoWeb.VehicleLive.FormComponent} id={@vehicle.id || :new} title={@page_title} action={@live_action} vehicle={@vehicle} patch={~p"/admin/vehicles"} />
+            <.live_component
+              module={SpatoWeb.VehicleLive.FormComponent}
+              id={@vehicle.id || :new}
+              title={@page_title}
+              action={@live_action}
+              vehicle={@vehicle}
+              patch={~p"/admin/vehicles"}
+              current_user={@current_user}
+              current_user_id={@current_user.id}
+            />
           </.modal>
 
           <.modal :if={@live_action == :show} id="vehicle-show-modal" show on_cancel={JS.patch(~p"/admin/vehicles")}>
