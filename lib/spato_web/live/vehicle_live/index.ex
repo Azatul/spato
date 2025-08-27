@@ -219,7 +219,7 @@ defmodule SpatoWeb.VehicleLive.Index do
             </:col>
             <:col :let={vehicle} label="Kapasiti">{vehicle.capacity}</:col>
             <:col :let={vehicle} label="Tarikh & Masa Kemaskini">
-              <%= Calendar.strftime(vehicle.updated_at, "%d/%m/%Y %H:%M:%S") %>
+              <%= Calendar.strftime(vehicle.updated_at, "%d/%m/%Y %H:%M") %>
             </:col>
             <:col :let={vehicle} label="Status">
               <span class={"px-1.5 py-0.5 rounded-full text-white text-xs font-semibold " <>

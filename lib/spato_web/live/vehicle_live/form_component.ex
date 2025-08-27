@@ -147,6 +147,7 @@ defmodule SpatoWeb.VehicleLive.FormComponent do
   end
 
   defp save_vehicle(socket, :new, vehicle_params) do
+    # Handle image upload
     uploaded_urls =
       consume_uploaded_entries(socket, :vehicle_image, fn %{path: path}, _entry ->
         uploads_dir = Path.expand("./uploads")
@@ -162,7 +163,8 @@ defmodule SpatoWeb.VehicleLive.FormComponent do
         _ -> vehicle_params
       end
 
-    case Assets.create_vehicle(vehicle_params) do
+    # Use create_vehicle/2 with current_user_id
+    case Assets.create_vehicle(vehicle_params, socket.assigns.current_user_id) do
       {:ok, vehicle} ->
         notify_parent({:saved, vehicle})
 
