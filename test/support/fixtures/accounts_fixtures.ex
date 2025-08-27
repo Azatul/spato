@@ -28,4 +28,19 @@ defmodule Spato.AccountsFixtures do
     [_, token | _] = String.split(captured_email.text_body, "[TOKEN]")
     token
   end
+
+  @doc """
+  Generate a department.
+  """
+  def department_fixture(attrs \\ %{}) do
+    {:ok, department} =
+      attrs
+      |> Enum.into(%{
+        code: "some code",
+        name: "some name"
+      })
+      |> Spato.Accounts.create_department()
+
+    department
+  end
 end

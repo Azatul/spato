@@ -14,26 +14,32 @@ defmodule SpatoWeb.Components.Sidebar do
       class={[
         "h-full bg-gray-100 border-r border-gray-200 p-4 flex flex-col transition-all duration-300 overflow-y-auto",
         @open && "w-64",
-        !@open && "w-20"
+        !@open && "w-16"
       ]}
     >
-      <!-- Logo -->
-      <div
-        class="flex items-center transition-all duration-300 cursor-pointer h-16 px-3"
-        phx-click={@toggle_event}
-        title="Toggle sidebar"
-      >
-        <!-- Logo stays fixed in place -->
-        <div class="flex-shrink-0 flex items-center justify-center w-8 h-8">
-          <img src="/images/spato - logo.png" alt="Spato Icon" class="h-8 w-8" />
-        </div>
+      <!-- Logo (clickable toggle) -->
+        <div
+          class={[
+            "flex items-center transition-all duration-300 cursor-pointer h-16", # h-16 gives vertical space
+            @open && "justify-start space-x-2 px-4",   # expanded → left align with padding
+            !@open && "justify-center"                 # collapsed → center align
+          ]}
+          phx-click={@toggle_event}
+          title="Toggle sidebar"
+        >
+          <!-- Icon (always visible, full size) -->
+          <img
+            src="/images/spato - logo.png"
+            alt="Spato Icon"
+            class="h-8"
+          />
 
-        <!-- Wordmark only visible when sidebar is open -->
+        <!-- Wordmark (only visible when expanded) -->
         <img
           src="/images/spato - word.png"
           alt="Spato Logo"
           class={[
-            "h-5 transition-all duration-300 origin-left ml-2",
+            "h-5 transition-all duration-300 origin-left",
             @open && "opacity-100 scale-x-100",
             !@open && "opacity-0 scale-x-0"
           ]}
@@ -43,30 +49,23 @@ defmodule SpatoWeb.Components.Sidebar do
       <!-- Navigation -->
       <nav class="flex-1 flex flex-col">
         <ul class="space-y-2">
-
           <!-- Dashboard -->
           <li>
-            <.link
-              href={if @current_user.role == "admin", do: "/admin/dashboard", else: "/dashboard"}
-              class={[
-                "flex items-center justify-between px-4 py-2 rounded-md hover:bg-gray-200 cursor-pointer transition-all duration-300",
-                @active_tab == "dashboard" && "bg-gray-300 font-bold"
-              ]}
+            <.sidebar_link
+              to="/admin/dashboard"
+              icon="house"
+              active={@active_tab == "dashboard"}
+              open={@open}
             >
-              <div class="flex items-center gap-2">
-                <.icon name="hero-home" class="transition-all duration-300 w-5 h-5" />
-                <%= if @open, do: "Dashboard" %>
-              </div>
-            </.link>
+              Dashboard
+            </.sidebar_link>
           </li>
 
           <!-- Tempahan Menu -->
           <li>
             <details class="group">
-              <summary class={[
-                "flex items-center justify-between px-4 py-2 rounded-md hover:bg-gray-200 cursor-pointer",
-                @active_tab in ["meeting_rooms", "vehicles", "catering", "equipments", "history"] && "bg-gray-300 font-bold"
-              ]}>
+              <summary class={[ "flex items-center justify-between px-4 py-2 rounded-md hover:bg-gray-200 cursor-pointer",
+                                @active_tab in ["meeting_rooms", "vehicles", "catering", "equipments", "history"] && "bg-gray-300 font-bold" ]}>
                 <div class="flex items-center gap-2">
                   <.icon name="hero-calendar" class="transition-all duration-300 w-5 h-5" />
                   <%= if @open, do: "Tempahan" %>
@@ -77,31 +76,11 @@ defmodule SpatoWeb.Components.Sidebar do
               </summary>
 
               <ul class="ml-8 mt-2 space-y-1">
-                <li>
-                  <.sidebar_link to="/meeting_rooms_booking" active={@active_tab == "meeting_rooms"} open={@open}>
-                    Tempahan Bilik Mesyuarat
-                  </.sidebar_link>
-                </li>
-                <li>
-                  <.sidebar_link to="/vehicles" active={@active_tab == "vehicles"} open={@open}>
-                    Tempahan Kenderaan
-                  </.sidebar_link>
-                </li>
-                <li>
-                  <.sidebar_link to="/catering" active={@active_tab == "catering"} open={@open}>
-                    Tempahan Katering
-                  </.sidebar_link>
-                </li>
-                <li>
-                  <.sidebar_link to="/equipments" active={@active_tab == "equipments"} open={@open}>
-                    Tempahan Peralatan
-                  </.sidebar_link>
-                </li>
-                <li>
-                  <.sidebar_link to="/history" active={@active_tab == "history"} open={@open}>
-                    Sejarah Tempahan
-                  </.sidebar_link>
-                </li>
+                <li><.sidebar_link to="/meeting_rooms" icon="door-closed" active={@active_tab == "meeting_rooms"} open={@open}>Tempahan Bilik Mesyuarat</.sidebar_link></li>
+                <li><.sidebar_link to="/vehicles" icon="car" active={@active_tab == "vehicles"} open={@open}>Tempahan Kenderaan</.sidebar_link></li>
+                <li><.sidebar_link to="/catering" icon="utensils" active={@active_tab == "catering"} open={@open}>Tempahan Katering</.sidebar_link></li>
+                <li><.sidebar_link to="/equipments" icon="tools" active={@active_tab == "equipments"} open={@open}>Tempahan Peralatan</.sidebar_link></li>
+                <li><.sidebar_link to="/history" icon="clock-rotate-left" active={@active_tab == "history"} open={@open}>Sejarah Tempahan</.sidebar_link></li>
               </ul>
             </details>
           </li>
@@ -110,10 +89,8 @@ defmodule SpatoWeb.Components.Sidebar do
           <%= if is_admin?(@current_user) do %>
             <li>
               <details class="group">
-                <summary class={[
-                  "flex items-center justify-between px-4 py-2 rounded-md hover:bg-gray-200 cursor-pointer",
-                  @active_tab in ["manage_meeting_rooms", "manage_vehicles", "manage_catering", "manage_equipments"] && "bg-gray-300 font-bold"
-                ]}>
+                <summary class={[ "flex items-center justify-between px-4 py-2 rounded-md hover:bg-gray-200 cursor-pointer",
+                                  @active_tab in ["manage_meeting_rooms", "manage_vehicles", "manage_catering", "manage_equipments"] && "bg-gray-300 font-bold" ]}>
                   <div class="flex items-center gap-2">
                     <.icon name="hero-cube-transparent-solid" class="transition-all duration-300 w-5 h-5" />
                     <%= if @open, do: "Pengurusan Aset" %>
@@ -124,101 +101,46 @@ defmodule SpatoWeb.Components.Sidebar do
                 </summary>
 
                 <ul class="ml-8 mt-2 space-y-1">
-                  <li>
-                    <.sidebar_link to="/meeting_rooms" active={@active_tab == "manage_meeting_rooms"} open={@open}>
-                      Urus Bilik Mesyuarat
-                    </.sidebar_link>
-                  </li>
-                  <li>
-                    <.sidebar_link to="/manage_vehicles" active={@active_tab == "manage_vehicles"} open={@open}>
-                      Urus Kenderaan
-                    </.sidebar_link>
-                  </li>
-                  <li>
-                    <.sidebar_link to="/manage_catering" active={@active_tab == "manage_catering"} open={@open}>
-                      Urus Katering
-                    </.sidebar_link>
-                  </li>
-                  <li>
-                    <.sidebar_link to="/manage_equipments" active={@active_tab == "manage_equipments"} open={@open}>
-                      Urus Peralatan
-                    </.sidebar_link>
-                  </li>
+                  <li><.sidebar_link to="/manage_meeting_rooms" icon="door-open" active={@active_tab == "manage_meeting_rooms"} open={@open}>Urus Bilik Mesyuarat</.sidebar_link></li>
+                  <li><.sidebar_link to="/manage_vehicles" icon="truck" active={@active_tab == "manage_vehicles"} open={@open}>Urus Kenderaan</.sidebar_link></li>
+                  <li><.sidebar_link to="/manage_catering" icon="utensils" active={@active_tab == "manage_catering"} open={@open}>Urus Katering</.sidebar_link></li>
+                  <li><.sidebar_link to="/manage_equipments" icon="tools" active={@active_tab == "manage_equipments"} open={@open}>Urus Peralatan</.sidebar_link></li>
                 </ul>
               </details>
             </li>
 
-            <!-- Senarai Pengguna -->
             <li>
-              <.link
-                href="/admin/user_profiles"
-                class={[
-                  "flex items-center justify-between px-4 py-2 rounded-md hover:bg-gray-200 cursor-pointer transition-all duration-300",
-                  @active_tab == "users" && "bg-gray-300 font-bold"
-                ]}
-              >
-                <div class="flex items-center gap-2">
-                  <.icon name="hero-users" class="transition-all duration-300 w-5 h-5" />
-                  <%= if @open, do: "Senarai Pengguna" %>
-                </div>
-              </.link>
-            </li>
-
-            <!-- Senarai Jabatan -->
-            <li>
-              <.link
-                href="/admin/departments"
-                class={[
-                  "flex items-center justify-between px-4 py-2 rounded-md hover:bg-gray-200 cursor-pointer transition-all duration-300",
-                  @active_tab == "departments" && "bg-gray-300 font-bold"
-                ]}
-              >
-                <div class="flex items-center gap-2">
-                  <.icon name="hero-building-office-2" class="transition-all duration-300 w-5 h-5" />
-                  <%= if @open, do: "Senarai Jabatan" %>
-                </div>
-              </.link>
+              <.sidebar_link to="/users" icon="users" active={@active_tab == "users"} open={@open}>
+                Senarai Pengguna
+              </.sidebar_link>
             </li>
           <% end %>
-
-          <!-- Logout -->
-          <li class="mt-auto">
-            <.link
-              href="/users/log_out"
-              method="delete"
-              class="flex items-center justify-between px-4 py-2 rounded-md hover:bg-gray-200 cursor-pointer transition-all duration-300 text-red-600"
-            >
-              <div class="flex items-center gap-2">
-                <.icon name="hero-arrow-left-on-rectangle-solid" class="transition-all duration-300 w-5 h-5" />
-                <%= if @open, do: "Log Out" %>
-              </div>
-            </.link>
-          </li>
         </ul>
       </nav>
     </aside>
     """
   end
 
-  # ----------------------------
-  # Components
-  # ----------------------------
-
-  # Submenu link without icon
   attr :to, :string, required: true
+  attr :icon, :string, required: true
   attr :active, :boolean, default: false
   attr :open, :boolean, default: true
   slot :inner_block, required: true
 
   def sidebar_link(assigns) do
     ~H"""
-    <.link
+    <a
       href={@to}
-      class={"flex items-center gap-2 px-4 py-2 rounded-md hover:bg-gray-200 transition-all duration-300 " <>
-             if @active, do: "bg-gray-300 font-bold", else: ""}
+      class={[
+        "flex items-center gap-2 px-4 py-2 rounded-md hover:bg-gray-200 transition-all duration-300",
+        @active && "bg-gray-300 font-bold"
+      ]}
     >
-      <%= render_slot(@inner_block) %>
-    </.link>
+      <i class={"fa-solid fa-#{@icon}"}></i>
+      <%= if @open do %>
+        <span><%= render_slot(@inner_block) %></span>
+      <% end %>
+    </a>
     """
   end
 
