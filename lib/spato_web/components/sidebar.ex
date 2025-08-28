@@ -131,7 +131,7 @@ defmodule SpatoWeb.Components.Sidebar do
                         </.sidebar_link>
                       </li>
                       <li>
-                        <.sidebar_link patch="/manage_equipments" active={@active_tab == "manage_equipments"} open={@open}>
+                        <.sidebar_link patch="/admin/equipments" active={@active_tab == "manage_equipments"} open={@open}>
                           Urus Peralatan
                         </.sidebar_link>
                       </li>

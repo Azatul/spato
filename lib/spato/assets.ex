@@ -121,4 +121,100 @@ defmodule Spato.Assets do
   defp to_int(val) when is_integer(val), do: val
   defp to_int(val) when is_binary(val), do: String.to_integer(val)
   defp to_int(_), do: 1
+
+  alias Spato.Assets.Equipment
+
+  @doc """
+  Returns the list of equipments.
+
+  ## Examples
+
+      iex> list_equipments()
+      [%Equipment{}, ...]
+
+  """
+  def list_equipments do
+    Repo.all(Equipment)
+  end
+
+  @doc """
+  Gets a single equipment.
+
+  Raises `Ecto.NoResultsError` if the Equipment does not exist.
+
+  ## Examples
+
+      iex> get_equipment!(123)
+      %Equipment{}
+
+      iex> get_equipment!(456)
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_equipment!(id), do: Repo.get!(Equipment, id)
+
+  @doc """
+  Creates a equipment.
+
+  ## Examples
+
+      iex> create_equipment(%{field: value})
+      {:ok, %Equipment{}}
+
+      iex> create_equipment(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_equipment(attrs \\ %{}) do
+    %Equipment{}
+    |> Equipment.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Updates a equipment.
+
+  ## Examples
+
+      iex> update_equipment(equipment, %{field: new_value})
+      {:ok, %Equipment{}}
+
+      iex> update_equipment(equipment, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def update_equipment(%Equipment{} = equipment, attrs) do
+    equipment
+    |> Equipment.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Deletes a equipment.
+
+  ## Examples
+
+      iex> delete_equipment(equipment)
+      {:ok, %Equipment{}}
+
+      iex> delete_equipment(equipment)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def delete_equipment(%Equipment{} = equipment) do
+    Repo.delete(equipment)
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking equipment changes.
+
+  ## Examples
+
+      iex> change_equipment(equipment)
+      %Ecto.Changeset{data: %Equipment{}}
+
+  """
+  def change_equipment(%Equipment{} = equipment, attrs \\ %{}) do
+    Equipment.changeset(equipment, attrs)
+  end
 end
