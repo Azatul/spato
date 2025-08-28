@@ -125,13 +125,13 @@ defmodule SpatoWeb.VehicleLive.Index do
       <.sidebar active_tab={@active_tab} current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar"/>
       <.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title={@page_title} />
 
-      <main class="flex-1 pt-16 p-6 transition-all duration-300 overflow-y-auto">
-        <div class="bg-gray-100 p-4 md:p-8 rounded-lg">
+      <main class="flex-1 pt-20 p-6 transition-all duration-300 overflow-y-auto bg-gray-100">
+      <section class="mb-4">
           <h1 class="text-xl font-bold mb-1">Senarai Kenderaan</h1>
-          <p class="text-md text-gray-500 mb-6">Semak semua kenderaan dalam sistem</p>
+          <p class="text-md text-gray-500 mb-4">Semak semua kenderaan dalam sistem</p>
 
           <!-- Stats Cards -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
             <%= for {label, value} <- [{"Jumlah Kenderaan Berdaftar", @stats.total},
                                       {"Kenderaan Tersedia", @stats.available},
                                       {"Dalam Penyelenggaraan", @stats.maintenance},
@@ -154,20 +154,28 @@ defmodule SpatoWeb.VehicleLive.Index do
             <% end %>
           </div>
 
+          <!-- Middle Section: Add Vehicle Button -->
+        <section class="mb-4 flex justify-end">
+          <.link patch={~p"/admin/vehicles/new"}>
+                <.button class="bg-gray-900 text-white px-4 py-2 rounded-md hover:bg-gray-700">Tambah Kenderaan</.button>
+              </.link>
+        </section>
+
+          <!-- Bottom Section: Vehicle Table -->
+          <section class="bg-white p-4 md:p-6 rounded-xl shadow-md">
           <!-- Header: Add + Search + Filter -->
           <div class="flex flex-col mb-4 gap-2">
             <div class="flex items-center justify-between">
               <h2 class="text-lg font-semibold text-gray-900">Senarai Kenderaan</h2>
-              <.link patch={~p"/admin/vehicles/new"}>
-                <.button class="bg-gray-900 text-white px-4 py-2 rounded-md hover:bg-gray-700">Tambah Kenderaan</.button>
-              </.link>
             </div>
 
+            <!-- Search and Filter -->
             <div class="flex flex-wrap gap-2 mt-2">
               <form phx-change="search" class="flex-1 min-w-[200px]">
                 <input type="text" name="q" value={@search_query} placeholder="Cari nama, jenis atau kapasiti..." class="w-full border rounded-md px-2 py-1 text-sm"/>
               </form>
 
+              <!-- Filter by status -->
               <form phx-change="filter_status">
                 <select name="status" class="border rounded-md px-2 py-1 text-sm">
                   <option value="all" selected={@filter_status in [nil, "all"]}>Semua Status</option>
@@ -255,6 +263,7 @@ defmodule SpatoWeb.VehicleLive.Index do
               <.link phx-click={JS.push("delete", value: %{id: vehicle.id}) |> hide("##{vehicle.id}")} data-confirm="Padam vehicle?">Padam</.link>
             </:action>
           </.table>
+          </section>
 
           <!-- Pagination -->
           <div class="relative flex items-center mt-4">
@@ -308,7 +317,7 @@ defmodule SpatoWeb.VehicleLive.Index do
           <.modal :if={@live_action == :show} id="vehicle-show-modal" show on_cancel={JS.patch(~p"/admin/vehicles?page=#{@page}&q=#{@search_query}&status=#{@filter_status}")}>
             <.live_component module={SpatoWeb.VehicleLive.ShowComponent} id={@vehicle.id} vehicle={@vehicle} />
           </.modal>
-        </div>
+        </section>
       </main>
     </div>
     """
