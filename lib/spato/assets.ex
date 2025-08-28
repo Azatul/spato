@@ -13,18 +13,18 @@ defmodule Spato.Assets do
 
   def list_vehicles do
     Repo.all(Vehicle)
-    |> Repo.preload(user: :user_profile)
+    |> Repo.preload([user: :user_profile, created_by: :user_profile])
   end
 
   def get_vehicle!(id) do
     Repo.get!(Vehicle, id)
-    |> Repo.preload(user: :user_profile)
+    |> Repo.preload([user: :user_profile, created_by: :user_profile])
   end
 
-  def create_vehicle(attrs \\ %{}, user_id) do
+  def create_vehicle(attrs \\ %{}, admin_id) do
     %Vehicle{}
     |> Vehicle.changeset(attrs)
-    |> Ecto.Changeset.put_change(:user_id, user_id)
+    |> Ecto.Changeset.put_change(:created_by_id, admin_id)
     |> Repo.insert()
   end
 
@@ -61,13 +61,12 @@ defmodule Spato.Assets do
     per_page = @per_page
     offset = (page - 1) * per_page
 
-    # Build base query
+    # Base query
     base_query =
       from v in Vehicle,
-        preload: [user: :user_profile],
         order_by: [desc: v.inserted_at]
 
-    # Filter by status
+    # Status filter
     filtered_query =
       if status != "all" do
         from v in base_query, where: v.status == ^status
@@ -75,33 +74,37 @@ defmodule Spato.Assets do
         base_query
       end
 
-    # Apply search with proper joins
+    # Search filter — use proper joins!
     final_query =
       if search != "" do
         like_search = "%#{search}%"
 
-        # We need to join with user and user_profile for the search condition
         from v in filtered_query,
           left_join: u in assoc(v, :user),
           left_join: up in assoc(u, :user_profile),
-          where: ilike(v.name, ^like_search) or
-                ilike(v.type, ^like_search) or
-                ilike(v.plate_number, ^like_search) or
-                ilike(up.full_name, ^like_search) or
-                fragment("?::text LIKE ?", v.capacity, ^like_search)
+          where:
+            ilike(v.name, ^like_search) or
+            ilike(v.type, ^like_search) or
+            fragment("?::text LIKE ?", v.capacity, ^like_search),
+            distinct: v.id,
+          select: v
       else
         filtered_query
       end
 
-    # Get total count (for all matching records)
-    total = Repo.aggregate(final_query, :count, :id)
+    # Total count
+    total =
+      final_query
+      |> exclude(:order_by)
+      |> Repo.aggregate(:count, :id)
 
-    # Get paginated results with proper limit/offset
+    # Paginated results, preloading associations correctly
     vehicles_page =
       final_query
       |> limit(^per_page)
       |> offset(^offset)
       |> Repo.all()
+      |> Repo.preload([user: :user_profile, created_by: :user_profile])
 
     total_pages = ceil(total / per_page)
 

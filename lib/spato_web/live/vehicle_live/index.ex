@@ -232,7 +232,7 @@ defmodule SpatoWeb.VehicleLive.Index do
               <%= Calendar.strftime(vehicle.last_services_at, "%d/%m/%Y") %>
             </:col>
             <:col :let={vehicle} label="Ditambah Oleh">
-              <%= vehicle.user && vehicle.user.user_profile && vehicle.user.user_profile.full_name || "N/A" %>
+              <%= vehicle.created_by && vehicle.created_by.user_profile && vehicle.created_by.user_profile.full_name || "N/A" %>
             </:col>
             <:col :let={vehicle} label="Tarikh & Masa Kemaskini">
               <%= Calendar.strftime(vehicle.updated_at, "%d/%m/%Y %H:%M") %>

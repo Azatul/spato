@@ -44,7 +44,7 @@ defmodule SpatoWeb.VehicleLive.ShowComponent do
         <:item title="Nombor Plat">{@vehicle.plate_number}</:item>
         <:item title="Kapasiti Penumpang">{@vehicle.capacity}</:item>
         <:item title="Ditambah Oleh">
-          <%= @vehicle.user && @vehicle.user.user_profile && @vehicle.user.user_profile.full_name || "N/A" %>
+          <%= @vehicle.created_by && @vehicle.created_by.user_profile && @vehicle.created_by.user_profile.full_name || "N/A" %>
         </:item>
         <:item title="Status">
           <span class={
