@@ -121,19 +121,11 @@ defmodule SpatoWeb.UserProfileLive.Index do
      )}
   end
 
-  # Filter by role (patch URL with role)
-  def handle_event("filter_role", %{"role" => role}, socket) do
-    {:noreply,
-     push_patch(socket,
-       to: ~p"/admin/user_profiles?page=1&q=#{socket.assigns.search_query}&role=#{role}"
-     )}
-  end
-
-  def handle_event("filter_department", %{"department" => dept_id}, socket) do
+  def handle_event("filter_users", %{"department" => department, "role" => role}, socket) do
     {:noreply,
      push_patch(socket,
        to:
-         ~p"/admin/user_profiles?page=1&q=#{socket.assigns.search_query}&role=#{socket.assigns.filter_role}&department=#{dept_id}"
+         ~p"/admin/user_profiles?page=1&q=#{socket.assigns.search_query}&role=#{role}&department=#{department}"
      )}
   end
 
@@ -199,21 +191,16 @@ defmodule SpatoWeb.UserProfileLive.Index do
                 <input type="text" name="q" value={@search_query} placeholder="Cari nama, jawatan atau jabatan..." class="w-full border rounded-md px-2 py-1 text-sm"/>
               </form>
 
-              <!-- Filter by department -->
-              <form phx-change="filter_department">
+              <!-- Filter by user profile -->
+              <form phx-change="filter_users" class="flex gap-2">
                 <select name="department" class="border rounded-md px-2 pr-8 py-1 text-sm">
                   <option value="all" selected={@filter_department in [nil, "all"]}>Semua Jabatan</option>
                   <option value="belum_diisi" selected={@filter_department == "belum_diisi"}>Belum Diisi</option>
                   <%= for dept <- @departments do %>
-                    <option value={dept.id} selected={@filter_department == to_string(dept.id)}>
-                      <%= dept.name %>
-                    </option>
+                    <option value={dept.id} selected={@filter_department == to_string(dept.id)}><%= dept.name %></option>
                   <% end %>
                 </select>
-              </form>
 
-              <!-- Filter by role -->
-              <form phx-change="filter_role">
                 <select name="role" class="border rounded-md px-2 pr-8 py-1 text-sm">
                   <option value="all" selected={@filter_role in [nil, "all"]}>Semua Status</option>
                   <option value="admin" selected={@filter_role == "admin"}>Admin</option>
