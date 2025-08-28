@@ -127,8 +127,8 @@ defmodule SpatoWeb.VehicleLive.Index do
 
       <main class="flex-1 pt-20 p-6 transition-all duration-300 overflow-y-auto bg-gray-100">
       <section class="mb-4">
-          <h1 class="text-xl font-bold mb-1">Senarai Kenderaan</h1>
-          <p class="text-md text-gray-500 mb-4">Semak semua kenderaan dalam sistem</p>
+          <h1 class="text-xl font-bold mb-1">Urus Kenderaan</h1>
+          <p class="text-md text-gray-500 mb-4">Semak dan urus semua kenderaan dalam sistem</p>
 
           <!-- Stats Cards -->
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
