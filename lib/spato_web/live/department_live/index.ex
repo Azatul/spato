@@ -115,7 +115,7 @@ defmodule SpatoWeb.DepartmentLive.Index do
                 phx-click={JS.push("delete", value: %{id: dept.id}) |> hide("##{id}")}
                 data-confirm="Anda yakin?"
               >
-                Delete
+                Padam
               </.link>
             </:action>
           </.table>
