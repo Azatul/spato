@@ -85,6 +85,7 @@ defmodule Spato.Assets do
           where:
             ilike(v.name, ^like_search) or
             ilike(v.type, ^like_search) or
+            ilike(v.plate_number, ^like_search) or
             fragment("?::text LIKE ?", v.capacity, ^like_search),
             distinct: v.id,
           select: v
