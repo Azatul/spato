@@ -8,6 +8,7 @@ defmodule Spato.Accounts do
 
   alias Spato.Accounts.{User, UserToken, UserNotifier, Department, UserProfile}
 
+  @per_page 10
   ## ----------------------
   ## User functions
   ## ----------------------
@@ -326,5 +327,109 @@ If a user has no profile, you’ll still get the user with `user_profile = nil`.
       active_users: active_users
     }
   end
+
+  # --- FILTER, SEARCH & PAGINATION ---
+
+  @doc """
+  Lists vehicles with optional filtering, search, and pagination.
+
+  Params can include:
+    - "page" => integer or string
+    - "search" => string
+    - "status" => string ("all", "tersedia", "dalam_penyelenggaraan")
+
+  Returns a map with:
+    - vehicles_page: list of vehicles for the current page
+    - total: total number of vehicles matching filters
+    - total_pages: total number of pages
+    - page: current page
+  """
+  def list_users_paginated(params \\ %{}) do
+    page = Map.get(params, "page", 1) |> to_int()
+    search = Map.get(params, "search", "")
+    role = Map.get(params, "role", "all")
+    department = Map.get(params, "department", "all")
+    per_page = @per_page
+    offset = (page - 1) * per_page
+
+    # Base query
+    base_query =
+      from u in User,
+        order_by: [desc: u.inserted_at]
+
+    # Status filter
+    filtered_query =
+      if role != "all" do
+        from u in base_query, where: u.role == ^role
+      else
+        base_query
+      end
+
+    # Department filter
+    filtered_query =
+      cond do
+        department == "all" ->
+          filtered_query
+
+        department == "belum_diisi" ->
+          from u in filtered_query,
+            left_join: up in assoc(u, :user_profile),
+            where: is_nil(up.department_id)
+
+        true ->
+          from u in filtered_query,
+            join: up in assoc(u, :user_profile),
+            where: up.department_id == ^String.to_integer(department)
+      end
+
+    # Search filter — use proper joins!
+    final_query =
+      if search != "" do
+        like_search = "%#{search}%"
+
+        from u in filtered_query,
+          left_join: up in assoc(u, :user_profile),
+          where:
+            ilike(u.email, ^like_search) or
+            ilike(u.role, ^like_search) or
+            ilike(up.employment_status, ^like_search) or
+            ilike(up.gender, ^like_search) or
+            ilike(up.full_name, ^like_search) or
+            ilike(up.phone_number, ^like_search) or
+            ilike(up.position, ^like_search),
+          distinct: u.id,
+          select: u
+      else
+        filtered_query
+      end
+
+    # Total count
+    total =
+      final_query
+      |> exclude(:order_by)
+      |> Repo.aggregate(:count, :id)
+
+    # Paginated results, preloading associations correctly
+    users_page =
+      final_query
+      |> limit(^per_page)
+      |> offset(^offset)
+      |> Repo.all()
+      |> Repo.preload([user_profile: :department])
+
+    total_pages = ceil(total / per_page)
+
+    %{
+      users_page: users_page,
+      total: total,
+      total_pages: total_pages,
+      page: page
+    }
+  end
+
+  # --- HELPERS ---
+  defp to_int(val) when is_integer(val), do: val
+  defp to_int(val) when is_binary(val), do: String.to_integer(val)
+  defp to_int(_), do: 1
 
 end

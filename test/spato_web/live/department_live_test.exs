@@ -19,15 +19,15 @@ defmodule SpatoWeb.DepartmentLiveTest do
     test "lists all departments", %{conn: conn, department: department} do
       {:ok, _index_live, html} = live(conn, ~p"/departments")
 
-      assert html =~ "Listing Departments"
+      assert html =~ "Senarai Jabatan"
       assert html =~ department.code
     end
 
     test "saves new department", %{conn: conn} do
       {:ok, index_live, _html} = live(conn, ~p"/departments")
 
-      assert index_live |> element("a", "New Department") |> render_click() =~
-               "New Department"
+      assert index_live |> element("a", "Jabatan Baru") |> render_click() =~
+               "Jabatan Baru"
 
       assert_patch(index_live, ~p"/departments/new")
 
@@ -42,7 +42,7 @@ defmodule SpatoWeb.DepartmentLiveTest do
       assert_patch(index_live, ~p"/departments")
 
       html = render(index_live)
-      assert html =~ "Department created successfully"
+      assert html =~ "Jabatan berjaya dicipta"
       assert html =~ "some code"
     end
 
@@ -50,7 +50,7 @@ defmodule SpatoWeb.DepartmentLiveTest do
       {:ok, index_live, _html} = live(conn, ~p"/departments")
 
       assert index_live |> element("#departments-#{department.id} a", "Edit") |> render_click() =~
-               "Edit Department"
+               "Kemaskini Jabatan"
 
       assert_patch(index_live, ~p"/departments/#{department}/edit")
 
@@ -65,7 +65,7 @@ defmodule SpatoWeb.DepartmentLiveTest do
       assert_patch(index_live, ~p"/departments")
 
       html = render(index_live)
-      assert html =~ "Department updated successfully"
+      assert html =~ "Jabatan berjaya dikemaskini"
       assert html =~ "some updated code"
     end
 
@@ -83,7 +83,7 @@ defmodule SpatoWeb.DepartmentLiveTest do
     test "displays department", %{conn: conn, department: department} do
       {:ok, _show_live, html} = live(conn, ~p"/departments/#{department}")
 
-      assert html =~ "Show Department"
+      assert html =~ "Lihat Jabatan"
       assert html =~ department.code
     end
 
@@ -91,7 +91,7 @@ defmodule SpatoWeb.DepartmentLiveTest do
       {:ok, show_live, _html} = live(conn, ~p"/departments/#{department}")
 
       assert show_live |> element("a", "Edit") |> render_click() =~
-               "Edit Department"
+               "Kemaskini Jabatan"
 
       assert_patch(show_live, ~p"/departments/#{department}/show/edit")
 
@@ -106,7 +106,7 @@ defmodule SpatoWeb.DepartmentLiveTest do
       assert_patch(show_live, ~p"/departments/#{department}")
 
       html = render(show_live)
-      assert html =~ "Department updated successfully"
+      assert html =~ "Jabatan berjaya dikemaskini"
       assert html =~ "some updated code"
     end
   end
