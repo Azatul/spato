@@ -37,4 +37,11 @@ defmodule Spato.Accounts.UserProfile do
   def human_gender(:male), do: "Lelaki"
   def human_gender(:female), do: "Perempuan"
   def human_gender(_), do: "Tidak Diketahui"
+
+  # Map DB values to human-readable labels
+  def human_role("admin"), do: "Admin"
+  def human_role("user"), do: "Staf Biasa"
+
+  # Catch-all clause for any other value
+  def human_role(other), do: other
 end

@@ -17,8 +17,15 @@ defmodule SpatoWeb.UserRegistrationLive.FormComponent do
       >
         <.input field={@form[:email]} type="email" label="Emel" required />
         <.input field={@form[:password]} type="password" label="Katalaluan" required />
-        <.input field={@form[:role]} type="select" label="Peranan" options={@roles} required />
-
+        <.input
+          field={@form[:role]}
+          type="select"
+          label="Peranan"
+          options={[
+            {"Admin", "admin"},
+            {"Staf Biasa", "user"}
+          ]}
+        />
         <:actions>
           <.button phx-disable-with="Mencipta pengguna...">Daftar</.button>
         </:actions>
