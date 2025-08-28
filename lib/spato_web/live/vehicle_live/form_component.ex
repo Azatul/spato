@@ -74,7 +74,13 @@ defmodule SpatoWeb.VehicleLive.FormComponent do
         />
         <.input field={@form[:last_services_at]} type="date" label="Tarikh Servis Terakhir" placeholder="e.g. 2025-01-01" />
         <:actions>
-          <.button phx-disable-with="Menyimpan...">Simpan Kenderaan</.button>
+          <.button phx-disable-with={@action == :new && "Menyimpan..." || "Mengemaskini..."}>
+            <%= if @action == :new do %>
+              Simpan Kenderaan
+            <% else %>
+              Kemas Kini Kenderaan
+            <% end %>
+          </.button>
         </:actions>
       </.simple_form>
     </div>
