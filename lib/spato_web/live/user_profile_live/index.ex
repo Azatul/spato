@@ -81,6 +81,7 @@ defmodule SpatoWeb.UserProfileLive.Index do
     {:noreply,
      socket
      |> stream_insert(:user_profiles, user_with_profile)
+     |> assign(:stats, Accounts.user_stats())
      |> put_flash(:info, "Pengguna berjaya didaftarkan!")
      |> assign(show_registration_modal: false, check_errors: false)}
   end
@@ -103,10 +104,15 @@ defmodule SpatoWeb.UserProfileLive.Index do
   # Delete user
   def handle_event("delete", %{"id" => id}, socket) do
     user = Accounts.get_user_with_profile!(id)
-
+    new_total = socket.assigns.filtered_count - 1
     case Accounts.delete_user(user) do
       {:ok, _} ->
-        {:noreply, stream_delete(socket, :user_profiles, user)}
+        {:noreply,
+         socket
+         |> stream_delete(:user_profiles, user)
+         |> assign(:stats, Accounts.user_stats())
+         |> put_flash(:info, "Pengguna berjaya dipadam")
+         |> assign(:filtered_count, new_total)}
 
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Tidak boleh padam pengguna")}
