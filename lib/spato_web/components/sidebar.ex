@@ -106,7 +106,7 @@ defmodule SpatoWeb.Components.Sidebar do
                   <!-- Show submenu only when sidebar is open -->
                   <details
                     class="group"
-                    open={@active_tab in ["manage_meeting_rooms", "manage_vehicles", "manage_catering", "manage_equipments"]}>
+                    open={@active_tab in ["/admin/meeting_rooms", "manage_vehicles", "manage_catering", "manage_equipments"]}>
                     <summary class="flex items-center justify-between px-4 py-2 rounded-md hover:bg-gray-200 cursor-pointer">
                       <div class="flex items-center gap-2">
                         <.icon name="hero-cube-transparent-solid" class="w-5 h-5" />

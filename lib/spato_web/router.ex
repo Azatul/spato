@@ -59,6 +59,13 @@ defmodule SpatoWeb.Router do
       live "/vehicles/:id/edit", VehicleLive.Index, :edit
       live "/vehicles/:id", VehicleLive.Index, :show
 
+      live "/meeting_rooms", MeetingRoomLive.Index, :index
+      live "/meeting_rooms/new", MeetingRoomLive.Index, :new
+      live "/meeting_rooms/:id/edit", MeetingRoomLive.Index, :edit
+
+      live "/meeting_rooms/:id", MeetingRoomLive.Show, :show
+      live "/meeting_rooms/:id/show/edit", MeetingRoomLive.Show, :edit
+
     end
   end
 
