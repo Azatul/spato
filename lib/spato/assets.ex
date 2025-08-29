@@ -122,99 +122,96 @@ defmodule Spato.Assets do
   defp to_int(val) when is_binary(val), do: String.to_integer(val)
   defp to_int(_), do: 1
 
+  # --- EQUIPMENTS ---
   alias Spato.Assets.Equipment
 
-  @doc """
-  Returns the list of equipments.
-
-  ## Examples
-
-      iex> list_equipments()
-      [%Equipment{}, ...]
-
-  """
   def list_equipments do
     Repo.all(Equipment)
+    |> Repo.preload([user: :user_profile, created_by: :user_profile])
   end
 
-  @doc """
-  Gets a single equipment.
+  def get_equipment!(id) do
+    Repo.get!(Equipment, id)
+    |> Repo.preload([user: :user_profile, created_by: :user_profile])
+  end
 
-  Raises `Ecto.NoResultsError` if the Equipment does not exist.
-
-  ## Examples
-
-      iex> get_equipment!(123)
-      %Equipment{}
-
-      iex> get_equipment!(456)
-      ** (Ecto.NoResultsError)
-
-  """
-  def get_equipment!(id), do: Repo.get!(Equipment, id)
-
-  @doc """
-  Creates a equipment.
-
-  ## Examples
-
-      iex> create_equipment(%{field: value})
-      {:ok, %Equipment{}}
-
-      iex> create_equipment(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def create_equipment(attrs \\ %{}) do
+  def create_equipment(attrs \\ %{}, admin_id) do
     %Equipment{}
     |> Equipment.changeset(attrs)
+    |> Ecto.Changeset.put_change(:created_by_id, admin_id)
     |> Repo.insert()
   end
 
-  @doc """
-  Updates a equipment.
-
-  ## Examples
-
-      iex> update_equipment(equipment, %{field: new_value})
-      {:ok, %Equipment{}}
-
-      iex> update_equipment(equipment, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
   def update_equipment(%Equipment{} = equipment, attrs) do
     equipment
     |> Equipment.changeset(attrs)
     |> Repo.update()
   end
 
-  @doc """
-  Deletes a equipment.
+  def delete_equipment(%Equipment{} = equipment), do: Repo.delete(equipment)
 
-  ## Examples
+  def change_equipment(%Equipment{} = equipment, attrs \\ %{}), do: Equipment.changeset(equipment, attrs)
 
-      iex> delete_equipment(equipment)
-      {:ok, %Equipment{}}
+  def list_equipments_paginated(params \\ %{}) do
+    page = Map.get(params, "page", 1) |> to_int()
+    search = Map.get(params, "search", "")
+    status = Map.get(params, "status", "all")
+    per_page = @per_page
+    offset = (page - 1) * per_page
 
-      iex> delete_equipment(equipment)
-      {:error, %Ecto.Changeset{}}
+    # Base query
+    base_query =
+      from v in Equipment,
+        order_by: [desc: v.inserted_at]
 
-  """
-  def delete_equipment(%Equipment{} = equipment) do
-    Repo.delete(equipment)
-  end
+    # Status filter
+    filtered_query =
+      if status != "all" do
+        from v in base_query, where: v.status == ^status
+      else
+        base_query
+      end
 
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking equipment changes.
+    # Search filter — use proper joins!
+    final_query =
+      if search != "" do
+        like_search = "%#{search}%"
 
-  ## Examples
+        from v in filtered_query,
+          left_join: u in assoc(v, :user),
+          left_join: up in assoc(u, :user_profile),
+          where:
+            ilike(v.name, ^like_search) or
+            ilike(v.type, ^like_search) or
+            ilike(v.serial_number, ^like_search) or
+            fragment("?::text LIKE ?", v.quantity_available, ^like_search),
+            distinct: v.id,
+          select: v
+      else
+        filtered_query
+      end
 
-      iex> change_equipment(equipment)
-      %Ecto.Changeset{data: %Equipment{}}
+    # Total count
+    total =
+      final_query
+      |> exclude(:order_by)
+      |> Repo.aggregate(:count, :id)
 
-  """
-  def change_equipment(%Equipment{} = equipment, attrs \\ %{}) do
-    Equipment.changeset(equipment, attrs)
+    # Paginated results, preloading associations correctly
+    equipments_page =
+      final_query
+      |> limit(^per_page)
+      |> offset(^offset)
+      |> Repo.all()
+      |> Repo.preload([user: :user_profile, created_by: :user_profile])
+
+    total_pages = ceil(total / per_page)
+
+    %{
+      equipments_page: equipments_page,
+      total: total,
+      total_pages: total_pages,
+      page: page
+    }
   end
 end

@@ -122,7 +122,8 @@ defmodule SpatoWeb.VehicleLive.FormComponent do
      |> assign(:remove_vehicle_image, true)}
   end
 
-  defp save_vehicle(socket, :edit, vehicle_params) do
+  defp save_vehicle(socket, action, vehicle_params) do
+    # Handle image uploads
     uploaded_urls =
       consume_uploaded_entries(socket, :vehicle_image, fn %{path: path}, _entry ->
         uploads_dir = Path.expand("./uploads")
@@ -133,18 +134,33 @@ defmodule SpatoWeb.VehicleLive.FormComponent do
       end)
 
     vehicle_params =
-      case uploaded_urls do
-        [url | _] -> Map.put(vehicle_params, "photo_url", url)
-        _ -> if socket.assigns.remove_vehicle_image, do: Map.put(vehicle_params, "photo_url", nil), else: vehicle_params
+      case {action, uploaded_urls} do
+        # If a new image is uploaded
+        {_, [url | _]} ->
+          Map.put(vehicle_params, "photo_url", url)
+
+        # If editing and user requested image removal
+        {:edit, []} when socket.assigns.remove_vehicle_image ->
+          Map.put(vehicle_params, "photo_url", nil)
+
+        # Otherwise, just keep params as-is
+        _ ->
+          vehicle_params
       end
 
-    case Assets.update_vehicle(socket.assigns.vehicle, vehicle_params) do
+    result =
+      case action do
+        :edit -> Assets.update_vehicle(socket.assigns.vehicle, vehicle_params)
+        :new  -> Assets.create_vehicle(vehicle_params, socket.assigns.current_user_id)
+      end
+
+    case result do
       {:ok, vehicle} ->
         notify_parent({:saved, vehicle})
 
         {:noreply,
          socket
-         |> put_flash(:info, "Vehicle updated successfully")
+         |> put_flash(:info, flash_message(action))
          |> push_patch(to: socket.assigns.patch)}
 
       {:error, %Ecto.Changeset{} = changeset} ->
@@ -152,37 +168,8 @@ defmodule SpatoWeb.VehicleLive.FormComponent do
     end
   end
 
-  defp save_vehicle(socket, :new, vehicle_params) do
-    # Handle image upload
-    uploaded_urls =
-      consume_uploaded_entries(socket, :vehicle_image, fn %{path: path}, _entry ->
-        uploads_dir = Path.expand("./uploads")
-        File.mkdir_p!(uploads_dir)
-        dest = Path.join(uploads_dir, Path.basename(path))
-        File.cp!(path, dest)
-        {:ok, "/uploads/#{Path.basename(dest)}"}
-      end)
-
-    vehicle_params =
-      case uploaded_urls do
-        [url | _] -> Map.put(vehicle_params, "photo_url", url)
-        _ -> vehicle_params
-      end
-
-    # Use create_vehicle/2 with current_user_id
-    case Assets.create_vehicle(vehicle_params, socket.assigns.current_user_id) do
-      {:ok, vehicle} ->
-        notify_parent({:saved, vehicle})
-
-        {:noreply,
-         socket
-         |> put_flash(:info, "Vehicle created successfully")
-         |> push_patch(to: socket.assigns.patch)}
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, form: to_form(changeset))}
-    end
-  end
+  defp flash_message(:edit), do: "Vehicle updated successfully"
+  defp flash_message(:new),  do: "Kenderaan berjaya ditambah"
 
   defp notify_parent(msg), do: send(self(), {__MODULE__, msg})
 end
