@@ -22,7 +22,7 @@ defmodule SpatoWeb.DepartmentLive.Index do
 
   @impl true
   def handle_params(params, _url, socket) do
-    {:noreply, apply_action(socket, socket.assigns.live_action, params)}
+    {:noreply, apply_action(assign(socket, :live_action, socket.assigns.live_action), socket.assigns.live_action, params)}
   end
 
   # Modal actions
@@ -91,12 +91,13 @@ defmodule SpatoWeb.DepartmentLive.Index do
 
           <!-- Middle Section: Add User Button -->
           <section class="mb-4 flex justify-end">
-            <.button
-              phx-click="show_department_modal"
-              class="inline-flex items-center justify-center rounded-md border border-transparent bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-800 focus:ring-offset-2"
-            >
-              Tambah Jabatan
-            </.button>
+            <div class="flex items-center gap-x-3">
+              <.link
+                patch={~p"/admin/departments/new"}
+                class="inline-flex items-center justify-center rounded-md border border-transparent bg-gray-900 px-4 py-2 text-sm font-semibold leading-6 text-white transition duration-150 ease-in-out hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-800 focus:ring-offset-2">
+                Tambah Jabatan
+              </.link>
+            </div>
           </section>
 
           <!-- Bottom Section: User Table -->
