@@ -1,34 +1,32 @@
 defmodule SpatoWeb.MeetingRoomLive.Index do
   use SpatoWeb, :live_view
   import SpatoWeb.Components.Sidebar
+  import Phoenix.LiveView.JS
 
   alias Spato.Assets
   alias Spato.Assets.MeetingRoom
 
   on_mount {SpatoWeb.UserAuth, :ensure_authenticated}
 
-  @page_size 10
-
   @impl true
-def mount(_params, _session, socket) do
-  {:ok,
-   socket
-   |> assign(:page_title, "Listing Meeting rooms")
-   |> assign(:active_tab, "meeting_rooms")
-   |> assign(:sidebar_open, true)
-   |> assign(:all_rooms, [])
-   |> assign(:page, 1)
-   |> assign(:page_size, @page_size)
-   |> assign(:total_count, 0)
-   |> assign(:keyword, "")
-   |> assign(:filter_status, "")
-   |> assign(:edit_modal_open, false)
-   |> assign(:modal_open, false)
-   |> assign(:edit_room, nil)
-   |> assign(:edit_room_changeset, nil)
-   |> assign(:new_room_changeset, to_form(Assets.change_meeting_room(%MeetingRoom{})))}
-end
+  def mount(_params, _session, socket) do
+    rooms = Assets.list_meeting_rooms()
 
+    {:ok,
+     socket
+     |> assign(:page_title, "Listing Meeting rooms")
+     |> assign(:active_tab, "meeting_rooms")
+     |> assign(:sidebar_open, true)
+     |> assign(:all_rooms, rooms)
+     |> stream(:meeting_rooms, rooms)
+     |> assign(:keyword, "")
+     |> assign(:filter_status, "")
+     |> assign(:edit_modal_open, false)
+     |> assign(:modal_open, false)
+     |> assign(:edit_room, nil)
+     |> assign(:edit_room_changeset, nil)
+     |> assign(:new_room_changeset, to_form(Assets.change_meeting_room(%MeetingRoom{})))}
+  end
 
   # Sidebar toggle
   @impl true
@@ -36,35 +34,36 @@ end
     {:noreply, update(socket, :sidebar_open, &(!&1))}
   end
 
-  # Search
- # Search
+# Search input
 @impl true
 def handle_event("search", %{"keyword" => keyword}, socket) do
+  rooms =
+    Spato.Assets.list_meeting_rooms_filtered(socket.assigns.filter_status || "", keyword || "")
+
   {:noreply,
-   push_patch(socket,
-     to:
-       ~p"/meeting_rooms?page=1&status=#{socket.assigns.filter_status}&keyword=#{keyword}"
-   )}
+   socket
+   |> assign(:keyword, keyword)
+   |> assign(:all_rooms, rooms)
+   |> stream(:meeting_rooms, rooms, reset: true)}
 end
 
-
-  # Filter
-  # Filter
+# Status filter
 @impl true
 def handle_event("filter", %{"status" => status}, socket) do
+  rooms =
+    Spato.Assets.list_meeting_rooms_filtered(status, socket.assigns.keyword || "")
+
   {:noreply,
-   push_patch(socket,
-     to:
-       ~p"/meeting_rooms?page=1&status=#{status}&keyword=#{socket.assigns.keyword}"
-   )}
+   socket
+   |> assign(:filter_status, status)
+   |> assign(:all_rooms, rooms)
+   |> stream(:meeting_rooms, rooms, reset: true)}
 end
-def handle_event("ignore", _, socket), do: {:noreply, socket}
 
 
-  # Pagination
 
 
-  # Modal tambah bilik
+  # Open modal tambah bilik
   @impl true
   def handle_event("open_modal", _, socket), do: {:noreply, assign(socket, :modal_open, true)}
   def handle_event("close_modal", _, socket), do: {:noreply, assign(socket, :modal_open, false)}
@@ -86,7 +85,7 @@ def handle_event("ignore", _, socket), do: {:noreply, socket}
     end
   end
 
-  # Modal edit
+  # Open edit modal
   @impl true
   def handle_event("edit_room", %{"id" => id}, socket) do
     room = Assets.get_meeting_room!(id)
@@ -98,8 +97,10 @@ def handle_event("ignore", _, socket), do: {:noreply, socket}
      |> assign(:edit_modal_open, true)}
   end
 
+  # Close edit modal
   def handle_event("close_edit_modal", _, socket), do: {:noreply, assign(socket, :edit_modal_open, false)}
 
+  # Update room
   @impl true
   def handle_event("update_room", %{"meeting_room" => room_params}, socket) do
     case Assets.update_meeting_room(socket.assigns.edit_room, room_params) do
@@ -116,36 +117,8 @@ def handle_event("ignore", _, socket), do: {:noreply, socket}
     end
   end
 
-  @impl true
-  def handle_params(params, _url, socket) do
-    page = Map.get(params, "page", "1") |> String.to_integer()
-    status = Map.get(params, "status", "")
-    keyword = Map.get(params, "keyword", socket.assigns.keyword || "")
 
-    rooms = Assets.list_meeting_rooms_filtered(status, keyword, page, socket.assigns.page_size)
-    total_count = Assets.count_meeting_rooms_filtered(status, keyword)
-
-    # Kira summary guna semua bilik (tanpa pagination)
-  all_for_summary = Assets.list_meeting_rooms_filtered(status, keyword, 1, 100_000)
-
-  summary_counts = %{
-    total: length(all_for_summary),
-    tersedia: Enum.count(all_for_summary, &(&1.status == "Tersedia")),
-    maintenance: Enum.count(all_for_summary, &(&1.status == "Dalam Penyelenggaraan")),
-    booked: Enum.count(all_for_summary, &(&1.status == "booked"))
-  }
-    {:noreply,
-     socket
-     |> assign(:page, page)
-     |> assign(:filter_status, status)
-     |> assign(:keyword, keyword)
-     |> assign(:all_rooms, rooms)
-     |> assign(:total_count, total_count)
-     |> assign(:summary_counts, summary_counts)
-     |> stream(:meeting_rooms, rooms, reset: true)}
-  end
-
-
+  # Render function tetap sama, boleh copy dari kod lama awak
   @impl true
   def render(assigns) do
     ~H"""
@@ -204,29 +177,31 @@ def handle_event("ignore", _, socket), do: {:noreply, socket}
           </button>
         </div>
 
-       <!-- Summary Cards -->
-<div class="grid grid-cols-4 gap-6 mb-8">
-  <div class="bg-white shadow-md rounded-lg p-6 text-lg">
-    <p class="text-gray-500 text-sm">Jumlah Bilik Mesyuarat Berdaftar</p>
-    <p class="text-2xl font-bold text-gray-800"><%= @summary_counts.total %></p>
-  </div>
-
-  <div class="bg-white shadow-md rounded-lg p-6 text-lg">
-    <p class="text-gray-500 text-sm">Bilik Mesyuarat Tersedia</p>
-    <p class="text-2xl font-bold text-green-600"><%= @summary_counts.tersedia %></p>
-  </div>
-
-  <div class="bg-white shadow-md rounded-lg p-6 text-lg">
-    <p class="text-gray-500 text-sm">Dalam Penyelenggaraan</p>
-    <p class="text-2xl font-bold text-green-600"><%= @summary_counts.maintenance %></p>
-  </div>
-
-  <div class="bg-white shadow-md rounded-lg p-6 text-lg">
-    <p class="text-gray-500 text-sm">Bilik Mesyuarat Aktif</p>
-    <p class="text-2xl font-bold text-red-600"><%= @summary_counts.booked %></p>
-  </div>
-</div>
-
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-4 gap-6 mb-8">
+          <div class="bg-white shadow-md rounded-lg p-6 text-lg">
+            <p class="text-gray-500 text-sm">Jumlah Bilik Mesyuarat Berdaftar</p>
+            <p class="text-2xl font-bold text-gray-800"><%= length(@all_rooms) %></p>
+          </div>
+          <div class="bg-white shadow-md rounded-lg p-6 text-lg">
+            <p class="text-gray-500 text-sm">Bilik Mesyuarat Tersedia</p>
+            <p class="text-2xl font-bold text-green-600">
+              <%= Enum.count(@all_rooms, &(&1.status == "Tersedia")) %>
+            </p>
+          </div>
+          <div class="bg-white shadow-md rounded-lg p-6 text-lg">
+            <p class="text-gray-500 text-sm">Dalam Penyelenggaraan</p>
+            <p class="text-2xl font-bold text-green-600">
+              <%= Enum.count(@all_rooms, &(&1.status == "Dalam Penyelenggaraan")) %>
+            </p>
+          </div>
+          <div class="bg-white shadow-md rounded-lg p-6 text-lg">
+            <p class="text-gray-500 text-sm">Bilik Mesyuarat Aktif</p>
+            <p class="text-2xl font-bold text-red-600">
+              <%= Enum.count(@all_rooms, &(&1.status == "booked")) %>
+            </p>
+          </div>
+        </div>
 
       <form phx-change="search" class="flex items-center justify-between mb-4 space-x-4">
   <input
@@ -289,7 +264,7 @@ def handle_event("ignore", _, socket), do: {:noreply, socket}
           <!-- Ditambah Oleh -->
           <td class="px-4 py-3 text-center border-b">
             Pengguna ID: <%= room.created_by_user_id %>
-            <% # kalau ada preload: <%= room.user.name %> %>
+            <%# kalau ada preload: <%= room.user.name %> %>
           </td>
 
          <!-- Tarikh & Masa -->
@@ -329,39 +304,6 @@ def handle_event("ignore", _, socket), do: {:noreply, socket}
     </tbody>
   </table>
 </div>
-
-<!-- Pagination buttons -->
-<div class="flex justify-between mt-4 items-center">
-  <!-- Prev button -->
-  <.link
-    patch={~p"/meeting_rooms?page=#{@page - 1}&status=#{@filter_status}&keyword=#{@keyword}"}
-    class={
-      "px-4 py-2 rounded " <>
-      if @page == 1, do: "bg-gray-300 text-gray-500 cursor-not-allowed", else: "bg-gray-200 hover:bg-gray-300"
-    }
-    aria-disabled={@page == 1}
-  >
-    Prev
-  </.link>
-
-  <!-- Page info -->
-  <span>
-    Page <%= @page %> of <%= Float.ceil(@total_count / @page_size) |> trunc() %>
-  </span>
-
-  <!-- Next button -->
-  <.link
-    patch={~p"/meeting_rooms?page=#{@page + 1}&status=#{@filter_status}&keyword=#{@keyword}"}
-    class={
-      "px-4 py-2 rounded " <>
-      if @page * @page_size >= @total_count, do: "bg-gray-300 text-gray-500 cursor-not-allowed", else: "bg-gray-200 hover:bg-gray-300"
-    }
-    aria-disabled={@page * @page_size >= @total_count}
-  >
-    Next
-  </.link>
-</div>
-
 
 <%= if @edit_modal_open do %>
   <div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
