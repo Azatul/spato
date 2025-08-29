@@ -51,6 +51,13 @@ defmodule SpatoWeb.UserProfileLive.ShowComponent do
           <p><b>No. Telefon:</b> <%= @user_profile.phone_number || "Belum diisi" %></p>
           <p><b>Alamat:</b> <%= @user_profile.address || "Belum diisi" %></p>
           <p><b>Peranan:</b> <%= if @user && @user.role, do: UserProfile.human_role(@user.role), else: "Belum diisi" %></p>
+          <p><b>Aktif pada:</b>
+            <%= if @user_profile.last_seen_at do %>
+              <%= Calendar.strftime(@user_profile.last_seen_at, "%d/%m/%Y %H:%M") %>
+            <% else %>
+              Belum diisi
+            <% end %>
+          </p>
           <p><b>Emel:</b> <%= @user && @user.email || "Belum diisi" %></p>
         </div>
       <% else %>
