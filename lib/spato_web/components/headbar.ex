@@ -64,13 +64,11 @@ defmodule SpatoWeb.Components.Headbar do
           {Spato.Accounts.User.display_role(@current_user)}
         </span>
 
-
         <details class="relative group">
           <summary class="list-none cursor-pointer flex items-center gap-2 select-none">
             <span class="hidden sm:inline text-sm font-medium text-gray-900">
               {Spato.Accounts.User.display_name(@current_user)}
             </span>
-
 
             <img
               src={
@@ -80,11 +78,26 @@ defmodule SpatoWeb.Components.Headbar do
                 end
               }
               alt="Avatar"
-              class="w-9 h-9 rounded-full object-cover border border-gray-200"
+              class="w-9 h-9 rounded-full object-cover border border-gray-300"
             />
           </summary>
+          <ul class="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-lg p-2">
+            <!-- Avatar section -->
+            <div class="flex justify-center mb-2">
+              <img
+                :if={Map.get(@current_user, :user_profile)}
+                src={
+                  case Map.get(@current_user, :user_profile) do
+                    %{profile_picture_url: url} when is_binary(url) and byte_size(url) > 0 -> url
+                    _ -> Map.get(@current_user, :avatar_url) || "/images/default-image.jpg"
+                  end
+                }
+                alt="Avatar"
+                class="w-12 h-12 rounded-full object-cover border border-gray-300"
+              />
+            </div>
 
-          <ul class="absolute right-0 mt-2 w-52 bg-white border border-gray-200 rounded-lg shadow-lg p-2">
+            <!-- Menu items -->
             <li>
               <.link
                 patch="/users/settings"
@@ -99,7 +112,7 @@ defmodule SpatoWeb.Components.Headbar do
                 method="delete"
                 class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-100 text-red-600"
               >
-                <.icon name="hero-arrow-left-on-rectangle-solid" class="w-4 h-4" /> Log Keluar
+                <.icon name="hero-arrow-right-on-rectangle-solid" class="w-4 h-4" /> Log Keluar
               </.link>
             </li>
           </ul>

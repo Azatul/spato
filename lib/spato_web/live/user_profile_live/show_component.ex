@@ -10,7 +10,7 @@ defmodule SpatoWeb.UserProfileLive.ShowComponent do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="p-4">
+    <div class="p-4 flex flex-col items-center">
       <!-- Header -->
       <h2 class="text-lg font-bold mb-2">
         <%= if @user_profile && @user_profile.full_name, do: @user_profile.full_name, else: "Belum diisi" %>
@@ -21,7 +21,7 @@ defmodule SpatoWeb.UserProfileLive.ShowComponent do
 
       <!-- Profile Picture -->
       <%= if @user_profile && @user_profile.profile_picture_url do %>
-        <div class="mb-4">
+        <div class="relative w-40 h-40 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
           <img src={@user_profile.profile_picture_url}
                alt="Profile picture"
                class="w-full max-w-sm rounded-md shadow" />

@@ -78,7 +78,7 @@ defmodule SpatoWeb.VehicleLive.FormComponent do
             <%= if @action == :new do %>
               Simpan Kenderaan
             <% else %>
-              Kemas Kini Kenderaan
+              Kemaskini Kenderaan
             <% end %>
           </.button>
         </:actions>

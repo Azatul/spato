@@ -9,7 +9,7 @@ defmodule SpatoWeb.EquipmentLive.FormComponent do
     <div>
       <.header>
         {@title}
-        <:subtitle>Use this form to manage equipment records in your database.</:subtitle>
+        <:subtitle>Gunakan borang ini untuk menguruskan rekod peralatan dalam sistem.</:subtitle>
       </.header>
 
       <.simple_form
@@ -47,10 +47,26 @@ defmodule SpatoWeb.EquipmentLive.FormComponent do
           </div>
         </div>
 
-        <.input field={@form[:name]} type="text" label="Nama" />
-        <.input field={@form[:type]} type="text" label="Jenis" />
-        <.input field={@form[:serial_number]} type="text" label="No. Siri" />
-        <.input field={@form[:quantity_available]} type="number" label="Kuantiti Tersedia" />
+        <.input field={@form[:name]} type="text" label="Nama Peralatan" placeholder="e.g. McBook Pro" />
+        <.input
+          field={@form[:type]}
+          type="select"
+          label="Jenis"
+          options={[
+            {"Laptop / Notebook", "laptop"},
+            {"Projektor", "projector"},
+            {"Projektor Screen", "projector_screen"},
+            {"Printer Mudah Alih", "printer"},
+            {"Kamera", "kamera"},
+            {"Speaker", "speaker"},
+            {"Laser Pointer", "laser_pointer"},
+            {"Extension Cord", "extension_cord"},
+            {"Whiteboard / Flipchart", "whiteboard"}
+          ]}
+          prompt="Pilih jenis peralatan"
+        />
+        <.input field={@form[:serial_number]} type="text" label="No. Siri" placeholder="e.g. 1234567890" />
+        <.input field={@form[:quantity_available]} type="number" label="Kuantiti Tersedia" placeholder="e.g. 1" />
         <.input
           field={@form[:status]}
           type="select"
@@ -61,7 +77,13 @@ defmodule SpatoWeb.EquipmentLive.FormComponent do
           ]}
         />
         <:actions>
-          <.button phx-disable-with="Menyimpan...">Simpan Peralatan</.button>
+          <.button phx-disable-with={@action == :new && "Menyimpan..." || "Mengemaskini..."}>
+            <%= if @action == :new do %>
+              Simpan Peralatan
+            <% else %>
+              Kemaskini Peralatan
+            <% end %>
+          </.button>
         </:actions>
       </.simple_form>
     </div>

@@ -205,6 +205,11 @@ defmodule Spato.Accounts do
   def delete_department(%Department{} = department), do: Repo.delete(department)
   def change_department(%Department{} = department, attrs \\ %{}), do: Department.changeset(department, attrs)
 
+  def count_departments do
+    Repo.aggregate(Department, :count, :id)
+  end
+
+
   ## ----------------------
   ## UserProfile functions
   ## ----------------------

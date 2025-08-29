@@ -199,9 +199,20 @@ defmodule SpatoWeb.EquipmentLive.Index do
             )
           end}>
           <:col :let={equipment} label="ID"><%= equipment.id %></:col>
-          <:col :let={equipment} label="Nama">{equipment.name}</:col>
-          <:col :let={equipment} label="Jenis">{equipment.type}</:col>
-          <:col :let={equipment} label="No. Siri">{equipment.serial_number}</:col>
+          <:col :let={equipment} label="Peralatan">
+              <div class="flex flex-col">
+                <!-- Equipment Name -->
+                <div class="font-semibold text-gray-900">
+                  <%= equipment.name %>
+                </div>
+
+                <!-- Equipment Serial Number -->
+                <div class="text-sm text-gray-500">
+                  <%= equipment.serial_number %>
+                </div>
+              </div>
+            </:col>
+          <:col :let={equipment} label="Jenis">{Equipment.human_type(equipment.type)}</:col>
           <:col :let={equipment} label="Kuantiti Tersedia">{equipment.quantity_available}</:col>
           <:col :let={equipment} label="Ditambah Oleh">
               <%= equipment.created_by && equipment.created_by.user_profile && equipment.created_by.user_profile.full_name || "N/A" %>
@@ -209,7 +220,18 @@ defmodule SpatoWeb.EquipmentLive.Index do
           <:col :let={equipment} label="Tarikh & Masa Kemaskini">
               <%= Calendar.strftime(equipment.updated_at, "%d/%m/%Y %H:%M") %>
           </:col>
-          <:col :let={equipment} label="Status">{Equipment.human_status(equipment.status)}</:col>
+          <:col :let={equipment} label="Status">
+          <span class={
+            "px-1.5 py-0.5 rounded-full text-white text-xs font-semibold " <>
+            case equipment.status do
+              "tersedia" -> "bg-green-500"
+              "tidak_tersedia" -> "bg-red-500"
+              _ -> "bg-gray-400"
+            end
+          }>
+            <%= Spato.Assets.Equipment.human_status(equipment.status) %>
+          </span>
+          </:col>
           <:action :let={equipment}>
               <.link patch={~p"/admin/equipments/#{equipment.id}/edit"}>Kemaskini</.link>
             </:action>

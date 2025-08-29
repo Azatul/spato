@@ -22,7 +22,7 @@ defmodule SpatoWeb.EquipmentLive.ShowComponent do
 
       <.list>
         <:item title="Nama">{@equipment.name}</:item>
-        <:item title="Jenis">{@equipment.type}</:item>
+        <:item title="Jenis">{Spato.Assets.Equipment.human_type(@equipment.type)}</:item>
         <:item title="No. Siri">{@equipment.serial_number}</:item>
         <:item title="Kuantiti Tersedia">{@equipment.quantity_available}</:item>
         <:item title="Ditambah Oleh">

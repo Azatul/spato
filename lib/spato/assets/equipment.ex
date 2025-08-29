@@ -28,4 +28,15 @@ defmodule Spato.Assets.Equipment do
   def human_status("tersedia"), do: "Tersedia"
   def human_status("tidak_tersedia"), do: "Tidak Tersedia"
   def human_status(other), do: other
+
+  def human_type("laptop"), do: "Laptop / Notebook"
+  def human_type("projector"), do: "Projektor"
+  def human_type("projector_screen"), do: "Projektor Screen"
+  def human_type("printer"), do: "Printer Mudah Alih"
+  def human_type("kamera"), do: "Kamera"
+  def human_type("speaker"), do: "Speaker"
+  def human_type("laser_pointer"), do: "Laser Pointer"
+  def human_type("extension_cord"), do: "Extension Cord"
+  def human_type("whiteboard"), do: "Whiteboard / Flipchart"
+  def human_type(other), do: other
 end
