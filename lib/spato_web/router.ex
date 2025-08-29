@@ -17,6 +17,11 @@ defmodule SpatoWeb.Router do
     plug :require_authenticated_user
   end
 
+  pipeline :regular_user_auth do
+    plug :require_authenticated_user
+    plug :require_authenticated_regular_user
+  end
+
   pipeline :admin_auth do
     plug :require_authenticated_user
     plug :require_authenticated_admin
@@ -33,7 +38,7 @@ defmodule SpatoWeb.Router do
   end
 
   scope "/", SpatoWeb do
-    pipe_through [:browser, :user_auth]
+    pipe_through [:browser, :regular_user_auth]
     live "/dashboard", UserDashboardLive
     # Add more user LiveViews here
   end
