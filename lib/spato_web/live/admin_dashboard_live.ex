@@ -1,6 +1,7 @@
 defmodule SpatoWeb.AdminDashboardLive do
   use SpatoWeb, :live_view
   import SpatoWeb.Components.Sidebar
+  import SpatoWeb.Components.Headbar
 
   on_mount {SpatoWeb.UserAuth, :ensure_authenticated}
 
@@ -26,18 +27,11 @@ defmodule SpatoWeb.AdminDashboardLive do
   def render(assigns) do
     ~H"""
     <div class="flex h-screen">
-      <.sidebar
-        active_tab={@active_tab}
-        current_user={@current_user}
-        open={@sidebar_open}
-        toggle_event="toggle_sidebar"
-      />
+      <.sidebar active_tab={@active_tab} current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar"/><.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title={@page_title} />
+      <.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title={@page_title} />
 
-      <main class="flex-1 p-6 transition-all duration-300">
-
-
-    <body class="bg-gray-100 p-4 md:p-8">
-
+      <main class="flex-1 pt-16 p-6 transition-all duration-300">
+      <body class="bg-gray-100 p-4 md:p-8">
         <!-- Top Section: Today's Reservations -->
         <section class="mb-8">
             <h2 class="text-xl md:text-2xl font-bold mb-4">Tempahan hari ini</h2>

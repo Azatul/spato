@@ -5,38 +5,71 @@ defmodule SpatoWeb.UserResetPasswordLive do
 
   def render(assigns) do
     ~H"""
-    <div class="mx-auto max-w-sm">
-      <.header class="text-center">Reset Password</.header>
+    <div class="bg-[#bcd2e4] min-h-screen w-full flex items-center justify-center">
+      <div class="bg-white rounded-lg shadow-md p-8 w-full max-w-sm">
 
-      <.simple_form
-        for={@form}
-        id="reset_password_form"
-        phx-submit="reset_password"
-        phx-change="validate"
-      >
-        <.error :if={@form.errors != []}>
-          Oops, something went wrong! Please check the errors below.
-        </.error>
+        <!-- Logo + Title -->
+        <div class="flex flex-col items-center justify-center mb-6 text-center">
+          <img src={~p"/images/spato.png"} alt="Logo SPATO" class="w-72 mb-4">
+          <.header class="text-xl font-semibold text-center">Tetapkan Semula Kata Laluan</.header>
+        </div>
 
-        <.input field={@form[:password]} type="password" label="New password" required />
-        <.input
-          field={@form[:password_confirmation]}
-          type="password"
-          label="Confirm new password"
-          required
-        />
-        <:actions>
-          <.button phx-disable-with="Resetting..." class="w-full">Reset Password</.button>
-        </:actions>
-      </.simple_form>
+        <!-- Reset Password Form -->
+        <.simple_form
+          for={@form}
+          id="reset_password_form"
+          phx-submit="reset_password"
+          phx-change="validate"
+        >
+          <.error :if={@form.errors != []}>
+            Maaf, terdapat ralat! Sila semak medan di bawah.
+          </.error>
 
-      <p class="text-center text-sm mt-4">
-        <.link href={~p"/users/register"}>Register</.link>
-        | <.link href={~p"/users/log_in"}>Log in</.link>
-      </p>
+          <!-- Kata Laluan Baru -->
+          <div class="mb-4">
+            <.input
+              field={@form[:password]}
+              type="password"
+              label="Kata Laluan Baru"
+              placeholder="Masukkan kata laluan baru"
+              class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#224179]"
+              required
+            />
+          </div>
+
+          <!-- Sahkan Kata Laluan -->
+          <div class="mb-4">
+            <.input
+              field={@form[:password_confirmation]}
+              type="password"
+              label="Sahkan Kata Laluan"
+              placeholder="Sahkan kata laluan baru"
+              class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#224179]"
+              required
+            />
+          </div>
+
+          <!-- Actions: Reset Button -->
+          <:actions>
+            <.button
+              phx-disable-with="Sedang menetapkan..."
+              class="block w-full py-2 rounded-md text-white hover:bg-[#20386b] transition font-semibold bg-[#224179]"
+            >
+              Tetapkan Semula Kata Laluan
+            </.button>
+          </:actions>
+        </.simple_form>
+
+        <!-- Footer Links -->
+        <p class="text-center text-sm mt-4">
+          <.link href={~p"/users/register"} class="text-[#224179] hover:underline">Daftar Akaun</.link>
+          | <.link href={~p"/users/log_in"} class="text-[#224179] hover:underline">Log Masuk</.link>
+        </p>
+
+      </div>
     </div>
     """
-  end
+    end
 
   def mount(params, _session, socket) do
     socket = assign_user_and_token(socket, params)
