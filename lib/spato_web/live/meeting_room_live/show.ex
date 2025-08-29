@@ -27,7 +27,7 @@ def render(assigns) do
     Meeting room <%= @meeting_room.id %>
     <:subtitle>This is a meeting_room record from your database.</:subtitle>
     <:actions>
-      <.link patch={~p"/meeting_rooms/#{@meeting_room}/show/edit"} phx-click={JS.push_focus()}>
+      <.link patch={~p"/admin/meeting_rooms/#{@meeting_room}/show/edit"} phx-click={JS.push_focus()}>
         <.button>Edit meeting_room</.button>
       </.link>
     </:actions>
@@ -42,16 +42,16 @@ def render(assigns) do
   <:item title="Status">{@meeting_room.status}</:item>
 </.list>
 
-<.back navigate={~p"/meeting_rooms"}>Back to meeting_rooms</.back>
+<.back navigate={~p"/admin/meeting_rooms"}>Back to meeting_rooms</.back>
 
-<.modal :if={@live_action == :edit} id="meeting_room-modal" show on_cancel={JS.patch(~p"/meeting_rooms/#{@meeting_room}")}>
+<.modal :if={@live_action == :edit} id="meeting_room-modal" show on_cancel={JS.patch(~p"/admin/meeting_rooms/#{@meeting_room}")}>
   <.live_component
     module={SpatoWeb.MeetingRoomLive.FormComponent}
     id={@meeting_room.id}
     title={@page_title}
     action={@live_action}
     meeting_room={@meeting_room}
-    patch={~p"/meeting_rooms/#{@meeting_room}"}
+    patch={~p"/admin/meeting_rooms/#{@meeting_room}"}
   />
 </.modal>
 """

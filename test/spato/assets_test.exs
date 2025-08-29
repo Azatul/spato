@@ -3,10 +3,8 @@ defmodule Spato.AssetsTest do
 
   alias Spato.Assets
 
-
   describe "meeting_rooms" do
     alias Spato.Assets.MeetingRoom
-
     import Spato.AssetsFixtures
 
     @invalid_attrs %{name: nil, status: nil, location: nil, capacity: nil, available_facility: nil, photo_url: nil}
@@ -22,7 +20,14 @@ defmodule Spato.AssetsTest do
     end
 
     test "create_meeting_room/1 with valid data creates a meeting_room" do
-      valid_attrs = %{name: "some name", status: "some status", location: "some location", capacity: 42, available_facility: "some available_facility", photo_url: "some photo_url"}
+      valid_attrs = %{
+        name: "some name",
+        status: "some status",
+        location: "some location",
+        capacity: 42,
+        available_facility: "some available_facility",
+        photo_url: "some photo_url"
+      }
 
       assert {:ok, %MeetingRoom{} = meeting_room} = Assets.create_meeting_room(valid_attrs)
       assert meeting_room.name == "some name"
@@ -39,7 +44,14 @@ defmodule Spato.AssetsTest do
 
     test "update_meeting_room/2 with valid data updates the meeting_room" do
       meeting_room = meeting_room_fixture()
-      update_attrs = %{name: "some updated name", status: "some updated status", location: "some updated location", capacity: 43, available_facility: "some updated available_facility", photo_url: "some updated photo_url"}
+      update_attrs = %{
+        name: "some updated name",
+        status: "some updated status",
+        location: "some updated location",
+        capacity: 43,
+        available_facility: "some updated available_facility",
+        photo_url: "some updated photo_url"
+      }
 
       assert {:ok, %MeetingRoom{} = meeting_room} = Assets.update_meeting_room(meeting_room, update_attrs)
       assert meeting_room.name == "some updated name"
@@ -65,10 +77,11 @@ defmodule Spato.AssetsTest do
     test "change_meeting_room/1 returns a meeting_room changeset" do
       meeting_room = meeting_room_fixture()
       assert %Ecto.Changeset{} = Assets.change_meeting_room(meeting_room)
+    end
+  end   # <<== INI yang hilang
 
   describe "vehicles" do
     alias Spato.Assets.Vehicle
-
     import Spato.AssetsFixtures
 
     @invalid_attrs %{name: nil, status: nil, type: nil, photo_url: nil, vehicle_model: nil, plate_number: nil}
@@ -84,7 +97,14 @@ defmodule Spato.AssetsTest do
     end
 
     test "create_vehicle/1 with valid data creates a vehicle" do
-      valid_attrs = %{name: "some name", status: "some status", type: "some type", photo_url: "some photo_url", vehicle_model: "some vehicle_model", plate_number: "some plate_number"}
+      valid_attrs = %{
+        name: "some name",
+        status: "some status",
+        type: "some type",
+        photo_url: "some photo_url",
+        vehicle_model: "some vehicle_model",
+        plate_number: "some plate_number"
+      }
 
       assert {:ok, %Vehicle{} = vehicle} = Assets.create_vehicle(valid_attrs)
       assert vehicle.name == "some name"
@@ -101,7 +121,14 @@ defmodule Spato.AssetsTest do
 
     test "update_vehicle/2 with valid data updates the vehicle" do
       vehicle = vehicle_fixture()
-      update_attrs = %{name: "some updated name", status: "some updated status", type: "some updated type", photo_url: "some updated photo_url", vehicle_model: "some updated vehicle_model", plate_number: "some updated plate_number"}
+      update_attrs = %{
+        name: "some updated name",
+        status: "some updated status",
+        type: "some updated type",
+        photo_url: "some updated photo_url",
+        vehicle_model: "some updated vehicle_model",
+        plate_number: "some updated plate_number"
+      }
 
       assert {:ok, %Vehicle{} = vehicle} = Assets.update_vehicle(vehicle, update_attrs)
       assert vehicle.name == "some updated name"

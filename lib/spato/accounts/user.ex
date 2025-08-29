@@ -8,6 +8,7 @@ defmodule Spato.Accounts.User do
     field :hashed_password, :string, redact: true
     field :current_password, :string, virtual: true, redact: true
     field :confirmed_at, :utc_datetime
+    field :role, :string
     has_many :meeting_rooms_created, Spato.Assets.MeetingRoom, foreign_key: :created_by_user_id
     has_one :user_profile, Spato.Accounts.UserProfile, on_delete: :delete_all
     has_many :vehicles, Spato.Assets.Vehicle, on_delete: :delete_all
