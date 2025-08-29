@@ -83,11 +83,6 @@ defmodule SpatoWeb.Components.Sidebar do
                       Tempahan Peralatan
                     </.sidebar_link>
                   </li>
-                  <li>
-                    <.sidebar_link patch="/history" active={@active_tab == "history"} open={@open}>
-                      Sejarah Tempahan
-                    </.sidebar_link>
-                  </li>
                 </ul>
               </details>
             <% else %>
@@ -98,6 +93,26 @@ defmodule SpatoWeb.Components.Sidebar do
             <% end %>
           </li>
 
+          <!-- Sejarah Tempahan (only for users, mid menu) -->
+          <%= if @current_user.role == "user" do %>
+            <li class="mt-auto">
+                <%= if @open do %>
+                  <.link
+                    patch="/user/history"
+                    class={[
+                      "flex items-center gap-2 px-4 py-2 rounded-md hover:bg-gray-200 transition-all duration-300",
+                      @active_tab == "user_history" && "bg-gray-300 font-bold"
+                    ]}>
+                    <.icon name="hero-clock" class="w-5 h-5" />
+                    Sejarah Tempahan
+                  </.link>
+                <% else %>
+                  <div class="flex items-center justify-center px-4 py-2" title="Sejarah Tempahan">
+                    <.icon name="hero-clock" class="w-5 h-5" />
+                  </div>
+                <% end %>
+              </li>
+          <% end %>
 
           <!-- Admin Menu -->
             <%= if is_admin?(@current_user) do %>
@@ -175,6 +190,25 @@ defmodule SpatoWeb.Components.Sidebar do
                 <% else %>
                   <div class="flex items-center justify-center px-4 py-2" title="Senarai Jabatan">
                     <.icon name="hero-building-office-2" class="w-5 h-5" />
+                  </div>
+                <% end %>
+              </li>
+
+              <!-- Sejarah Tempahan at very bottom for admins -->
+              <li class="mt-auto">
+                <%= if @open do %>
+                  <.link
+                    patch="/admin/history"
+                    class={[
+                      "flex items-center gap-2 px-4 py-2 rounded-md hover:bg-gray-200 transition-all duration-300",
+                      @active_tab == "admin_history" && "bg-gray-300 font-bold"
+                    ]}>
+                    <.icon name="hero-clock" class="w-5 h-5" />
+                    Sejarah Tempahan
+                  </.link>
+                <% else %>
+                  <div class="flex items-center justify-center px-4 py-2" title="Sejarah Tempahan">
+                    <.icon name="hero-clock" class="w-5 h-5" />
                   </div>
                 <% end %>
               </li>
