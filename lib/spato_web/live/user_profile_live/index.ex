@@ -294,6 +294,7 @@ defmodule SpatoWeb.UserProfileLive.Index do
         </section>
 
          <!-- Pagination -->
+          <%= if @filtered_count > 0 do %>
           <div class="relative flex items-center mt-4">
             <!-- Previous button -->
             <div class="flex-1">
@@ -327,6 +328,7 @@ defmodule SpatoWeb.UserProfileLive.Index do
               </.link>
             </div>
           </div>
+          <% end %>
 
         <!-- Modals (Show & Registration) -->
         <.modal :if={@live_action == :show} id="user-profile-show-modal" show on_cancel={JS.patch(~p"/admin/user_profiles")}>

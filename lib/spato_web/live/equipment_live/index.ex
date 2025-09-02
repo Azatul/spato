@@ -243,6 +243,7 @@ defmodule SpatoWeb.EquipmentLive.Index do
           </section>
 
         <!-- Pagination -->
+          <%= if @filtered_count > 0 do %>
           <div class="relative flex items-center mt-4">
             <!-- Previous button -->
             <div class="flex-1">
@@ -276,6 +277,7 @@ defmodule SpatoWeb.EquipmentLive.Index do
               </.link>
             </div>
           </div>
+          <% end %>
 
           <!-- Modals -->
           <.modal :if={@live_action in [:new, :edit]} id="equipment-modal" show on_cancel={JS.patch(~p"/admin/equipments")}>
