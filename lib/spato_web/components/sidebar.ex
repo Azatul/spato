@@ -9,11 +9,12 @@ defmodule SpatoWeb.Components.Sidebar do
 
   def sidebar(assigns) do
     ~H"""
-    <aside class={[
-      "h-full bg-gray-100 border-r border-gray-200 p-4 flex flex-col transition-all duration-300 overflow-hidden",
-      @open && "w-64",
-      !@open && "w-20"
-    ]}>
+      <aside class={[
+        "h-full bg-white-100 border-r border-gray-200 p-4 flex flex-col transition-all duration-300 overflow-hidden",
+        @open && "w-64",
+        !@open && "w-20"
+      ]}>
+
       <!-- Logo -->
       <div class="flex items-center transition-all duration-300 cursor-pointer h-16 px-3"
            phx-click={@toggle_event} title="Toggle sidebar">
