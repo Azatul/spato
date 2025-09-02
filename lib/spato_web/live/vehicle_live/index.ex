@@ -121,11 +121,12 @@ defmodule SpatoWeb.VehicleLive.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="flex h-screen overflow-hidden">
+      <div class="flex h-screen overflow-hidden">
       <.sidebar active_tab={@active_tab} current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar"/>
+      <div class="flex flex-col flex-1">
       <.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title={@page_title} />
 
-      <main class="flex-1 pt-20 p-6 transition-all duration-300 overflow-y-auto bg-gray-100">
+      <main class="flex-1 overflow-y-auto pt-20 p-6 transition-all duration-300 bg-gray-100">
       <section class="mb-4">
           <h1 class="text-xl font-bold mb-1">Urus Kenderaan</h1>
           <p class="text-md text-gray-500 mb-4">Semak dan urus semua kenderaan dalam sistem</p>
@@ -319,6 +320,7 @@ defmodule SpatoWeb.VehicleLive.Index do
           </.modal>
         </section>
       </main>
+    </div>
     </div>
     """
   end

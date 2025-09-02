@@ -245,6 +245,25 @@ defmodule SpatoWeb.UserAuth do
     end
   end
 
+  def require_authenticated_regular_user(conn, _opts) do
+    user = conn.assigns.current_user
+
+    cond do
+      user == nil ->
+        conn
+        |> Phoenix.Controller.redirect(to: "/users/log_in")
+        |> halt()
+
+      user.role == "admin" ->
+        conn
+        |> Phoenix.Controller.redirect(to: "/admin/dashboard")
+        |> halt()
+
+      true ->
+        conn
+    end
+  end
+
   defp put_token_in_session(conn, token) do
     conn
     |> put_session(:user_token, token)

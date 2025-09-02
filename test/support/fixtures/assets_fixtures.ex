@@ -22,4 +22,23 @@ defmodule Spato.AssetsFixtures do
 
     vehicle
   end
+
+  @doc """
+  Generate a equipment.
+  """
+  def equipment_fixture(attrs \\ %{}) do
+    {:ok, equipment} =
+      attrs
+      |> Enum.into(%{
+        name: "some name",
+        photo_url: "some photo_url",
+        quantity_available: 42,
+        serial_number: "some serial_number",
+        status: "some status",
+        type: "some type"
+      })
+      |> Spato.Assets.create_equipment()
+
+    equipment
+  end
 end

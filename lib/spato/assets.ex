@@ -121,4 +121,97 @@ defmodule Spato.Assets do
   defp to_int(val) when is_integer(val), do: val
   defp to_int(val) when is_binary(val), do: String.to_integer(val)
   defp to_int(_), do: 1
+
+  # --- EQUIPMENTS ---
+  alias Spato.Assets.Equipment
+
+  def list_equipments do
+    Repo.all(Equipment)
+    |> Repo.preload([user: :user_profile, created_by: :user_profile])
+  end
+
+  def get_equipment!(id) do
+    Repo.get!(Equipment, id)
+    |> Repo.preload([user: :user_profile, created_by: :user_profile])
+  end
+
+  def create_equipment(attrs \\ %{}, admin_id) do
+    %Equipment{}
+    |> Equipment.changeset(attrs)
+    |> Ecto.Changeset.put_change(:created_by_id, admin_id)
+    |> Repo.insert()
+  end
+
+  def update_equipment(%Equipment{} = equipment, attrs) do
+    equipment
+    |> Equipment.changeset(attrs)
+    |> Repo.update()
+  end
+
+  def delete_equipment(%Equipment{} = equipment), do: Repo.delete(equipment)
+
+  def change_equipment(%Equipment{} = equipment, attrs \\ %{}), do: Equipment.changeset(equipment, attrs)
+
+  def list_equipments_paginated(params \\ %{}) do
+    page = Map.get(params, "page", 1) |> to_int()
+    search = Map.get(params, "search", "")
+    status = Map.get(params, "status", "all")
+    per_page = @per_page
+    offset = (page - 1) * per_page
+
+    # Base query
+    base_query =
+      from v in Equipment,
+        order_by: [desc: v.inserted_at]
+
+    # Status filter
+    filtered_query =
+      if status != "all" do
+        from v in base_query, where: v.status == ^status
+      else
+        base_query
+      end
+
+    # Search filter — use proper joins!
+    final_query =
+      if search != "" do
+        like_search = "%#{search}%"
+
+        from v in filtered_query,
+          left_join: u in assoc(v, :user),
+          left_join: up in assoc(u, :user_profile),
+          where:
+            ilike(v.name, ^like_search) or
+            ilike(v.type, ^like_search) or
+            ilike(v.serial_number, ^like_search) or
+            fragment("?::text LIKE ?", v.quantity_available, ^like_search),
+            distinct: v.id,
+          select: v
+      else
+        filtered_query
+      end
+
+    # Total count
+    total =
+      final_query
+      |> exclude(:order_by)
+      |> Repo.aggregate(:count, :id)
+
+    # Paginated results, preloading associations correctly
+    equipments_page =
+      final_query
+      |> limit(^per_page)
+      |> offset(^offset)
+      |> Repo.all()
+      |> Repo.preload([user: :user_profile, created_by: :user_profile])
+
+    total_pages = ceil(total / per_page)
+
+    %{
+      equipments_page: equipments_page,
+      total: total,
+      total_pages: total_pages,
+      page: page
+    }
+  end
 end
