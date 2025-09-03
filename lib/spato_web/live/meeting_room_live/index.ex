@@ -69,8 +69,8 @@ defmodule SpatoWeb.MeetingRoomLive.Index do
  defp apply_action(socket, :index, _params), do: assign(socket, page_title: "Senarai Bilik Mesyuarat", meeting_room: nil)
 
   @impl true
-  def handle_info({SpatoWeb.MeetingRoomLive.FormComponent, {:saved, meeting_room}}, socket) do
-    {:noreply, stream_insert(socket, :meeting_rooms, meeting_room)}
+  def handle_info({SpatoWeb.MeetingRoomLive.FormComponent, {:saved, _meeting_room}}, socket) do
+    {:noreply, load_meeting_rooms(socket)}
   end
 
   @impl true
@@ -116,10 +116,10 @@ defmodule SpatoWeb.MeetingRoomLive.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="flex h-screen overflow-hidden">
+      <div class="flex h-screen overflow-hidden">
       <.sidebar active_tab={@active_tab} current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar"/>
       <div class="flex flex-col flex-1">
-        <.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title={@page_title} />
+      <.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title={@page_title} />
 
         <main class="flex-1 overflow-y-auto pt-20 p-6 transition-all duration-300 bg-gray-100">
           <section class="mb-4">
@@ -150,17 +150,22 @@ defmodule SpatoWeb.MeetingRoomLive.Index do
             <% end %>
           </div>
 
-            <!-- Add Meeting Room Button -->
+            <!-- Middle Section:Add Meeting Room Button -->
             <section class="mb-4 flex justify-end">
               <.link patch={~p"/admin/meeting_rooms/new"}>
                 <.button class="bg-gray-900 text-white px-4 py-2 rounded-md hover:bg-gray-700">Tambah Bilik Mesyuarat</.button>
               </.link>
             </section>
 
-            <!-- Meeting Rooms Table -->
+            <!-- Bottom Section: Meeting Rooms Table -->
             <section class="bg-white p-4 md:p-6 rounded-xl shadow-md">
-             <!-- Search and Filter -->
-            <div class="flex flex-wrap gap-2 mt-2">
+              <div class="flex flex-col mb-4 gap-2">
+                <div class="flex items-center justify-between">
+                  <h2 class="text-lg font-semibold text-gray-900">Senarai Bilik Mesyuarat</h2>
+                </div>
+
+              <!-- Search and Filter -->
+              <div class="flex flex-wrap gap-2 mt-2">
               <form phx-change="search" class="flex-1 min-w-[200px]">
                 <input type="text" name="q" value={@search_query} placeholder="Cari nama, lokasi atau kapasiti..." class="w-full border rounded-md px-2 py-1 text-sm"/>
               </form>
@@ -174,7 +179,7 @@ defmodule SpatoWeb.MeetingRoomLive.Index do
                 </select>
               </form>
             </div>
-          </section>
+            </div>
 
           <!-- Equipments count message -->
           <div class="mb-2 text-sm text-gray-600">
@@ -185,17 +190,35 @@ defmodule SpatoWeb.MeetingRoomLive.Index do
             <% end %>
           </div>
 
+          <!-- Meeting Rooms Table -->
           <.table id="meeting_rooms" rows={@meeting_rooms_page} row_click={fn meeting_room ->
-             JS.patch(
+            JS.patch(
               ~p"/admin/meeting_rooms/#{meeting_room.id}?action=show&page=#{@page}&q=#{@search_query}&status=#{@filter_status}"
-              )
-              end}>
+            )
+          end}>
                 <:col :let={meeting_room} label="ID"><%= meeting_room.id %></:col>
                 <:col :let={meeting_room} label="Nama">{meeting_room.name}</:col>
                 <:col :let={meeting_room} label="Lokasi">{meeting_room.location}</:col>
                 <:col :let={meeting_room} label="Kapasiti">{meeting_room.capacity}</:col>
-                <:col :let={meeting_room} label="Available facility">{meeting_room.available_facility}</:col>
-                <:col :let={meeting_room} label="Status">{meeting_room.status}</:col>
+                <:col :let={meeting_room} label="Kemudahan Tersedia">{meeting_room.available_facility}</:col>
+                <:col :let={meeting_room} label="Ditambah Oleh">
+                  <%= meeting_room.created_by && meeting_room.created_by.user_profile && meeting_room.created_by.user_profile.full_name || "N/A" %>
+                </:col>
+                <:col :let={meeting_room} label="Tarikh & Masa Kemaskini">
+              <%= Calendar.strftime(meeting_room.updated_at, "%d/%m/%Y %H:%M") %>
+          </:col>
+                <:col :let={meeting_room} label="Status">
+                  <span class={
+                    "px-1.5 py-0.5 rounded-full text-white text-xs font-semibold " <>
+                    case meeting_room.status do
+                      "tersedia" -> "bg-green-500"
+                      "tidak_tersedia" -> "bg-red-500"
+                      _ -> "bg-gray-400"
+                    end
+                  }>
+                    <%= Spato.Assets.MeetingRoom.human_status(meeting_room.status) %>
+                  </span>
+                </:col>
                 <:action :let={meeting_room}>
                   <div class="sr-only">
                     <.link navigate={~p"/admin/meeting_rooms/#{meeting_room.id}"}>Show</.link>
@@ -212,9 +235,7 @@ defmodule SpatoWeb.MeetingRoomLive.Index do
                 </:action>
               </.table>
             </section>
-        </main>
-      </div>
-    </div>
+
         <!-- Pagination -->
           <%= if @filtered_count > 0 do %>
           <div class="relative flex items-center mt-4">
@@ -252,20 +273,31 @@ defmodule SpatoWeb.MeetingRoomLive.Index do
           </div>
           <% end %>
 
-    <.modal :if={@live_action in [:new, :edit]} id="meeting_room-modal" show on_cancel={JS.patch(~p"/admin/meeting_rooms")}>
-      <.live_component
-        module={SpatoWeb.MeetingRoomLive.FormComponent}
-        id={@meeting_room.id || :new}
-        title={@page_title}
-        action={@live_action}
-        meeting_room={@meeting_room}
-        current_user_id={@current_user.id}
-        patch={~p"/admin/meeting_rooms"}
-      />
-    </.modal>
-    <.modal :if={@live_action == :show} id="meeting_room-show-modal" show on_cancel={JS.patch(~p"/admin/meeting_rooms?page=#{@page}&q=#{@search_query}&status=#{@filter_status}")}>
-            <.live_component module={SpatoWeb.MeetingRoomLive.ShowComponent} id={@meeting_room.id} meeting_room={@meeting_room} />
+          <!-- Modals -->
+          <.modal :if={@live_action in [:new, :edit]} id="meeting_room-modal" show on_cancel={JS.patch(~p"/admin/meeting_rooms")}>
+            <.live_component
+              module={SpatoWeb.MeetingRoomLive.FormComponent}
+              id={@meeting_room.id || :new}
+              title={@page_title}
+              action={@live_action}
+              meeting_room={@meeting_room}
+              current_user={@current_user}
+              current_user_id={@current_user.id}
+              patch={~p"/admin/meeting_rooms"}
+            />
           </.modal>
+
+          <.modal :if={@live_action == :show} id="meeting_room-show-modal" show on_cancel={JS.patch(~p"/admin/meeting_rooms?page=#{@page}&q=#{@search_query}&status=#{@filter_status}")}>
+            <.live_component module={SpatoWeb.MeetingRoomLive.ShowComponent}
+            id={@meeting_room.id}
+              meeting_room={@meeting_room}
+            />
+          </.modal>
+
+          </section>
+       </main>
+      </div>
+    </div>
     """
   end
 end

@@ -217,79 +217,35 @@ defmodule Spato.Assets do
 
   alias Spato.Assets.MeetingRoom
 
-  @doc """
-  Returns the list of meeting_rooms.
+   # --- CRUD FUNCTIONS ---
 
-  ## Examples
-
-      iex> list_meeting_rooms()
-      [%MeetingRoom{}, ...]
-
-  """
   def list_meeting_rooms do
     Repo.all(MeetingRoom)
+    |> Repo.preload([user: :user_profile, created_by: :user_profile])
   end
 
+  def get_meeting_room!(id) do
+    Repo.get!(MeetingRoom, id)
+    |> Repo.preload([user: :user_profile, created_by: :user_profile])
+  end
 
-  def get_meeting_room!(id), do: Repo.get!(MeetingRoom, id)
+  def create_meeting_room(attrs \\ %{}, admin_id) do
+    attrs_with_creator = Map.put(attrs, "created_by_id", admin_id)
 
-  @doc """
-  Creates a meeting_room.
-
-  ## Examples
-
-      iex> create_meeting_room(%{field: value})
-      {:ok, %MeetingRoom{}}
-
-      iex> create_meeting_room(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def create_meeting_room(attrs \\ %{}, current_user) do
     %MeetingRoom{}
-    |> MeetingRoom.changeset(attrs)
-    |> Ecto.Changeset.put_change(:user_id, current_user.id)
-    |> Ecto.Changeset.put_change(:created_by_id, current_user.id)
+    |> MeetingRoom.changeset(attrs_with_creator)
     |> Repo.insert()
   end
 
-  def update_meeting_room(%MeetingRoom{} = meeting_room, attrs, current_user) do
+  def update_meeting_room(%MeetingRoom{} = meeting_room, attrs) do
     meeting_room
     |> MeetingRoom.changeset(attrs)
-    |> Ecto.Changeset.put_change(:user_id, current_user.id)
-    |> Ecto.Changeset.put_change(:created_by_id, current_user.id)
     |> Repo.update()
   end
 
+  def delete_meeting_room(%MeetingRoom{} = meeting_room), do: Repo.delete(meeting_room)
 
-  @doc """
-  Deletes a meeting_room.
-
-  ## Examples
-
-      iex> delete_meeting_room(meeting_room)
-      {:ok, %MeetingRoom{}}
-
-      iex> delete_meeting_room(meeting_room)
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def delete_meeting_room(%MeetingRoom{} = meeting_room) do
-    Repo.delete(meeting_room)
-  end
-
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking meeting_room changes.
-
-  ## Examples
-
-      iex> change_meeting_room(meeting_room)
-      %Ecto.Changeset{data: %MeetingRoom{}}
-
-  """
-  def change_meeting_room(%MeetingRoom{} = meeting_room, attrs \\ %{}) do
-    MeetingRoom.changeset(meeting_room, attrs)
-  end
+  def change_meeting_room(%MeetingRoom{} = meeting_room, attrs \\ %{}), do: MeetingRoom.changeset(meeting_room, attrs)
 
   def list_meeting_rooms_paginated(params \\ %{}) do
     page = Map.get(params, "page", 1) |> to_int()
@@ -300,32 +256,32 @@ defmodule Spato.Assets do
 
     # Base query
     base_query =
-      from v in MeetingRoom,
-        order_by: [desc: v.inserted_at]
+      from m in MeetingRoom,
+        order_by: [desc: m.inserted_at]
 
     # Status filter
     filtered_query =
       if status != "all" do
-        from v in base_query, where: v.status == ^status
+        from m in base_query, where: m.status == ^status
       else
         base_query
       end
 
-    # Search filter — use proper joins!
+    # Search filter
     final_query =
       if search != "" do
         like_search = "%#{search}%"
 
-        from v in filtered_query,
-          left_join: u in assoc(v, :user),
+        from m in filtered_query,
+          left_join: u in assoc(m, :user),
           left_join: up in assoc(u, :user_profile),
           where:
-            ilike(v.name, ^like_search) or
-            ilike(v.location, ^like_search) or
-            ilike(v.serial_number, ^like_search) or
-            fragment("?::text LIKE ?", v.capacity, ^like_search),
-            distinct: v.id,
-          select: v
+            ilike(m.name, ^like_search) or
+            ilike(m.location, ^like_search) or
+            ilike(m.available_facility, ^like_search) or
+            fragment("?::text LIKE ?", m.capacity, ^like_search),
+          distinct: m.id,
+          select: m
       else
         filtered_query
       end
@@ -336,13 +292,13 @@ defmodule Spato.Assets do
       |> exclude(:order_by)
       |> Repo.aggregate(:count, :id)
 
-    # Paginated results, preloading associations correctly
+    # Paginated results with preload
     meeting_rooms_page =
       final_query
       |> limit(^per_page)
       |> offset(^offset)
       |> Repo.all()
-      |> Repo.preload([created_by: :user_profile])
+      |> Repo.preload([user: :user_profile, created_by: :user_profile])
 
     total_pages = ceil(total / per_page)
 

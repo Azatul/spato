@@ -9,7 +9,7 @@ defmodule SpatoWeb.MeetingRoomLive.FormComponent do
     <div>
       <.header>
         {@title}
-        <:subtitle>Use this form to manage meeting_room records in your database.</:subtitle>
+        <:subtitle>Gunakan borang ini untuk menguruskan rekod bilik mesyuarat dalam sistem.</:subtitle>
       </.header>
 
       <.simple_form
@@ -45,11 +45,19 @@ defmodule SpatoWeb.MeetingRoomLive.FormComponent do
             </div>
           </div>
         </div>
-        <.input field={@form[:name]} type="text" label="Name" />
-        <.input field={@form[:location]} type="text" label="Location" />
-        <.input field={@form[:capacity]} type="number" label="Capacity" />
-        <.input field={@form[:available_facility]} type="text" label="Available facility" />
-        <.input field={@form[:status]} type="text" label="Status" />
+        <.input field={@form[:name]} type="text" label="Nama" />
+        <.input field={@form[:location]} type="text" label="Lokasi" />
+        <.input field={@form[:capacity]} type="number" label="Kapasiti" />
+        <.input field={@form[:available_facility]} type="text" label="Kemudahan Tersedia" />
+        <.input
+          field={@form[:status]}
+          type="select"
+          label="Status"
+          options={[
+            {"Tersedia", "tersedia"},
+            {"Tidak Tersedia", "tidak_tersedia"}
+          ]}
+        />
         <:actions>
           <.button phx-disable-with={@action == :new && "Menyimpan..." || "Mengemaskini..."}>
             <%= if @action == :new do %>
@@ -86,6 +94,7 @@ defmodule SpatoWeb.MeetingRoomLive.FormComponent do
   def handle_event("save", %{"meeting_room" => meeting_room_params}, socket) do
     save_meeting_room(socket, socket.assigns.action, meeting_room_params)
   end
+
   def handle_event("remove_meeting_room_image", _params, socket) do
     socket =
       Enum.reduce(socket.assigns.uploads.meeting_room_image.entries, socket, fn entry, acc ->
@@ -124,21 +133,11 @@ defmodule SpatoWeb.MeetingRoomLive.FormComponent do
           meeting_room_params
       end
 
-      result =
-        case action do
-          :edit ->
-            Assets.update_meeting_room(
-              socket.assigns.meeting_room,
-              meeting_room_params,
-              socket.assigns.current_user_id
-            )
-
-          :new ->
-            Assets.create_meeting_room(
-              meeting_room_params,
-              socket.assigns.current_user_id
-            )
-        end
+    result =
+      case action do
+        :edit -> Assets.update_meeting_room(socket.assigns.meeting_room, meeting_room_params)
+        :new  -> Assets.create_meeting_room(meeting_room_params, socket.assigns.current_user_id)
+      end
 
     case result do
       {:ok, meeting_room} ->

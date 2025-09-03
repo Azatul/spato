@@ -4,7 +4,7 @@ defmodule SpatoWeb.MeetingRoomLive.ShowComponent do
   @impl true
   def render(assigns) do
     ~H"""
-      <div id={"vehicle-show-#{@id}"} class="p-4 max-w-md mx-auto bg-white rounded-lg shadow">
+    <div id={"meeting-room-show-#{@id}"} class="p-4 max-w-md mx-auto bg-white rounded-lg shadow space-y-4">
       <.header>
         Lihat Bilik Mesyuarat
         <:subtitle>Maklumat bilik mesyuarat.</:subtitle>
@@ -19,17 +19,32 @@ defmodule SpatoWeb.MeetingRoomLive.ShowComponent do
           />
         <% end %>
       </div>
-    <.list>
-      <:item title="Name">{@meeting_room.name}</:item>
-      <:item title="Location">{@meeting_room.location}</:item>
-      <:item title="Capacity">{@meeting_room.capacity}</:item>
-      <:item title="Available facility">{@meeting_room.available_facility}</:item>
-      <:item title="Photo url">{@meeting_room.photo_url}</:item>
-      <:item title="Status">{@meeting_room.status}</:item>
-    </.list>
+
+      <.list>
+        <:item title="Nama">{@meeting_room.name}</:item>
+        <:item title="Lokasi">{@meeting_room.location}</:item>
+        <:item title="Kapasiti">{@meeting_room.capacity}</:item>
+        <:item title="Kemudahan Tersedia">{@meeting_room.available_facility}</:item>
+        <:item title="Ditambah Oleh">
+          <%= @meeting_room.created_by && @meeting_room.created_by.user_profile && @meeting_room.created_by.user_profile.full_name || "N/A" %>
+        </:item>
+        <:item title="Tarikh & Masa Kemaskini">
+          <%= Calendar.strftime(@meeting_room.updated_at, "%d/%m/%Y %H:%M") %>
+        </:item>
+        <:item title="Status">
+          <span class={
+            "px-1.5 py-0.5 rounded-full text-white text-xs font-semibold " <>
+            case @meeting_room.status do
+              "tersedia" -> "bg-green-500"
+              "tidak_tersedia" -> "bg-red-500"
+              _ -> "bg-gray-400"
+            end
+          }>
+            <%= Spato.Assets.MeetingRoom.human_status(@meeting_room.status) %>
+          </span>
+        </:item>
+      </.list>
     </div>
-
-
     """
   end
 end

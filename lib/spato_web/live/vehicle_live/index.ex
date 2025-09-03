@@ -267,6 +267,7 @@ defmodule SpatoWeb.VehicleLive.Index do
           </section>
 
           <!-- Pagination -->
+          <%= if @total_pages > 1 do %>
           <div class="relative flex items-center mt-4">
             <!-- Previous button -->
             <div class="flex-1">
@@ -300,6 +301,7 @@ defmodule SpatoWeb.VehicleLive.Index do
               </.link>
             </div>
           </div>
+          <% end %>
 
           <!-- Modals -->
           <.modal :if={@live_action in [:new, :edit]} id="vehicle-modal" show on_cancel={JS.patch(~p"/admin/vehicles")}>
