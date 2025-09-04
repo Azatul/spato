@@ -62,10 +62,10 @@ defmodule SpatoWeb.VehicleLive.Index do
   @impl true
   def handle_event("filter_status", %{"status" => status}, socket) do
     {:noreply,
-     socket
-     |> assign(:filter_status, status)
-     |> assign(:page, 1)
-     |> load_vehicles()}
+    push_patch(socket,
+    to:
+    ~p"/admin/vehicles?page=1&q=#{socket.assigns.search_query}&status=#{status}"
+    )}
   end
 
   @impl true

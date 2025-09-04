@@ -55,14 +55,16 @@ defmodule SpatoWeb.CateringMenuLive.Index do
      |> load_catering_menus()}
   end
 
+
   @impl true
-  def handle_event("filter_status", %{"status" => status}, socket) do
-    {:noreply,
-     socket
-     |> assign(:filter_status, status)
-     |> assign(:page, 1)
-     |> load_catering_menus()}
-  end
+def handle_event("filter_status", %{"status" => status}, socket) do
+  {:noreply,
+   push_patch(socket,
+     to:
+       ~p"/admin/catering_menus?page=1&q=#{socket.assigns.search_query}&status=#{status}"
+   )}
+end
+
 
   @impl true
   def handle_event("paginate", %{"page" => page}, socket) do
