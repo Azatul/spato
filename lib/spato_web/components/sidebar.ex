@@ -7,6 +7,9 @@ defmodule SpatoWeb.Components.Sidebar do
   attr :open, :boolean, default: true
   attr :toggle_event, :string, default: nil
 
+  defp booking_path(%{role: "admin"}), do: "/admin/bookings"
+  defp booking_path(_), do: "/bookings"
+
   def sidebar(assigns) do
     ~H"""
       <aside class={[
@@ -70,7 +73,10 @@ defmodule SpatoWeb.Components.Sidebar do
                     </.sidebar_link>
                   </li>
                   <li>
-                    <.sidebar_link patch="/vehicles" active={@active_tab == "vehicles"} open={@open}>
+                    <.sidebar_link
+                      patch={if @current_user.role == "admin", do: "/admin/vehicle_bookings", else: "/vehicle_bookings"}
+                      active={@active_tab in ["vehicles", "admin_vehicle_bookings"]}
+                      open={@open}>
                       Tempahan Kenderaan
                     </.sidebar_link>
                   </li>
