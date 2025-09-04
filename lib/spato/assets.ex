@@ -214,4 +214,99 @@ defmodule Spato.Assets do
       page: page
     }
   end
+
+  alias Spato.Assets.MeetingRoom
+
+   # --- CRUD FUNCTIONS ---
+
+  def list_meeting_rooms do
+    Repo.all(MeetingRoom)
+    |> Repo.preload([user: :user_profile, created_by: :user_profile])
+  end
+
+  def get_meeting_room!(id) do
+    Repo.get!(MeetingRoom, id)
+    |> Repo.preload([user: :user_profile, created_by: :user_profile])
+  end
+
+  def create_meeting_room(attrs \\ %{}, admin_id) do
+    attrs_with_creator = Map.put(attrs, "created_by_id", admin_id)
+
+    %MeetingRoom{}
+    |> MeetingRoom.changeset(attrs_with_creator)
+    |> Repo.insert()
+  end
+
+  def update_meeting_room(%MeetingRoom{} = meeting_room, attrs) do
+    meeting_room
+    |> MeetingRoom.changeset(attrs)
+    |> Repo.update()
+  end
+
+  def delete_meeting_room(%MeetingRoom{} = meeting_room), do: Repo.delete(meeting_room)
+
+  def change_meeting_room(%MeetingRoom{} = meeting_room, attrs \\ %{}), do: MeetingRoom.changeset(meeting_room, attrs)
+
+  def list_meeting_rooms_paginated(params \\ %{}) do
+    page = Map.get(params, "page", 1) |> to_int()
+    search = Map.get(params, "search", "")
+    status = Map.get(params, "status", "all")
+    per_page = @per_page
+    offset = (page - 1) * per_page
+
+    # Base query
+    base_query =
+      from m in MeetingRoom,
+        order_by: [desc: m.inserted_at]
+
+    # Status filter
+    filtered_query =
+      if status != "all" do
+        from m in base_query, where: m.status == ^status
+      else
+        base_query
+      end
+
+    # Search filter
+    final_query =
+      if search != "" do
+        like_search = "%#{search}%"
+
+        from m in filtered_query,
+          left_join: u in assoc(m, :user),
+          left_join: up in assoc(u, :user_profile),
+          where:
+            ilike(m.name, ^like_search) or
+            ilike(m.location, ^like_search) or
+            ilike(m.available_facility, ^like_search) or
+            fragment("?::text LIKE ?", m.capacity, ^like_search),
+          distinct: m.id,
+          select: m
+      else
+        filtered_query
+      end
+
+    # Total count
+    total =
+      final_query
+      |> exclude(:order_by)
+      |> Repo.aggregate(:count, :id)
+
+    # Paginated results with preload
+    meeting_rooms_page =
+      final_query
+      |> limit(^per_page)
+      |> offset(^offset)
+      |> Repo.all()
+      |> Repo.preload([user: :user_profile, created_by: :user_profile])
+
+    total_pages = ceil(total / per_page)
+
+    %{
+      meeting_rooms_page: meeting_rooms_page,
+      total: total,
+      total_pages: total_pages,
+      page: page
+    }
+  end
 end

@@ -132,7 +132,7 @@ defmodule SpatoWeb.Components.Sidebar do
                     </summary>
                     <ul class="ml-8 mt-2 space-y-1">
                       <li>
-                        <.sidebar_link patch="/manage_meeting_rooms" active={@active_tab == "manage_meeting_rooms"} open={@open}>
+                        <.sidebar_link patch="/admin/meeting_rooms" active={@active_tab == "manage_meeting_rooms"} open={@open}>
                           Urus Bilik Mesyuarat
                         </.sidebar_link>
                       </li>
