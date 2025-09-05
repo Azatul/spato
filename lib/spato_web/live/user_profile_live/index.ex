@@ -229,7 +229,8 @@ defmodule SpatoWeb.UserProfileLive.Index do
           <.table
             id="user_profiles"
             rows={@streams.user_profiles}
-            row_click={fn {_id, u} -> JS.patch(~p"/admin/user_profiles/#{u.id}?action=show") end}
+            row_click={fn {_id, u} ->
+            JS.patch(~p"/admin/user_profiles/#{u.id}?action=show&page=#{@page}&q=#{@search_query}&role=#{@filter_role}&department=#{@filter_department}")end}
           >
             <:col :let={{_id, u}} label="ID"><%= u.id %></:col>
             <:col :let={{_id, u}} label="Nama Penuh"><%= if u.user_profile && Map.has_key?(u.user_profile, :full_name), do: u.user_profile.full_name, else: "Belum diisi" %></:col>

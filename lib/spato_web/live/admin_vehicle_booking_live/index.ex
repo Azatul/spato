@@ -20,26 +20,8 @@ defmodule SpatoWeb.AdminVehicleBookingLive.Index do
   end
 
   @impl true
-  def handle_params(params, _url, socket) do
-    {:noreply, apply_action(socket, socket.assigns.live_action, params)}
-  end
-
-  defp apply_action(socket, :edit, %{"id" => id}) do
-    socket
-    |> assign(:page_title, "Edit Vehicle booking")
-    |> assign(:vehicle_booking, Bookings.get_vehicle_booking!(id))
-  end
-
-  defp apply_action(socket, :new, _params) do
-    socket
-    |> assign(:page_title, "New Vehicle booking")
-    |> assign(:vehicle_booking, %VehicleBooking{})
-  end
-
-  defp apply_action(socket, :index, _params) do
-    socket
-    |> assign(:page_title, "Listing Vehicle bookings")
-    |> assign(:vehicle_booking, nil)
+  def handle_params(_params, _url, socket) do
+    {:noreply, socket}
   end
 
   @impl true
@@ -49,14 +31,6 @@ defmodule SpatoWeb.AdminVehicleBookingLive.Index do
 
   @impl true
   def handle_event("toggle_sidebar", _, socket), do: {:noreply, update(socket, :sidebar_open, &(!&1))}
-
-  @impl true
-  def handle_event("delete", %{"id" => id}, socket) do
-    vehicle_booking = Bookings.get_vehicle_booking!(id)
-    {:ok, _} = Bookings.delete_vehicle_booking(vehicle_booking)
-
-    {:noreply, stream_delete(socket, :vehicle_bookings, vehicle_booking)}
-  end
 
   @impl true
 def handle_event("approve", %{"id" => id}, socket) do
@@ -120,7 +94,7 @@ end
                     <.link navigate={~p"/admin/vehicle_bookings/#{vehicle_booking}"}>Show</.link>
                   </div>
                 </:action>
-                <:action :let={{id, vehicle_booking}}>
+                <:action :let={{_id, vehicle_booking}}>
                   <%= if vehicle_booking.status == "pending" do %>
                     <.link
                       phx-click={JS.push("approve", value: %{id: vehicle_booking.id})}
@@ -138,24 +112,17 @@ end
                     <span><%= vehicle_booking.status %></span>
                   <% end %>
                 </:action>
-                <:action :let={{id, vehicle_booking}}>
-                  <.link
-                    phx-click={JS.push("delete", value: %{id: vehicle_booking.id}) |> hide("##{id}")}
-                    data-confirm="Are you sure?"
-                  >
-                    Delete
-                  </.link>
-                </:action>
+
               </.table>
             </section>
 
             <.modal :if={@live_action in [:new, :edit]} id="vehicle_booking-modal" show on_cancel={JS.patch(~p"/admin/vehicle_bookings")}>
               <.live_component
                 module={SpatoWeb.AdminVehicleBookingLive.FormComponent}
-                id={@vehicle_booking.id || :new}
+                id={:new}
                 title={@page_title}
                 action={@live_action}
-                vehicle_booking={@vehicle_booking}
+                vehicle_booking={%VehicleBooking{}}
                 patch={~p"/admin/vehicle_bookings"}
               />
             </.modal>
