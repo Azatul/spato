@@ -44,9 +44,10 @@ defmodule SpatoWeb.Router do
     live "/vehicle_bookings", VehicleBookingLive.Index, :index
     live "/vehicle_bookings/new", VehicleBookingLive.Index, :new
     live "/vehicle_bookings/:id/edit", VehicleBookingLive.Index, :edit
-
-    live "/vehicle_bookings/:id", VehicleBookingLive.Show, :show
+    live "/vehicle_bookings/:id", VehicleBookingLive.Index, :show
     live "/vehicle_bookings/:id/show/edit", VehicleBookingLive.Show, :edit
+
+    live "/available_vehicles", AvailableVehicleLive.Index, :index
   end
 
   scope "/admin", SpatoWeb do
@@ -81,7 +82,10 @@ defmodule SpatoWeb.Router do
       live "/meeting_rooms/:id", MeetingRoomLive.Index, :show
 
       live "/vehicle_bookings", AdminVehicleBookingLive.Index, :index
-      live "/vehicle_bookings/:id", AdminVehicleBookingLive.Show, :show
+      live "/vehicle_bookings/:id", AdminVehicleBookingLive.Index, :show
+      live "/vehicle_bookings/:id/edit", AdminVehicleBookingLive.Index, :edit
+      live "/vehicle_bookings/:id/approve", AdminVehicleBookingLive.Show, :approve
+      live "/vehicle_bookings/:id/reject", AdminVehicleBookingLive.Show, :reject
 
     end
   end
