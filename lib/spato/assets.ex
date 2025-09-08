@@ -414,7 +414,7 @@ defmodule Spato.Assets do
   def list_catering_menus_paginated(params \\ %{}) do
     page = Map.get(params, "page", 1) |> to_int()
     search = Map.get(params, "search", "")
-    status = Map.get(params, "status", "all")
+    type = Map.get(params, "type", "all")
     per_page = @per_page
     offset = (page - 1) * per_page
 
@@ -423,8 +423,8 @@ defmodule Spato.Assets do
         order_by: [desc: c.inserted_at]
 
     filtered_query =
-      if status != "all" do
-        from c in base_query, where: c.status == ^status
+      if type != "all" do
+        from c in base_query, where: c.type == ^type
       else
         base_query
       end

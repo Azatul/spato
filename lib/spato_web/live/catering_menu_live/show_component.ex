@@ -24,6 +24,20 @@ defmodule SpatoWeb.CateringMenuLive.ShowComponent do
         <:item title="Nama">{@catering_menu.name}</:item>
         <:item title="Keterangan">{@catering_menu.description}</:item>
         <:item title="Harga/Seorang">{@catering_menu.price_per_head}</:item>
+        <:item title="Jenis">
+        <span class={
+          "px-1.5 py-0.5 rounded-full text-white text-xs font-semibold " <>
+          case @catering_menu.type do
+            "sarapan" -> "bg-yellow-500"
+            "makan_tengahari" -> "bg-blue-500"
+            "minum_petang" -> "bg-purple-500"
+            _ -> "bg-gray-400"
+          end
+        }>
+          <%= Spato.Assets.CateringMenu.human_type(@catering_menu.type) %>
+        </span>
+      </:item>
+
         <:item title="Status">
           <span class={
             "px-1.5 py-0.5 rounded-full text-white text-xs font-semibold " <>

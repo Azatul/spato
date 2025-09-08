@@ -50,6 +50,16 @@ defmodule SpatoWeb.CateringMenuLive.FormComponent do
         <.input field={@form[:description]} type="text" label="Keterangan" />
         <.input field={@form[:price_per_head]} type="number" label="Harga/Seorang" step="any" />
         <.input
+          field={@form[:type]}
+          type="select"
+          label="Jenis"
+          options={[
+            {"Sarapan", "sarapan"},
+            {"Makan Tengahari", "makan_tengahari"},
+            {"Minum Petang", "minum_petang"}
+          ]}
+        />
+        <.input
           field={@form[:status]}
           type="select"
           label="Status"

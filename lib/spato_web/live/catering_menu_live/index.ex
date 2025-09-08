@@ -17,6 +17,7 @@ defmodule SpatoWeb.CateringMenuLive.Index do
      |> assign(:sidebar_open, true)
      |> assign(:current_user, socket.assigns.current_user)
      |> assign(:filter_status, "all")
+     |> assign(:filter_type, "all")
      |> assign(:search_query, "")
      |> assign(:page, 1)
      |> stream(:catering_menus, Assets.list_catering_menus())}
@@ -27,7 +28,8 @@ defmodule SpatoWeb.CateringMenuLive.Index do
     params = %{
       "page" => socket.assigns.page,
       "search" => socket.assigns.search_query,
-      "status" => socket.assigns.filter_status
+      "status" => socket.assigns.filter_status,
+      "type" => socket.assigns.filter_type
     }
 
     data = Assets.list_catering_menus_paginated(params)
@@ -57,13 +59,14 @@ defmodule SpatoWeb.CateringMenuLive.Index do
 
 
   @impl true
-def handle_event("filter_status", %{"status" => status}, socket) do
-  {:noreply,
-   push_patch(socket,
-     to:
-       ~p"/admin/catering_menus?page=1&q=#{socket.assigns.search_query}&status=#{status}"
-   )}
-end
+  def handle_event("filter_type", %{"type" => type}, socket) do
+    {:noreply,
+     push_patch(socket,
+       to:
+         ~p"/admin/catering_menus?page=1&q=#{socket.assigns.search_query}&status=#{socket.assigns.filter_status}&type=#{type}"
+     )}
+  end
+
 
 
   @impl true
@@ -104,13 +107,13 @@ end
   def handle_params(params, _url, socket) do
     page   = Map.get(params, "page", "1") |> String.to_integer()
     search = Map.get(params, "q", "")
-    status = Map.get(params, "status", "all")
+    type   = Map.get(params, "type", "all")
 
     {:noreply,
     socket
     |> assign(:page, page)
     |> assign(:search_query, search)
-    |> assign(:filter_status, status)
+    |> assign(:filter_type, type)
     |> load_catering_menus()
     |> apply_action(socket.assigns.live_action, params)}
   end
@@ -166,13 +169,15 @@ end
                 <input type="text" name="q" value={@search_query} placeholder="Cari nama atau keterangan..." class="w-full border rounded-md px-2 py-1 text-sm"/>
               </form>
 
-              <form phx-change="filter_status">
-                <select name="status" class="border rounded-md px-2 pr-8 py-1 text-sm">
-                  <option value="all" selected={@filter_status in [nil, "all"]}>Semua Status</option>
-                  <option value="tersedia" selected={@filter_status == "tersedia"}>Tersedia</option>
-                  <option value="tidak_tersedia" selected={@filter_status == "tidak_tersedia"}>Tidak Tersedia</option>
-                </select>
-              </form>
+             <form phx-change="filter_type">
+              <select name="type" class="border rounded-md px-2 pr-8 py-1 text-sm">
+                <option value="all" selected={@filter_type in [nil, "all"]}>Semua Jenis</option>
+                <option value="sarapan" selected={@filter_type == "sarapan"}>Sarapan</option>
+                <option value="makan_tengahari" selected={@filter_type == "makan_tengahari"}>Makan Tengahari</option>
+                <option value="minum_petang" selected={@filter_type == "minum_petang"}>Minum Petang</option>
+              </select>
+            </form>
+
             </div>
           </div>
 
@@ -192,17 +197,10 @@ end
           <:col :let={menu} label="ID"><%= menu.id %></:col>
           <:col :let={menu} label="Nama"><%= menu.name %></:col>
           <:col :let={menu} label="Harga/Seorang"><%= menu.price_per_head %></:col>
-          <:col :let={menu} label="Status">
-            <span class={
-              "px-1.5 py-0.5 rounded-full text-white text-xs font-semibold " <>
-              case menu.status do
-                "tersedia" -> "bg-green-500"
-                "tidak_tersedia" -> "bg-red-500"
-                _ -> "bg-gray-400"
-              end
-            }>
-              <%= menu.status %>
-            </span>
+          <:col :let={menu} label="Jenis">
+          <span class="px-1.5 py-0.5 rounded-md text-gray-700 text-xs font-medium bg-gray-100">
+            <%= Spato.Assets.CateringMenu.human_type(menu.type) %>
+          </span>
           </:col>
           <:col :let={menu} label="Ditambah Oleh">
             <%= if menu.created_by do %>
