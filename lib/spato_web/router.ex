@@ -41,6 +41,13 @@ defmodule SpatoWeb.Router do
     pipe_through [:browser, :regular_user_auth]
     live "/dashboard", UserDashboardLive
     # Add more user LiveViews here
+
+    live "/vehicle_bookings", VehicleBookingLive.Index, :index
+    live "/vehicle_bookings/new", VehicleBookingLive.Index, :new
+    live "/vehicle_bookings/:id/edit", VehicleBookingLive.Index, :edit
+    live "/vehicle_bookings/:id", VehicleBookingLive.Show, :show
+    live "/vehicle_bookings/:id/show/edit", VehicleBookingLive.Show, :edit
+
   end
 
   scope "/admin", SpatoWeb do
@@ -72,14 +79,13 @@ defmodule SpatoWeb.Router do
       live "/meeting_rooms", MeetingRoomLive.Index, :index
       live "/meeting_rooms/new", MeetingRoomLive.Index, :new
       live "/meeting_rooms/:id/edit", MeetingRoomLive.Index, :edit
-
       live "/meeting_rooms/:id", MeetingRoomLive.Index, :show
 
       live "/catering_menus", CateringMenuLive.Index, :index
       live "/catering_menus/new", CateringMenuLive.Index, :new
       live "/catering_menus/:id/edit", CateringMenuLive.Index, :edit
-
       live "/catering_menus/:id", CateringMenuLive.Index, :show
+
     end
   end
 
