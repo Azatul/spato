@@ -4,7 +4,7 @@ defmodule SpatoWeb.EquipmentLive.ShowComponent do
   @impl true
   def render(assigns) do
     ~H"""
-    <div id={"equipment-show-#{@id}"} class="p-4 max-w-md mx-auto bg-white rounded-lg shadow space-y-4">
+    <div id={"equipment-show-#{@id}"}>
       <.header>
         Lihat Peralatan
         <:subtitle>Maklumat peralatan.</:subtitle>

@@ -4,10 +4,9 @@ defmodule SpatoWeb.CateringMenuLive.ShowComponent do
   @impl true
   def render(assigns) do
     ~H"""
-    <div id={"catering-menu-show-#{@id}"} class="p-4 max-w-md mx-auto bg-white rounded-lg shadow space-y-4">
+    <div id={"catering-menu-show-#{@id}"}>
       <.header>
-        Lihat Menu Katering
-        <:subtitle>Maklumat menu katering.</:subtitle>
+      Maklumat menu katering
       </.header>
 
       <div class="mb-4">

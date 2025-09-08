@@ -4,7 +4,7 @@ defmodule SpatoWeb.VehicleLive.ShowComponent do
   @impl true
   def render(assigns) do
     ~H"""
-    <div id={"vehicle-show-#{@id}"} class="p-4 max-w-md mx-auto bg-white rounded-lg shadow">
+    <div id={"vehicle-show-#{@id}"}>
       <.header>
         Lihat Kenderaan
         <:subtitle>Maklumat kenderaan.</:subtitle>
