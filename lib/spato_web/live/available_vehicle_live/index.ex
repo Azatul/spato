@@ -34,15 +34,13 @@ defmodule SpatoWeb.AvailableVehicleLive.Index do
   # Load vehicles based on filters and page
   defp load_vehicles(socket) do
     filters = socket.assigns.filters
-    params = Map.put(filters, "page", socket.assigns.page)
-
-    data = Bookings.available_vehicles_paginated(params)
+    vehicles = Bookings.available_vehicles(filters)
 
     socket
-    |> assign(:vehicles, data.vehicles_page)
-    |> assign(:page, data.page)
-    |> assign(:total_pages, data.total_pages)
-    |> assign(:total, data.total)
+    |> assign(:vehicles, vehicles)
+    |> assign(:page, 1)
+    |> assign(:total_pages, 1)
+    |> assign(:total, length(vehicles))
   end
 
 
@@ -74,12 +72,10 @@ defmodule SpatoWeb.AvailableVehicleLive.Index do
   def handle_event("toggle_sidebar", _, socket), do: {:noreply, update(socket, :sidebar_open, &(!&1))}
 
   @impl true
-  def handle_params(params, _url, socket) do
-    page = Map.get(params, "page", "1") |> String.to_integer()
-
+  def handle_params(_params, _url, socket) do
     {:noreply,
      socket
-     |> assign(:page, page)
+     |> assign(:page, 1)
      |> load_vehicles()}
   end
 

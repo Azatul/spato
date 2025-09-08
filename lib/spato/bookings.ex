@@ -415,4 +415,96 @@ defmodule Spato.Bookings do
     }
   end
 
+  def available_vehicles(params \\ %{}) do
+    query = Map.get(params, "query", "")
+    type = Map.get(params, "type", "all")
+    capacity = Map.get(params, "capacity", "")
+    pickup_time_str = Map.get(params, "pickup_time")
+    return_time_str = Map.get(params, "return_time")
+
+    # Convert string dates to DateTime if provided
+    pickup_time = if pickup_time_str && pickup_time_str != "" do
+      formatted_time = if String.length(pickup_time_str) == 16 do
+        pickup_time_str <> ":00"
+      else
+        pickup_time_str
+      end
+
+      case DateTime.from_iso8601(formatted_time) do
+        {:ok, datetime, _} -> datetime
+        _ -> nil
+      end
+    else
+      nil
+    end
+
+    return_time = if return_time_str && return_time_str != "" do
+      formatted_time = if String.length(return_time_str) == 16 do
+        return_time_str <> ":00"
+      else
+        return_time_str
+      end
+
+      case DateTime.from_iso8601(formatted_time) do
+        {:ok, datetime, _} -> datetime
+        _ -> nil
+      end
+    else
+      nil
+    end
+
+    base_query =
+      from v in Spato.Assets.Vehicle,
+        where: v.status == "tersedia",
+        order_by: [desc: v.inserted_at]
+
+    # Type filter
+    base_query =
+      if type != "all" do
+        from v in base_query, where: v.type == ^type
+      else
+        base_query
+      end
+
+    # Capacity filter
+    base_query =
+      if capacity != "" do
+        {cap_int, _} = Integer.parse(capacity)
+        from v in base_query, where: v.capacity >= ^cap_int
+      else
+        base_query
+      end
+
+    # Search filter
+    base_query =
+      if query != "" do
+        like_search = "%#{query}%"
+        from v in base_query,
+          where: ilike(v.name, ^like_search) or ilike(v.plate_number, ^like_search)
+      else
+        base_query
+      end
+
+    # Availability filter (exclude vehicles already booked in selected time range)
+    base_query =
+      if pickup_time && return_time do
+        from v in base_query,
+          left_join: b in assoc(v, :vehicle_bookings),
+          where:
+            is_nil(b.id) or
+            b.status != "accepted" or
+            fragment(
+              "NOT (tsrange(?, ?) && tsrange(?, ?))",
+              b.pickup_time,
+              b.return_time,
+              ^pickup_time,
+              ^return_time
+            )
+      else
+        base_query
+      end
+
+    Repo.all(base_query)
+  end
+
 end
