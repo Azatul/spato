@@ -70,7 +70,7 @@ defmodule SpatoWeb.Components.Sidebar do
                     </.sidebar_link>
                   </li>
                   <li>
-                    <.sidebar_link patch="/vehicles" active={@active_tab == "vehicles"} open={@open}>
+                    <.sidebar_link patch="/vehicle_bookings" active={@active_tab == "vehicles"} open={@open}>
                       Tempahan Kenderaan
                     </.sidebar_link>
                   </li>

@@ -1,12 +1,21 @@
 defmodule SpatoWeb.VehicleBookingLive.Index do
   use SpatoWeb, :live_view
+  import SpatoWeb.Components.Sidebar
+  import SpatoWeb.Components.Headbar
 
   alias Spato.Bookings
   alias Spato.Bookings.VehicleBooking
 
+  on_mount {SpatoWeb.UserAuth, :ensure_authenticated}
+
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, stream(socket, :vehicle_bookings, Bookings.list_vehicle_bookings())}
+    {:ok,
+     socket
+     |> assign(:active_tab, "vehicles")
+     |> assign(:sidebar_open, true)
+     |> assign(:current_user, socket.assigns.current_user)
+     |> stream(:vehicle_bookings, Bookings.list_vehicle_bookings())}
   end
 
   @impl true
@@ -46,54 +55,70 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
   end
 
   @impl true
+  def handle_event("toggle_sidebar", _params, socket) do
+    {:noreply, update(socket, :sidebar_open, &(!&1))}
+  end
+
+  @impl true
   def render(assigns) do
     ~H"""
-    <.header>
-      Listing Vehicle bookings
-      <:actions>
-        <.link patch={~p"/vehicle_bookings/new"}>
-          <.button>New Vehicle booking</.button>
-        </.link>
-      </:actions>
-    </.header>
+    <div class="flex h-screen overflow-hidden">
+      <.sidebar active_tab={@active_tab} current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar"/>
+      <div class="flex flex-col flex-1">
+        <.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title={@page_title} />
 
-    <.table
-      id="vehicle_bookings"
-      rows={@streams.vehicle_bookings}
-      row_click={fn {_id, vehicle_booking} -> JS.navigate(~p"/vehicle_bookings/#{vehicle_booking}") end}
-    >
-      <:col :let={{_id, vehicle_booking}} label="Purpose">{vehicle_booking.purpose}</:col>
-      <:col :let={{_id, vehicle_booking}} label="Trip destination">{vehicle_booking.trip_destination}</:col>
-      <:col :let={{_id, vehicle_booking}} label="Pickup time">{vehicle_booking.pickup_time}</:col>
-      <:col :let={{_id, vehicle_booking}} label="Return time">{vehicle_booking.return_time}</:col>
-      <:col :let={{_id, vehicle_booking}} label="Status">{vehicle_booking.status}</:col>
-      <:col :let={{_id, vehicle_booking}} label="Additional notes">{vehicle_booking.additional_notes}</:col>
-      <:action :let={{_id, vehicle_booking}}>
-        <div class="sr-only">
-          <.link navigate={~p"/vehicle_bookings/#{vehicle_booking}"}>Show</.link>
-        </div>
-        <.link patch={~p"/vehicle_bookings/#{vehicle_booking}/edit"}>Edit</.link>
-      </:action>
-      <:action :let={{id, vehicle_booking}}>
-        <.link
-          phx-click={JS.push("delete", value: %{id: vehicle_booking.id}) |> hide("##{id}")}
-          data-confirm="Are you sure?"
-        >
-          Delete
-        </.link>
-      </:action>
-    </.table>
+        <main class="flex-1 overflow-y-auto pt-20 p-6 transition-all duration-300 bg-gray-100">
+          <section class="bg-white p-4 md:p-6 rounded-xl shadow-md">
+            <.header>
+              Listing Vehicle bookings
+              <:actions>
+                <.link patch={~p"/vehicle_bookings/new"}>
+                  <.button>New Vehicle booking</.button>
+                </.link>
+              </:actions>
+            </.header>
 
-    <.modal :if={@live_action in [:new, :edit]} id="vehicle_booking-modal" show on_cancel={JS.patch(~p"/vehicle_bookings")}>
-      <.live_component
-        module={SpatoWeb.VehicleBookingLive.FormComponent}
-        id={@vehicle_booking.id || :new}
-        title={@page_title}
-        action={@live_action}
-        vehicle_booking={@vehicle_booking}
-        patch={~p"/vehicle_bookings"}
-      />
-    </.modal>
+            <.table
+              id="vehicle_bookings"
+              rows={@streams.vehicle_bookings}
+              row_click={fn {_id, vehicle_booking} -> JS.navigate(~p"/vehicle_bookings/#{vehicle_booking}") end}
+            >
+              <:col :let={{_id, vehicle_booking}} label="Purpose">{vehicle_booking.purpose}</:col>
+              <:col :let={{_id, vehicle_booking}} label="Trip destination">{vehicle_booking.trip_destination}</:col>
+              <:col :let={{_id, vehicle_booking}} label="Pickup time">{vehicle_booking.pickup_time}</:col>
+              <:col :let={{_id, vehicle_booking}} label="Return time">{vehicle_booking.return_time}</:col>
+              <:col :let={{_id, vehicle_booking}} label="Status">{vehicle_booking.status}</:col>
+              <:col :let={{_id, vehicle_booking}} label="Additional notes">{vehicle_booking.additional_notes}</:col>
+              <:action :let={{_id, vehicle_booking}}>
+                <div class="sr-only">
+                  <.link navigate={~p"/vehicle_bookings/#{vehicle_booking}"}>Show</.link>
+                </div>
+                <.link patch={~p"/vehicle_bookings/#{vehicle_booking}/edit"}>Edit</.link>
+              </:action>
+              <:action :let={{id, vehicle_booking}}>
+                <.link
+                  phx-click={JS.push("delete", value: %{id: vehicle_booking.id}) |> hide("##{id}")}
+                  data-confirm="Are you sure?"
+                >
+                  Delete
+                </.link>
+              </:action>
+            </.table>
+
+            <.modal :if={@live_action in [:new, :edit]} id="vehicle_booking-modal" show on_cancel={JS.patch(~p"/vehicle_bookings")}>
+              <.live_component
+                module={SpatoWeb.VehicleBookingLive.FormComponent}
+                id={@vehicle_booking.id || :new}
+                title={@page_title}
+                action={@live_action}
+                vehicle_booking={@vehicle_booking}
+                patch={~p"/vehicle_bookings"}
+              />
+            </.modal>
+          </section>
+        </main>
+      </div>
+    </div>
     """
   end
 end
