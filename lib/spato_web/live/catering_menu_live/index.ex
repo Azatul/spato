@@ -13,7 +13,7 @@ defmodule SpatoWeb.CateringMenuLive.Index do
     {:ok,
      socket
      |> assign(:page_title, "Senarai Menu Katering")
-     |> assign(:active_tab, "manage_catering_menus")
+     |> assign(:active_tab, "manage_catering")
      |> assign(:sidebar_open, true)
      |> assign(:current_user, socket.assigns.current_user)
      |> assign(:filter_status, "all")
