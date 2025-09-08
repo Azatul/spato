@@ -60,4 +60,22 @@ defmodule Spato.AssetsFixtures do
 
     meeting_room
   end
+
+  @doc """
+  Generate a catering_menu.
+  """
+  def catering_menu_fixture(attrs \\ %{}) do
+    {:ok, catering_menu} =
+      attrs
+      |> Enum.into(%{
+        description: "some description",
+        name: "some name",
+        photo_url: "some photo_url",
+        price_per_head: "120.5",
+        status: "some status"
+      })
+      |> Spato.Assets.create_catering_menu()
+
+    catering_menu
+  end
 end

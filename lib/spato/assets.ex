@@ -309,4 +309,160 @@ defmodule Spato.Assets do
       page: page
     }
   end
+
+  alias Spato.Assets.CateringMenu
+
+  @doc """
+  Returns the list of catering_menus.
+
+  ## Examples
+
+      iex> list_catering_menus()
+      [%CateringMenu{}, ...]
+
+  """
+  def list_catering_menus do
+    Repo.all(CateringMenu)
+    |> Repo.preload([user: :user_profile, created_by: :user_profile])
+  end
+
+  @doc """
+  Gets a single catering_menu.
+
+  Raises `Ecto.NoResultsError` if the Catering menu does not exist.
+
+  ## Examples
+
+      iex> get_catering_menu!(123)
+      %CateringMenu{}
+
+      iex> get_catering_menu!(456)
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_catering_menu!(id) do
+    Repo.get!(CateringMenu, id)
+    |> Repo.preload([user: :user_profile, created_by: :user_profile])
+  end
+
+  @doc """
+  Creates a catering_menu.
+
+  ## Examples
+
+      iex> create_catering_menu(%{field: value})
+      {:ok, %CateringMenu{}}
+
+      iex> create_catering_menu(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_catering_menu(attrs \\ %{}, admin_id) do
+    %CateringMenu{}
+    |> CateringMenu.changeset(attrs)
+    |> Ecto.Changeset.put_change(:created_by_id, admin_id)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Updates a catering_menu.
+
+  ## Examples
+
+      iex> update_catering_menu(catering_menu, %{field: new_value})
+      {:ok, %CateringMenu{}}
+
+      iex> update_catering_menu(catering_menu, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def update_catering_menu(%CateringMenu{} = catering_menu, attrs) do
+    catering_menu
+    |> CateringMenu.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Deletes a catering_menu.
+
+  ## Examples
+
+      iex> delete_catering_menu(catering_menu)
+      {:ok, %CateringMenu{}}
+
+      iex> delete_catering_menu(catering_menu)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def delete_catering_menu(%CateringMenu{} = catering_menu) do
+    Repo.delete(catering_menu)
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking catering_menu changes.
+
+  ## Examples
+
+      iex> change_catering_menu(catering_menu)
+      %Ecto.Changeset{data: %CateringMenu{}}
+
+  """
+  def change_catering_menu(%CateringMenu{} = catering_menu, attrs \\ %{}) do
+    CateringMenu.changeset(catering_menu, attrs)
+  end
+
+  def list_catering_menus_paginated(params \\ %{}) do
+    page = Map.get(params, "page", 1) |> to_int()
+    search = Map.get(params, "search", "")
+    type = Map.get(params, "type", "all")
+    per_page = @per_page
+    offset = (page - 1) * per_page
+
+    base_query =
+      from c in CateringMenu,
+        order_by: [desc: c.inserted_at]
+
+    filtered_query =
+      if type != "all" do
+        from c in base_query, where: c.type == ^type
+      else
+        base_query
+      end
+
+    final_query =
+      if search != "" do
+        like_search = "%#{search}%"
+
+        from c in filtered_query,
+          where:
+            ilike(c.name, ^like_search) or
+            ilike(c.description, ^like_search) or
+            fragment("?::text LIKE ?", c.price_per_head, ^like_search),
+          distinct: c.id,
+          select: c
+      else
+        filtered_query
+      end
+
+    total =
+      final_query
+      |> exclude(:order_by)
+      |> Repo.aggregate(:count, :id)
+
+    catering_menus_page =
+      final_query
+      |> limit(^per_page)
+      |> offset(^offset)
+      |> Repo.all()
+      |> Repo.preload([user: :user_profile, created_by: :user_profile])
+
+    total_pages = ceil(total / per_page)
+
+    %{
+      catering_menus_page: catering_menus_page,
+      total: total,
+      total_pages: total_pages,
+      page: page
+    }
+  end
 end

@@ -4,7 +4,7 @@ defmodule SpatoWeb.MeetingRoomLive.ShowComponent do
   @impl true
   def render(assigns) do
     ~H"""
-    <div id={"meeting-room-show-#{@id}"} class="p-4 max-w-md mx-auto bg-white rounded-lg shadow space-y-4">
+    <div id={"meeting-room-show-#{@id}"}>
       <.header>
         Lihat Bilik Mesyuarat
         <:subtitle>Maklumat bilik mesyuarat.</:subtitle>
