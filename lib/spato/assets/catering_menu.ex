@@ -21,6 +21,6 @@ defmodule Spato.Assets.CateringMenu do
   def changeset(catering_menu, attrs) do
     catering_menu
     |> cast(attrs, [:name, :description, :price_per_head, :status, :photo_url])
-    |> validate_required([:name, :description, :price_per_head, :status, :photo_url])
+    |> validate_required([:name, :description, :price_per_head, :status])
   end
 end
