@@ -41,6 +41,12 @@ defmodule SpatoWeb.Router do
     pipe_through [:browser, :regular_user_auth]
     live "/dashboard", UserDashboardLive
     # Add more user LiveViews here
+    live "/meeting_room_bookings", MeetingRoomBookingLive.Index, :index
+    live "/meeting_room_bookings/new", MeetingRoomBookingLive.Index, :new
+    live "/meeting_room_bookings/:id/edit", MeetingRoomBookingLive.Index, :edit
+
+    live "/meeting_room_bookings/:id", MeetingRoomBookingLive.Show, :show
+    live "/meeting_room_bookings/:id/show/edit", MeetingRoomBookingLive.Show, :edit
   end
 
   scope "/admin", SpatoWeb do
