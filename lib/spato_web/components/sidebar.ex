@@ -54,7 +54,9 @@ defmodule SpatoWeb.Components.Sidebar do
          <!-- Tempahan Menu -->
           <li>
             <%= if @open do %>
-              <details class="group">
+              <details
+                class="group"
+                open={@active_tab in ["meeting_rooms", "vehicles", "admin_vehicles", "catering", "equipments"]}>
                 <summary class="flex items-center justify-between px-4 py-2 rounded-md hover:bg-gray-200 cursor-pointer">
                   <div class="flex items-center gap-2">
                     <.icon name="hero-calendar" class="w-5 h-5" />
@@ -70,7 +72,10 @@ defmodule SpatoWeb.Components.Sidebar do
                     </.sidebar_link>
                   </li>
                   <li>
-                    <.sidebar_link patch="/vehicle_bookings" active={@active_tab == "vehicles"} open={@open}>
+                    <.sidebar_link
+                      patch={if @current_user.role == "admin", do: "/admin/vehicle_bookings", else: "/vehicle_bookings"}
+                      active={@active_tab in ["vehicles", "admin_vehicles"]}
+                      open={@open}>
                       Tempahan Kenderaan
                     </.sidebar_link>
                   </li>

@@ -23,7 +23,6 @@ defmodule SpatoWeb.VehicleBookingLive.FormComponent do
         <.input field={@form[:trip_destination]} type="text" label="Trip destination" />
         <.input field={@form[:pickup_time]} type="datetime-local" label="Pickup time" />
         <.input field={@form[:return_time]} type="datetime-local" label="Return time" />
-        <.input field={@form[:status]} type="text" label="Status" />
         <.input field={@form[:additional_notes]} type="text" label="Additional notes" />
         <:actions>
           <.button phx-disable-with="Saving...">Save Vehicle booking</.button>

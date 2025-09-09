@@ -15,35 +15,59 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
      |> assign(:active_tab, "vehicles")
      |> assign(:sidebar_open, true)
      |> assign(:current_user, socket.assigns.current_user)
-     |> stream(:vehicle_bookings, Bookings.list_vehicle_bookings())}
+     |> assign(:filter_status, "all")
+     |> assign(:search_query, "")
+     |> assign(:page, 1)
+     |> assign(:filter_date, "")
+     |> assign(:stats, Bookings.get_booking_stats(socket.assigns.current_user.id))
+     |> load_vehicle_bookings()}
   end
 
   @impl true
   def handle_params(params, _url, socket) do
-    {:noreply, apply_action(socket, socket.assigns.live_action, params)}
+    page   = Map.get(params, "page", "1") |> String.to_integer()
+    search = Map.get(params, "q", "")
+    status = Map.get(params, "status", "all")
+    date   = Map.get(params, "date", "")
+
+    {:noreply,
+     socket
+     |> assign(:page, page)
+     |> assign(:search_query, search)
+     |> assign(:filter_status, status)
+     |> assign(:filter_date, date)
+     |> assign(:stats, Bookings.get_booking_stats(socket.assigns.current_user.id))
+     |> load_vehicle_bookings()
+     |> apply_action(socket.assigns.live_action, params)}
   end
 
   defp apply_action(socket, :edit, %{"id" => id}) do
     socket
-    |> assign(:page_title, "Edit Vehicle booking")
+    |> assign(:page_title, "Kemaskini Tempahan Kenderaan")
     |> assign(:vehicle_booking, Bookings.get_vehicle_booking!(id))
   end
 
   defp apply_action(socket, :new, _params) do
     socket
-    |> assign(:page_title, "New Vehicle booking")
+    |> assign(:page_title, "Tambah Tempahan Kenderaan")
     |> assign(:vehicle_booking, %VehicleBooking{})
   end
 
   defp apply_action(socket, :index, _params) do
     socket
-    |> assign(:page_title, "Listing Vehicle bookings")
+    |> assign(:page_title, "Senarai Tempahan Kenderaan")
     |> assign(:vehicle_booking, nil)
   end
 
+  defp apply_action(socket, :show, %{"id" => id}) do
+    socket
+    |> assign(:page_title, "Tempahan Kenderaan")
+    |> assign(:vehicle_booking, Bookings.get_vehicle_booking!(id))
+  end
+
   @impl true
-  def handle_info({SpatoWeb.VehicleBookingLive.FormComponent, {:saved, vehicle_booking}}, socket) do
-    {:noreply, stream_insert(socket, :vehicle_bookings, vehicle_booking)}
+  def handle_info({SpatoWeb.VehicleBookingLive.FormComponent, {:saved, _vehicle_booking}}, socket) do
+    {:noreply, load_vehicle_bookings(socket)}
   end
 
   @impl true
@@ -51,12 +75,62 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
     vehicle_booking = Bookings.get_vehicle_booking!(id)
     {:ok, _} = Bookings.delete_vehicle_booking(vehicle_booking)
 
-    {:noreply, stream_delete(socket, :vehicle_bookings, vehicle_booking)}
+    {:noreply, load_vehicle_bookings(socket)}
   end
 
   @impl true
   def handle_event("toggle_sidebar", _params, socket) do
     {:noreply, update(socket, :sidebar_open, &(!&1))}
+  end
+
+  @impl true
+  def handle_event("search", %{"q" => query}, socket) do
+    {:noreply,
+     socket
+     |> assign(:search_query, query)
+     |> assign(:page, 1)
+     |> load_vehicle_bookings()}
+  end
+
+  @impl true
+  def handle_event("filter_status", %{"status" => status}, socket) do
+    {:noreply,
+      push_patch(socket,
+        to: ~p"/vehicle_bookings?page=1&q=#{socket.assigns.search_query}&status=#{status}")}
+  end
+
+  @impl true
+  def handle_event("paginate", %{"page" => page}, socket) do
+    {:noreply,
+     socket
+     |> assign(:page, String.to_integer(page))
+     |> load_vehicle_bookings()}
+  end
+
+  @impl true
+  def handle_event("filter_date", %{"date" => date}, socket) do
+    {:noreply,
+    push_patch(socket,
+      to: ~p"/vehicle_bookings?page=1&q=#{socket.assigns.search_query}&status=#{socket.assigns.filter_status}&date=#{date}"
+    )}
+  end
+
+  # --- LOAD BOOKINGS ---
+  defp load_vehicle_bookings(socket) do
+    params = %{
+      "page" => socket.assigns.page,
+      "search" => socket.assigns.search_query,
+      "status" => socket.assigns.filter_status,
+      "date" => socket.assigns.filter_date
+    }
+
+    data = Bookings.list_vehicle_bookings_paginated(params)
+
+    socket
+    |> assign(:vehicle_bookings_page, data.vehicle_bookings_page)
+    |> assign(:total_pages, data.total_pages)
+    |> assign(:filtered_count, data.total)
+    |> assign(:page, data.page)
   end
 
   @impl true
@@ -68,53 +142,165 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
         <.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title={@page_title} />
 
         <main class="flex-1 overflow-y-auto pt-20 p-6 transition-all duration-300 bg-gray-100">
-          <section class="bg-white p-4 md:p-6 rounded-xl shadow-md">
-            <.header>
-              Listing Vehicle bookings
-              <:actions>
-                <.link patch={~p"/vehicle_bookings/new"}>
-                  <.button>New Vehicle booking</.button>
-                </.link>
-              </:actions>
-            </.header>
+          <section class="mb-4">
+            <h1 class="text-xl font-bold mb-1">Tempahan Kenderaan Saya</h1>
+            <p class="text-md text-gray-500 mb-4">Semak semua tempahan kenderaan yang anda buat</p>
 
-            <.table
-              id="vehicle_bookings"
-              rows={@streams.vehicle_bookings}
-              row_click={fn {_id, vehicle_booking} -> JS.navigate(~p"/vehicle_bookings/#{vehicle_booking}") end}
-            >
-              <:col :let={{_id, vehicle_booking}} label="Purpose">{vehicle_booking.purpose}</:col>
-              <:col :let={{_id, vehicle_booking}} label="Trip destination">{vehicle_booking.trip_destination}</:col>
-              <:col :let={{_id, vehicle_booking}} label="Pickup time">{vehicle_booking.pickup_time}</:col>
-              <:col :let={{_id, vehicle_booking}} label="Return time">{vehicle_booking.return_time}</:col>
-              <:col :let={{_id, vehicle_booking}} label="Status">{vehicle_booking.status}</:col>
-              <:col :let={{_id, vehicle_booking}} label="Additional notes">{vehicle_booking.additional_notes}</:col>
-              <:action :let={{_id, vehicle_booking}}>
-                <div class="sr-only">
-                  <.link navigate={~p"/vehicle_bookings/#{vehicle_booking}"}>Show</.link>
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+              <%= for {label, value, color} <- [
+                    {"Jumlah Tempahan Minggu Ini", @stats.total_this_week, "text-gray-700"},
+                    {"Tempahan Selesai", @stats.completed, "text-blue-500"},
+                    {"Tempahan Menunggu", @stats.pending, "text-yellow-500"},
+                    {"Tempahan Diluluskan", @stats.approved, "text-green-500"}
+                  ] do %>
+                <div class="bg-white p-4 rounded-xl shadow-md flex flex-col justify-between h-30 transition-transform hover:scale-105">
+                  <div>
+                    <p class="text-sm text-gray-500"><%= label %></p>
+                    <p class={"text-3xl font-bold mt-1 #{color}"}><%= value %></p>
+                  </div>
                 </div>
-                <.link patch={~p"/vehicle_bookings/#{vehicle_booking}/edit"}>Edit</.link>
-              </:action>
-              <:action :let={{id, vehicle_booking}}>
-                <.link
-                  phx-click={JS.push("delete", value: %{id: vehicle_booking.id}) |> hide("##{id}")}
-                  data-confirm="Are you sure?"
-                >
-                  Delete
-                </.link>
-              </:action>
-            </.table>
+              <% end %>
+            </div>
 
-            <.modal :if={@live_action in [:new, :edit]} id="vehicle_booking-modal" show on_cancel={JS.patch(~p"/vehicle_bookings")}>
-              <.live_component
-                module={SpatoWeb.VehicleBookingLive.FormComponent}
-                id={@vehicle_booking.id || :new}
-                title={@page_title}
-                action={@live_action}
-                vehicle_booking={@vehicle_booking}
-                patch={~p"/vehicle_bookings"}
-              />
-            </.modal>
+            <!-- Booking Table Section -->
+            <section class="bg-white p-4 md:p-6 rounded-xl shadow-md">
+              <div class="flex flex-col mb-4 gap-2">
+                <div class="flex items-center justify-between">
+                  <h2 class="text-lg font-semibold text-gray-900">Senarai Tempahan Kenderaan</h2>
+                  <.link patch={~p"/vehicle_bookings/new"}>
+                    <.button>Tambah Tempahan Kenderaan</.button>
+                  </.link>
+                </div>
+
+                <div class="flex flex-wrap gap-2 mt-2">
+                  <!-- Search -->
+                  <form phx-change="search" class="flex-1 min-w-[200px]">
+                    <input type="text" name="q" value={@search_query} placeholder="Cari tujuan, destinasi..." class="w-full border rounded-md px-2 py-1 text-sm"/>
+                  </form>
+
+                  <!-- Status filter -->
+                  <form phx-change="filter_status">
+                    <select name="status" class="border rounded-md px-2 py-1 text-sm">
+                      <option value="all" selected={@filter_status in [nil, "all"]}>Semua Status</option>
+                      <option value="pending" selected={@filter_status == "pending"}>Menunggu</option>
+                      <option value="approved" selected={@filter_status == "approved"}>Diluluskan</option>
+                      <option value="rejected" selected={@filter_status == "rejected"}>Ditolak</option>
+                      <option value="completed" selected={@filter_status == "completed"}>Selesai</option>
+                    </select>
+                  </form>
+
+                  <!-- Date filter -->
+                  <form phx-change="filter_date">
+                    <input type="date" name="date" value={@filter_date} class="border rounded-md px-2 py-1 text-sm"/>
+                  </form>
+                </div>
+              </div>
+
+              <div class="mb-2 text-sm text-gray-600">
+                <%= if @filtered_count == 0 do %>
+                  Tiada tempahan ditemui
+                <% else %>
+                  <%= @filtered_count %> tempahan ditemui
+                <% end %>
+              </div>
+
+              <.table
+                id="vehicle_bookings"
+                rows={@vehicle_bookings_page}
+                row_click={fn vehicle_booking -> JS.patch(
+                  ~p"/vehicle_bookings/#{vehicle_booking.id}?action=show&page=#{@page}&q=#{@search_query}&status=#{@filter_status}"
+                ) end}
+              >
+                <:col :let={vehicle_booking} label="ID"><%= vehicle_booking.id %></:col>
+                <:col :let={vehicle_booking} label="Tujuan">{vehicle_booking.purpose}</:col>
+                <:col :let={vehicle_booking} label="Destinasi Perjalanan">{vehicle_booking.trip_destination}</:col>
+                <:col :let={vehicle_booking} label="Masa Pickup">{vehicle_booking.pickup_time}</:col>
+                <:col :let={vehicle_booking} label="Masa Pulang">{vehicle_booking.return_time}</:col>
+                <:col :let={vehicle_booking} label="Status">{vehicle_booking.status}</:col>
+                <:col :let={vehicle_booking} label="Catatan Tambahan">{vehicle_booking.additional_notes}</:col>
+                <:action :let={vehicle_booking}>
+                  <div class="sr-only">
+                    <.link navigate={~p"/vehicle_bookings/#{vehicle_booking.id}?action=show"}>Lihat</.link>
+                  </div>
+                  <.link patch={~p"/vehicle_bookings/#{vehicle_booking}/edit"}>Kemaskini</.link>
+                </:action>
+                <:action :let={vehicle_booking}>
+                  <.link
+                    phx-click={JS.push("delete", value: %{id: vehicle_booking.id}) |> hide("##{vehicle_booking.id}")} data-confirm="Padam tempahan?">
+                    Padam
+                  </.link>
+                </:action>
+              </.table>
+
+              <!-- Pagination -->
+              <%= if @filtered_count > 1 do %>
+                <div class="relative flex items-center mt-4">
+                  <!-- Previous button -->
+                  <div class="flex-1">
+                    <.link
+                      patch={~p"/vehicle_bookings?page=#{max(@page - 1, 1)}&q=#{@search_query}&status=#{@filter_status}&date=#{@filter_date}"}
+                      class={"px-3 py-1 border rounded " <>
+                        if @page == 1,
+                          do: "bg-gray-200 text-gray-500 cursor-not-allowed",
+                          else: "bg-white text-gray-700 hover:bg-gray-100"}>
+                      Sebelumnya
+                    </.link>
+                  </div>
+
+                  <!-- Page numbers -->
+                  <div class="absolute left-1/2 transform -translate-x-1/2 flex space-x-1">
+                    <%= for p <- 1..@total_pages do %>
+                      <.link
+                        patch={~p"/vehicle_bookings?page=#{p}&q=#{@search_query}&status=#{@filter_status}&date=#{@filter_date}"}
+                        class={"px-3 py-1 border rounded " <>
+                          if p == @page,
+                            do: "bg-gray-700 text-white",
+                            else: "bg-white text-gray-700 hover:bg-gray-100"}>
+                        <%= p %>
+                      </.link>
+                    <% end %>
+                  </div>
+
+                  <!-- Next button -->
+                  <div class="flex-1 text-right">
+                    <.link
+                      patch={~p"/vehicle_bookings?page=#{min(@page + 1, @total_pages)}&q=#{@search_query}&status=#{@filter_status}&date=#{@filter_date}"}
+                      class={"px-3 py-1 border rounded " <>
+                        if @page == @total_pages,
+                          do: "bg-gray-200 text-gray-500 cursor-not-allowed",
+                          else: "bg-white text-gray-700 hover:bg-gray-100"}>
+                      Seterusnya
+                    </.link>
+                  </div>
+                </div>
+              <% end %>
+
+              <!-- Modal -->
+              <.modal :if={@live_action in [:new, :edit]} id="vehicle_booking-modal" show on_cancel={JS.patch(~p"/vehicle_bookings")}>
+                <.live_component
+                  module={SpatoWeb.VehicleBookingLive.FormComponent}
+                  id={@vehicle_booking.id || :new}
+                  title={@page_title}
+                  action={@live_action}
+                  vehicle_booking={@vehicle_booking}
+                  patch={~p"/vehicle_bookings"}
+                />
+              </.modal>
+
+              <!-- Modal -->
+              <.modal
+                :if={@live_action == :show}
+                id="vehicle-booking-show-modal"
+                show
+                on_cancel={JS.patch(~p"/vehicle_bookings?page=#{@page}&q=#{@search_query}&status=#{@filter_status}&date=#{@filter_date}")}>
+                <.live_component
+                  module={SpatoWeb.VehicleBookingLive.ShowComponent}
+                  id={@vehicle_booking.id}
+                  vehicle_booking={@vehicle_booking}
+                />
+              </.modal>
+            </section>
           </section>
         </main>
       </div>

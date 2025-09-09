@@ -3,16 +3,17 @@ defmodule Spato.Bookings.VehicleBooking do
   import Ecto.Changeset
 
   schema "vehicle_bookings" do
-    field :status, :string
+    field :status, :string, default: "pending"
     field :purpose, :string
     field :trip_destination, :string
     field :pickup_time, :utc_datetime
     field :return_time, :utc_datetime
     field :additional_notes, :string
-    field :user_id, :id
-    field :vehicle_id, :id
-    field :approved_by_user_id, :id
-    field :cancelled_by_user_id, :id
+
+    belongs_to :user, Spato.Accounts.User
+    belongs_to :vehicle, Spato.Assets.Vehicle
+    belongs_to :approved_by_user, Spato.Accounts.User
+    belongs_to :cancelled_by_user, Spato.Accounts.User
 
     timestamps(type: :utc_datetime)
   end
@@ -20,7 +21,8 @@ defmodule Spato.Bookings.VehicleBooking do
   @doc false
   def changeset(vehicle_booking, attrs) do
     vehicle_booking
-    |> cast(attrs, [:purpose, :trip_destination, :pickup_time, :return_time, :status, :additional_notes])
-    |> validate_required([:purpose, :trip_destination, :pickup_time, :return_time, :status, :additional_notes])
+    |> cast(attrs, [:user_id, :vehicle_id, :approved_by_user_id, :cancelled_by_user_id, :purpose, :trip_destination, :pickup_time, :return_time, :status, :additional_notes])
+    |> validate_required([:purpose, :trip_destination, :pickup_time, :return_time, :additional_notes])
+    |> validate_inclusion(:status, ["pending", "approved", "rejected", "cancelled", "completed"])
   end
 end

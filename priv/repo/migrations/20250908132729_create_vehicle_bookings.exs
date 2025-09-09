@@ -7,7 +7,7 @@ defmodule Spato.Repo.Migrations.CreateVehicleBookings do
       add :trip_destination, :text
       add :pickup_time, :utc_datetime
       add :return_time, :utc_datetime
-      add :status, :string
+      add :status, :string, default: "pending", null: false
       add :additional_notes, :text
       add :user_id, references(:users, on_delete: :nothing)
       add :vehicle_id, references(:vehicles, on_delete: :nothing)

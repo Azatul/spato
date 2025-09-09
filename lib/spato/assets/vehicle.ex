@@ -14,6 +14,7 @@ defmodule Spato.Assets.Vehicle do
 
     belongs_to :user, Spato.Accounts.User
     belongs_to :created_by, Spato.Accounts.User
+    has_many :vehicle_bookings, Spato.Bookings.VehicleBooking, on_delete: :delete_all
 
     timestamps(type: :utc_datetime)
   end
