@@ -4,6 +4,10 @@ defmodule SpatoWeb.MeetingRoomBookingLive.Index do
   alias Spato.Bookings
   alias Spato.Bookings.MeetingRoomBooking
 
+  import SpatoWeb.Components.Sidebar
+  import SpatoWeb.Components.Headbar
+
+
   @impl true
   def mount(_params, session, socket) do
   user = Spato.Accounts.get_user_by_session_token(session["user_token"])
@@ -20,8 +24,6 @@ defmodule SpatoWeb.MeetingRoomBookingLive.Index do
     |> stream(:meeting_room_bookings, bookings)}
 end
 
-@impl true
-  def handle_event("toggle_sidebar", _, socket), do: {:noreply, update(socket, :sidebar_open, &(!&1))}
 
   @impl true
   def handle_params(params, _url, socket) do
@@ -60,9 +62,30 @@ end
   end
 
   @impl true
+  def handle_event("toggle_sidebar", _, socket), do: {:noreply, update(socket, :sidebar_open, &(!&1))}
+
+  @impl true
   def render(assigns) do
     ~H"""
+      <div class="flex h-screen overflow-hidden">
+      <.sidebar active_tab={@active_tab} current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar"/>
+      <div class="flex flex-col flex-1">
+      <.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title={@page_title} />
 
+      <main class="flex-1 overflow-y-auto pt-20 p-6 transition-all duration-300 bg-gray-100">
+      <section class="mb-4">
+          <h1 class="text-xl font-bold mb-1">Tempah Bilik Mesyuarat</h1>
+          <p class="text-md text-gray-500 mb-4">Semak dan urus semua menu katering dalam sistem</p>
+
+           <!-- Button tempah bilik baru -->
+            <div class="flex justify-end mb-4">
+              <.link
+                patch={~p"/meeting_room_bookings/new"}
+                class="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition"
+              >
+                + Tempah Bilik Baru
+              </.link>
+            </div>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div class="p-4 bg-blue-100 rounded-xl shadow">
@@ -121,8 +144,11 @@ end
           meeting_room_booking={@meeting_room_booking}
           patch={~p"/meeting_room_bookings"}
         />
-      </.modal>
-      """
-
+        </.modal>
+        </section>
+      </main>
+      </div>
+      </div>
+    """
   end
 end
