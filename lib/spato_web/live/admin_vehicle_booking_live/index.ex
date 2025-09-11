@@ -18,7 +18,6 @@ defmodule SpatoWeb.AdminVehicleBookingLive.Index do
      |> assign(:search_query, "")
      |> assign(:page, 1)
      |> assign(:filter_date, "")
-     |> assign(:stats, Bookings.get_booking_stats())
      |> load_vehicle_bookings()}
   end
 
@@ -134,22 +133,7 @@ def render(assigns) do
           <h1 class="text-xl font-bold mb-1">Urus Tempahan Kenderaan</h1>
           <p class="text-md text-gray-500 mb-4">Semak dan urus semua tempahan kenderaan dalam sistem</p>
 
-          <!-- Stats Cards -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <%= for {label, value, color} <- [
-                  {"Jumlah Tempahan Minggu Ini", @stats.total_this_week, "text-gray-700"},
-                  {"Tempahan Selesai", @stats.completed, "text-blue-500"},
-                  {"Tempahan Menunggu", @stats.pending, "text-yellow-500"},
-                  {"Tempahan Diluluskan", @stats.approved, "text-green-500"}
-                ] do %>
-              <div class="bg-white p-4 rounded-xl shadow-md flex flex-col justify-between h-30 transition-transform hover:scale-105">
-                <div>
-                  <p class="text-sm text-gray-500"><%= label %></p>
-                  <p class={"text-3xl font-bold mt-1 #{color}"}><%= value %></p>
-                </div>
-              </div>
-            <% end %>
-          </div>
+
 
           <!-- Table Section -->
           <section class="bg-white p-4 md:p-6 rounded-xl shadow-md">

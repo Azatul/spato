@@ -19,7 +19,6 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
      |> assign(:search_query, "")
      |> assign(:page, 1)
      |> assign(:filter_date, "")
-     |> assign(:stats, Bookings.get_booking_stats(socket.assigns.current_user.id))
      |> load_vehicle_bookings()}
   end
 
@@ -36,7 +35,6 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
      |> assign(:search_query, search)
      |> assign(:filter_status, status)
      |> assign(:filter_date, date)
-     |> assign(:stats, Bookings.get_booking_stats(socket.assigns.current_user.id))
      |> load_vehicle_bookings()
      |> apply_action(socket.assigns.live_action, params)}
   end
@@ -146,22 +144,7 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
             <h1 class="text-xl font-bold mb-1">Tempahan Kenderaan Saya</h1>
             <p class="text-md text-gray-500 mb-4">Semak semua tempahan kenderaan yang anda buat</p>
 
-            <!-- Stats Cards -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-              <%= for {label, value, color} <- [
-                    {"Jumlah Tempahan Minggu Ini", @stats.total_this_week, "text-gray-700"},
-                    {"Tempahan Selesai", @stats.completed, "text-blue-500"},
-                    {"Tempahan Menunggu", @stats.pending, "text-yellow-500"},
-                    {"Tempahan Diluluskan", @stats.approved, "text-green-500"}
-                  ] do %>
-                <div class="bg-white p-4 rounded-xl shadow-md flex flex-col justify-between h-30 transition-transform hover:scale-105">
-                  <div>
-                    <p class="text-sm text-gray-500"><%= label %></p>
-                    <p class={"text-3xl font-bold mt-1 #{color}"}><%= value %></p>
-                  </div>
-                </div>
-              <% end %>
-            </div>
+
 
             <!-- Booking Table Section -->
             <section class="bg-white p-4 md:p-6 rounded-xl shadow-md">
