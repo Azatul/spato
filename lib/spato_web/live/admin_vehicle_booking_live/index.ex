@@ -4,6 +4,7 @@ defmodule SpatoWeb.AdminVehicleBookingLive.Index do
   import SpatoWeb.Components.Headbar
 
   alias Spato.Bookings
+  alias Spato.Accounts.User
 
   on_mount {SpatoWeb.UserAuth, :ensure_authenticated}
 
@@ -180,6 +181,13 @@ def render(assigns) do
               ~p"/admin/vehicle_bookings/#{booking.id}?action=show&page=#{@page}&q=#{@search_query}&status=#{@filter_status}&date=#{@filter_date}"
             ) end}>
               <:col :let={booking} label="ID"><%= booking.id %></:col>
+              <:col :let={booking} label="Dibuat Oleh">
+                <%= if booking.user do %>
+                  <%= User.display_name(booking.user) %>
+                <% else %>
+                  -
+                <% end %>
+              </:col>
               <:col :let={booking} label="Tujuan">{booking.purpose}</:col>
               <:col :let={booking} label="Destinasi">{booking.trip_destination}</:col>
               <:col :let={booking} label="Masa Pickup">{booking.pickup_time}</:col>

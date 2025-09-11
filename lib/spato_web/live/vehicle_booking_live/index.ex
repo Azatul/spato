@@ -122,7 +122,7 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
       "date" => socket.assigns.filter_date
     }
 
-    data = Bookings.list_vehicle_bookings_paginated(params)
+    data = Bookings.list_vehicle_bookings_paginated(params, socket.assigns.current_user)
 
     socket
     |> assign(:vehicle_bookings_page, data.vehicle_bookings_page)
@@ -267,6 +267,7 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
                   title={@page_title}
                   action={@live_action}
                   vehicle_booking={@vehicle_booking}
+                  current_user={@current_user}
                   patch={~p"/vehicle_bookings"}
                 />
               </.modal>

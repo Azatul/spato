@@ -68,7 +68,11 @@ defmodule SpatoWeb.VehicleBookingLive.FormComponent do
   end
 
   defp save_vehicle_booking(socket, :new, vehicle_booking_params) do
-    case Bookings.create_vehicle_booking(vehicle_booking_params) do
+    params =
+      vehicle_booking_params
+      |> Map.put_new("user_id", socket.assigns.current_user.id)
+
+    case Bookings.create_vehicle_booking(params) do
       {:ok, vehicle_booking} ->
         notify_parent({:saved, vehicle_booking})
 

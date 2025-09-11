@@ -14,6 +14,7 @@ defmodule Spato.Bookings do
   def list_vehicle_bookings(user \\ nil) do
     VehicleBooking
     |> scope_by_user(user)
+    |> preload(user: [:user_profile])
     |> order_by([vb], desc: vb.inserted_at)
     |> Repo.all()
   end
@@ -30,6 +31,7 @@ defmodule Spato.Bookings do
       |> filter_search(search)
       |> filter_status(status)
       |> filter_date(date)
+      |> preload(user: [:user_profile])
       |> order_by([vb], desc: vb.inserted_at)
 
     total = Repo.aggregate(query, :count)
