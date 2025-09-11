@@ -25,7 +25,6 @@ defmodule SpatoWeb.MeetingRoomBookingLive.FormComponent do
         <.input field={@form[:end_time]} type="datetime-local" label="End time" />
         <.input field={@form[:is_recurring]} type="checkbox" label="Is recurring" />
         <.input field={@form[:recurrence_pattern]} type="text" label="Recurrence pattern" />
-        <.input field={@form[:status]} type="text" label="Status" />
         <.input field={@form[:notes]} type="text" label="Notes" />
         <:actions>
           <.button phx-disable-with="Saving...">Save Meeting room booking</.button>

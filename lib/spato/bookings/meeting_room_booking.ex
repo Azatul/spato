@@ -3,7 +3,7 @@ defmodule Spato.Bookings.MeetingRoomBooking do
   import Ecto.Changeset
 
   schema "meeting_room_bookings" do
-    field :status, :string
+    field :status, :string, default: "pending"
     field :purpose, :string
     field :participants, :integer
     field :start_time, :naive_datetime
@@ -22,7 +22,8 @@ defmodule Spato.Bookings.MeetingRoomBooking do
   @doc false
   def changeset(meeting_room_booking, attrs) do
     meeting_room_booking
-    |> cast(attrs, [:purpose, :participants, :start_time, :end_time, :is_recurring, :recurrence_pattern, :status, :notes])
-    |> validate_required([:purpose, :participants, :start_time, :end_time, :is_recurring, :recurrence_pattern, :status, :notes])
+    |> cast(attrs, [:purpose, :participants, :start_time, :end_time, :is_recurring, :recurrence_pattern, :notes])
+    |> validate_required([:purpose, :participants, :start_time, :end_time, :is_recurring, :recurrence_pattern, :notes])
+    |> put_change(:status, meeting_room_booking.status || "pending")
   end
 end

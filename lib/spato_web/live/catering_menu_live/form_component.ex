@@ -59,15 +59,6 @@ defmodule SpatoWeb.CateringMenuLive.FormComponent do
             {"Minum Petang", "minum_petang"}
           ]}
         />
-        <.input
-          field={@form[:status]}
-          type="select"
-          label="Status"
-          options={[
-            {"Tersedia", "tersedia"},
-            {"Tidak Tersedia", "tidak_tersedia"}
-          ]}
-        />
         <:actions>
           <.button phx-disable-with={@action == :new && "Menyimpan..." || "Mengemaskini..."}>
             <%= if @action == :new do %>
@@ -101,9 +92,28 @@ defmodule SpatoWeb.CateringMenuLive.FormComponent do
     {:noreply, assign(socket, form: to_form(changeset, action: :validate))}
   end
 
-  def handle_event("save", %{"catering_menu" => catering_menu_params}, socket) do
-    save_catering_menu(socket, socket.assigns.action, catering_menu_params)
+  @impl true
+def handle_event("save", %{"meeting_room_booking" => booking_params}, socket) do
+  booking_params = Map.put(booking_params, "user_id", socket.assigns.current_user.id)
+
+  case Bookings.create_meeting_room_booking(booking_params) do
+    {:ok, booking} ->
+      # Hantar mesej ke parent (Index LiveView) supaya stream update
+      notify_parent({:saved, booking})
+
+      {:noreply,
+       socket
+       |> put_flash(:info, "Tempahan berjaya disimpan")
+       |> push_patch(to: socket.assigns.patch)}
+
+    {:error, %Ecto.Changeset{} = changeset} ->
+      {:noreply, assign(socket, :changeset, changeset)}
   end
+end
+
+defp notify_parent(msg), do: send(self(), {__MODULE__, msg})
+
+
 
   def handle_event("remove_menu_image", _params, socket) do
     socket =
