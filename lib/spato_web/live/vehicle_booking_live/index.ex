@@ -29,14 +29,34 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
     status = Map.get(params, "status", "all")
     date   = Map.get(params, "date", "")
 
-    {:noreply,
-     socket
-     |> assign(:page, page)
-     |> assign(:search_query, search)
-     |> assign(:filter_status, status)
-     |> assign(:filter_date, date)
-     |> load_vehicle_bookings()
-     |> apply_action(socket.assigns.live_action, params)}
+    socket =
+      socket
+      |> assign(:page, page)
+      |> assign(:search_query, search)
+      |> assign(:filter_status, status)
+      |> assign(:filter_date, date)
+      |> load_vehicle_bookings()
+
+    # Block editing if not pending or not owner
+    socket =
+      case socket.assigns.live_action do
+        :edit ->
+          id = Map.get(params, "id")
+          booking = Bookings.get_vehicle_booking!(id)
+
+          if booking.status == "pending" and booking.user_id == socket.assigns.current_user.id do
+            apply_action(socket, :edit, params)
+          else
+            socket
+            |> put_flash(:error, "Anda tidak boleh mengemaskini tempahan ini.")
+            |> push_patch(to: ~p"/vehicle_bookings")
+          end
+
+        _ ->
+          apply_action(socket, socket.assigns.live_action, params)
+      end
+
+    {:noreply, socket}
   end
 
   defp apply_action(socket, :edit, %{"id" => id}) do
@@ -65,14 +85,6 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
 
   @impl true
   def handle_info({SpatoWeb.VehicleBookingLive.FormComponent, {:saved, _vehicle_booking}}, socket) do
-    {:noreply, load_vehicle_bookings(socket)}
-  end
-
-  @impl true
-  def handle_event("delete", %{"id" => id}, socket) do
-    vehicle_booking = Bookings.get_vehicle_booking!(id)
-    {:ok, _} = Bookings.delete_vehicle_booking(vehicle_booking)
-
     {:noreply, load_vehicle_bookings(socket)}
   end
 
@@ -111,6 +123,19 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
     push_patch(socket,
       to: ~p"/vehicle_bookings?page=1&q=#{socket.assigns.search_query}&status=#{socket.assigns.filter_status}&date=#{date}"
     )}
+  end
+
+  @impl true
+  def handle_event("cancel", %{"id" => id}, socket) do
+    booking = Bookings.get_vehicle_booking!(id)
+
+    case Bookings.cancel_booking(booking, socket.assigns.current_user) do
+      {:ok, _} ->
+        {:noreply, load_vehicle_bookings(socket)}
+
+      {:error, :not_allowed} ->
+        {:noreply, socket |> put_flash(:error, "Tidak boleh batal selepas tindakan admin.")}
+    end
   end
 
   # --- LOAD BOOKINGS ---
@@ -203,16 +228,13 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
                 <:col :let={vehicle_booking} label="Status">{vehicle_booking.status}</:col>
                 <:col :let={vehicle_booking} label="Catatan Tambahan">{vehicle_booking.additional_notes}</:col>
                 <:action :let={vehicle_booking}>
-                  <div class="sr-only">
-                    <.link navigate={~p"/vehicle_bookings/#{vehicle_booking.id}?action=show"}>Lihat</.link>
-                  </div>
-                  <.link patch={~p"/vehicle_bookings/#{vehicle_booking}/edit"}>Kemaskini</.link>
-                </:action>
-                <:action :let={vehicle_booking}>
-                  <.link
-                    phx-click={JS.push("delete", value: %{id: vehicle_booking.id}) |> hide("##{vehicle_booking.id}")} data-confirm="Padam tempahan?">
-                    Padam
-                  </.link>
+                  <%= if vehicle_booking.status == "pending" do %>
+                    <.link phx-click={JS.push("cancel", value: %{id: vehicle_booking.id})} data-confirm="Batal tempahan?">
+                      Batal
+                    </.link>
+                  <% else %>
+                    <span class="text-gray-400">—</span>
+                  <% end %>
                 </:action>
               </.table>
 

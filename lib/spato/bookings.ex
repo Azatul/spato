@@ -84,6 +84,16 @@ defmodule Spato.Bookings do
   def reject_booking(%VehicleBooking{} = vb),
     do: update_vehicle_booking(vb, %{status: "rejected"})
 
+  def cancel_booking(%VehicleBooking{} = vb, %Spato.Accounts.User{} = user) do
+    case vb.status do
+      "pending" ->
+        update_vehicle_booking(vb, %{status: "cancelled", cancelled_by_user_id: user.id})
+
+      _ ->
+        {:error, :not_allowed}
+    end
+  end
+
   # --- Private Helpers ---
 
   defp scope_by_user(query, nil), do: query
