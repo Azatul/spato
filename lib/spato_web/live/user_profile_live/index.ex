@@ -288,8 +288,15 @@ defmodule SpatoWeb.UserProfileLive.Index do
             <:col :let={{_id, u}} label="Tarikh Lantikan"><%= if u.user_profile && Map.has_key?(u.user_profile, :date_joined), do: u.user_profile.date_joined, else: "Belum diisi" %></:col>
 
             <:action :let={{id, u}}>
-              <.link phx-click={JS.push("delete", value: %{id: u.id}) |> hide("##{id}")} data-confirm="Anda yakin?">Padam</.link>
+              <%= if u.id != @current_user.id and u.role != "admin" do %>
+                <.link phx-click={JS.push("delete", value: %{id: u.id}) |> hide("##{id}")} data-confirm="Anda yakin?">
+                  Padam
+                </.link>
+              <% else %>
+                <!-- No delete option for self or admins -->
+              <% end %>
             </:action>
+
           </.table>
         </section>
 

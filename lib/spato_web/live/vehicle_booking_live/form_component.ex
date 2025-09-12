@@ -1,15 +1,14 @@
 defmodule SpatoWeb.VehicleBookingLive.FormComponent do
   use SpatoWeb, :live_component
-
   alias Spato.Bookings
 
   @impl true
   def render(assigns) do
     ~H"""
-    <div>
+    <div class="max-w-xl mx-auto bg-white p-6 rounded-xl shadow-md">
       <.header>
         {@title}
-        <:subtitle>Use this form to manage vehicle_booking records in your database.</:subtitle>
+        <:subtitle>Sila isi butiran untuk menempah kenderaan.</:subtitle>
       </.header>
 
       <.simple_form
@@ -19,13 +18,20 @@ defmodule SpatoWeb.VehicleBookingLive.FormComponent do
         phx-change="validate"
         phx-submit="save"
       >
-        <.input field={@form[:purpose]} type="text" label="Purpose" />
-        <.input field={@form[:trip_destination]} type="text" label="Trip destination" />
-        <.input field={@form[:pickup_time]} type="datetime-local" label="Pickup time" />
-        <.input field={@form[:return_time]} type="datetime-local" label="Return time" />
-        <.input field={@form[:additional_notes]} type="text" label="Additional notes" />
+        <!-- Preloaded fields -->
+        <.input field={@form[:vehicle_id]} type="hidden" />
+        <.input field={@form[:pickup_time]} type="datetime-local" label="Masa Ambil" />
+        <.input field={@form[:return_time]} type="datetime-local" label="Masa Pulang" />
+
+        <!-- User-filled fields -->
+        <.input field={@form[:purpose]} type="text" label="Tujuan" />
+        <.input field={@form[:trip_destination]} type="text" label="Destinasi" />
+        <.input field={@form[:additional_notes]} type="text" label="Nota tambahan" />
+
         <:actions>
-          <.button phx-disable-with="Saving...">Save Vehicle booking</.button>
+          <.button phx-disable-with="Menyimpan..." class="bg-blue-600 text-white">
+            Simpan Tempahan
+          </.button>
         </:actions>
       </.simple_form>
     </div>
@@ -43,23 +49,26 @@ defmodule SpatoWeb.VehicleBookingLive.FormComponent do
   end
 
   @impl true
-  def handle_event("validate", %{"vehicle_booking" => vehicle_booking_params}, socket) do
-    changeset = Bookings.change_vehicle_booking(socket.assigns.vehicle_booking, vehicle_booking_params)
+  def handle_event("validate", %{"vehicle_booking" => params}, socket) do
+    changeset =
+      Bookings.change_vehicle_booking(socket.assigns.vehicle_booking, params)
+
     {:noreply, assign(socket, form: to_form(changeset, action: :validate))}
   end
 
-  def handle_event("save", %{"vehicle_booking" => vehicle_booking_params}, socket) do
-    save_vehicle_booking(socket, socket.assigns.action, vehicle_booking_params)
+  @impl true
+  def handle_event("save", %{"vehicle_booking" => params}, socket) do
+    save_vehicle_booking(socket, socket.assigns.action, params)
   end
 
-  defp save_vehicle_booking(socket, :edit, vehicle_booking_params) do
-    case Bookings.update_vehicle_booking(socket.assigns.vehicle_booking, vehicle_booking_params) do
+  defp save_vehicle_booking(socket, :edit, params) do
+    case Bookings.update_vehicle_booking(socket.assigns.vehicle_booking, params) do
       {:ok, vehicle_booking} ->
         notify_parent({:saved, vehicle_booking})
 
         {:noreply,
          socket
-         |> put_flash(:info, "Vehicle booking updated successfully")
+         |> put_flash(:info, "Tempahan dikemas kini")
          |> push_patch(to: socket.assigns.patch)}
 
       {:error, %Ecto.Changeset{} = changeset} ->
@@ -67,9 +76,9 @@ defmodule SpatoWeb.VehicleBookingLive.FormComponent do
     end
   end
 
-  defp save_vehicle_booking(socket, :new, vehicle_booking_params) do
+  defp save_vehicle_booking(socket, :new, params) do
     params =
-      vehicle_booking_params
+      params
       |> Map.put_new("user_id", socket.assigns.current_user.id)
 
     case Bookings.create_vehicle_booking(params) do
@@ -78,7 +87,7 @@ defmodule SpatoWeb.VehicleBookingLive.FormComponent do
 
         {:noreply,
          socket
-         |> put_flash(:info, "Vehicle booking created successfully")
+         |> put_flash(:info, "Tempahan kenderaan berjaya dibuat")
          |> push_patch(to: socket.assigns.patch)}
 
       {:error, %Ecto.Changeset{} = changeset} ->
