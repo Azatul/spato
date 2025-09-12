@@ -107,6 +107,38 @@ defmodule Spato.Bookings do
     }
   end
 
+  def available_vehicles(filters) do
+    import Ecto.Query
+
+    pickup_time = filters["pickup_time"]
+    return_time = filters["return_time"]
+
+    base_query =
+      from v in Spato.Assets.Vehicle,
+        preload: [:vehicle_bookings]
+
+    # If no pickup/return time provided, just return all
+    if is_nil(pickup_time) or is_nil(return_time) do
+      Spato.Repo.all(base_query)
+    else
+      from(v in base_query,
+        left_join: b in assoc(v, :vehicle_bookings),
+        on:
+          b.vehicle_id == v.id and
+            b.status in ["pending", "approved"] and
+            fragment(
+              "tsrange(?, ?) && tsrange(?, ?)",
+              b.pickup_time,
+              b.return_time,
+              ^pickup_time,
+              ^return_time
+            ),
+        where: is_nil(b.id)
+      )
+      |> Spato.Repo.all()
+    end
+  end
+
   # --- CRUD ---
 
   def get_vehicle_booking!(id), do: Repo.get!(VehicleBooking, id)

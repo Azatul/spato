@@ -209,7 +209,7 @@ defmodule SpatoWeb.UserProfileLive.Index do
                 </select>
 
                 <select name="role" class="border rounded-md px-2 pr-8 py-1 text-sm">
-                  <option value="all" selected={@filter_role in [nil, "all"]}>Semua Status</option>
+                  <option value="all" selected={@filter_role in [nil, "all"]}>Semua Peranan</option>
                   <option value="admin" selected={@filter_role == "admin"}>Admin</option>
                   <option value="user" selected={@filter_role == "user"}>Staf Biasa</option>
                 </select>

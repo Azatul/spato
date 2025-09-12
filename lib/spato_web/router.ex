@@ -35,6 +35,7 @@ defmodule SpatoWeb.Router do
     pipe_through :browser
 
     live "/", UserLoginLive
+    live "/available_vehicles", AvailableVehicleLive
   end
 
   scope "/", SpatoWeb do
