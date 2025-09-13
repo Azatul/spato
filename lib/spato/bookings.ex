@@ -142,7 +142,15 @@ defmodule Spato.Bookings do
 
   # --- CRUD ---
 
-  def get_vehicle_booking!(id), do: Repo.get!(VehicleBooking, id)
+  def get_vehicle_booking!(id) do
+    Repo.get!(VehicleBooking, id)
+    |> Repo.preload([
+      :vehicle,
+      :user,
+      :approved_by_user,
+      :cancelled_by_user
+    ])
+  end
 
   def create_vehicle_booking(attrs) do
     %VehicleBooking{}

@@ -37,6 +37,19 @@ defmodule SpatoWeb.VehicleBookingLive.AdminShowComponent do
           <dt class="font-medium text-gray-700">Catatan Tambahan</dt>
           <dd class="text-gray-900"><%= @vehicle_booking.additional_notes %></dd>
         </div>
+
+              <!-- Vehicle Details -->
+      <%= if @vehicle_booking.vehicle do %>
+        <.list>
+          <:item title="Nama Kenderaan"><%= @vehicle_booking.vehicle.name %></:item>
+          <:item title="Model"><%= @vehicle_booking.vehicle.vehicle_model %></:item>
+          <:item title="No. Plat"><%= @vehicle_booking.vehicle.plate_number %></:item>
+          <:item title="Jenis"><%= @vehicle_booking.vehicle.type %></:item>
+          <:item title="Kapasiti"><%= @vehicle_booking.vehicle.capacity %> penumpang</:item>
+        </.list>
+      <% else %>
+        <p class="mt-6 text-gray-500">Tiada maklumat kenderaan dilampirkan.</p>
+      <% end %>
       </dl>
 
       <div class="mt-6 flex gap-2">
