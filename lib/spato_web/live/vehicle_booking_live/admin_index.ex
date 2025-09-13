@@ -1,4 +1,4 @@
-defmodule SpatoWeb.AdminVehicleBookingLive.Index do
+defmodule SpatoWeb.VehicleBookingLive.AdminIndex do
   use SpatoWeb, :live_view
   import SpatoWeb.Components.Sidebar
   import SpatoWeb.Components.Headbar
@@ -255,7 +255,7 @@ def render(assigns) do
             show
             on_cancel={JS.patch(~p"/admin/vehicle_bookings?page=#{@page}&q=#{@search_query}&status=#{@filter_status}&date=#{@filter_date}")}>
             <.live_component
-              module={SpatoWeb.AdminVehicleBookingLive.ShowComponent}
+              module={SpatoWeb.VehicleBookingLive.AdminShowComponent}
               id={@vehicle_booking.id}
               vehicle_booking={@vehicle_booking}
             />

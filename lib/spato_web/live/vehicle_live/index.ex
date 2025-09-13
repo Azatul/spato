@@ -203,37 +203,18 @@ defmodule SpatoWeb.VehicleLive.Index do
             )
           end}>
             <:col :let={vehicle} label="ID"><%= vehicle.id %></:col>
-            <:col :let={vehicle} label="Kenderaan">
+            <:col :let={booking} label="Kenderaan">
               <div class="flex flex-col">
-                <!-- Vehicle Name -->
-                <div class="font-semibold text-gray-900">
-                  <%= vehicle.name %>
-                </div>
-
-                <!-- Plate Number -->
-                <div class="text-sm text-gray-500">
-                  <%= vehicle.plate_number %>
-                </div>
-
-                <!-- Vehicle Type (colored pill badge) -->
-                <div class="mt-1">
-                  <%= case vehicle.type do %>
-                    <% "kereta" -> %>
-                      <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-blue-500">Kereta</span>
-                    <% "mpv" -> %>
-                      <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-indigo-500">SUV / MPV</span>
-                    <% "pickup" -> %>
-                      <span class="px-1.5 py-0.5 rounded-full text-black text-xs font-semibold bg-yellow-400">Pickup / 4WD</span>
-                    <% "van" -> %>
-                      <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-green-500">Van</span>
-                    <% "bas" -> %>
-                      <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-purple-600">Bas</span>
-                    <% "motosikal" -> %>
-                      <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-red-500">Motosikal</span>
-                    <% _ -> %>
-                      <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-gray-400">Lain</span>
-                  <% end %>
-                </div>
+                <%= if booking.vehicle do %>
+                  <div class="font-semibold text-gray-900">
+                    <%= booking.vehicle.name %>
+                  </div>
+                  <div class="text-sm text-gray-500">
+                    <%= booking.vehicle.plate_number %> – <%= booking.vehicle.type %>
+                  </div>
+                <% else %>
+                  <div class="text-gray-500">Tiada kenderaan dipilih</div>
+                <% end %>
               </div>
             </:col>
             <:col :let={vehicle} label="Kapasiti">{vehicle.capacity}</:col>

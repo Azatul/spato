@@ -14,8 +14,8 @@ defmodule Spato.Bookings do
   def list_vehicle_bookings(user \\ nil) do
     VehicleBooking
     |> scope_by_user(user)
-    |> preload(user: [:user_profile])
     |> order_by([vb], desc: vb.inserted_at)
+    |> preload([:vehicle, user: [:user_profile]])
     |> Repo.all()
   end
 
@@ -96,6 +96,7 @@ defmodule Spato.Bookings do
       |> offset(^offset)
       |> Repo.all()
       |> Repo.preload(user: [:user_profile])
+      |> Repo.preload([:vehicle, user: [:user_profile]])
 
     total_pages = ceil(total / per_page)
 

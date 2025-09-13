@@ -9,7 +9,7 @@ defmodule SpatoWeb.VehicleBookingLive.FormComponent do
     <div>
       <.header>
         {@title}
-        <:subtitle>Use this form to manage vehicle_booking records in your database.</:subtitle>
+        <:subtitle>Gunakan borang ini untuk menguruskan tempahan kenderaan.</:subtitle>
       </.header>
 
       <.simple_form
@@ -19,22 +19,21 @@ defmodule SpatoWeb.VehicleBookingLive.FormComponent do
         phx-change="validate"
         phx-submit="save"
       >
-        <!-- Vehicle info (readonly, prefilled) -->
+        <!-- Vehicle info (readonly, prefilled if chosen) -->
         <%= if @vehicle do %>
           <.input field={@form[:vehicle_model]} label="Model" readonly />
           <.input field={@form[:plate_number]} label="No. Plat" readonly />
           <.input field={@form[:capacity]} label="Kapasiti" readonly />
-          <.input field={@form[:status]} label="Status" readonly />
         <% end %>
 
         <!-- Prefilled times -->
-        <.input field={@form[:pickup_time]} type="datetime-local" label="Pickup time" />
-        <.input field={@form[:return_time]} type="datetime-local" label="Return time" />
+        <.input field={@form[:pickup_time]} type="datetime-local" label="Masa Ambil" />
+        <.input field={@form[:return_time]} type="datetime-local" label="Masa Pulang" />
 
         <!-- Other fields -->
-        <.input field={@form[:purpose]} type="text" label="Purpose" />
-        <.input field={@form[:trip_destination]} type="text" label="Trip destination" />
-        <.input field={@form[:additional_notes]} type="text" label="Additional notes" />
+        <.input field={@form[:purpose]} type="text" label="Tujuan" />
+        <.input field={@form[:trip_destination]} type="text" label="Destinasi" />
+        <.input field={@form[:additional_notes]} type="text" label="Catatan Tambahan" />
 
         <:actions>
           <.button phx-disable-with="Saving...">
@@ -50,35 +49,17 @@ defmodule SpatoWeb.VehicleBookingLive.FormComponent do
     """
   end
 
-  # Case: params present (edit, or selecting vehicle by param)
+  # Single update/2 handling both new/edit
   @impl true
   def update(%{vehicle_booking: vehicle_booking, params: params} = assigns, socket) do
+    # Load vehicle if vehicle_id passed
     vehicle =
       case params["vehicle_id"] do
         nil -> nil
         id -> Spato.Repo.get!(Spato.Assets.Vehicle, id)
       end
 
-    changeset =
-      Bookings.change_vehicle_booking(vehicle_booking, %{
-        vehicle_id: vehicle && vehicle.id,
-        vehicle_model: vehicle && vehicle.vehicle_model,
-        plate_number: vehicle && vehicle.plate_number,
-        capacity: vehicle && vehicle.capacity,
-        status: vehicle && vehicle.status,
-        pickup_time: params["pickup_time"],
-        return_time: params["return_time"]
-      })
-
-    {:ok,
-     socket
-     |> assign(assigns)
-     |> assign(:vehicle, vehicle)
-     |> assign(:form, to_form(changeset))}
-  end
-
-  # Case: no params (new booking form)
-  def update(%{vehicle_booking: vehicle_booking, params: params} = assigns, socket) do
+    # Normalize times (treat "" as nil)
     attrs =
       params
       |> Map.take(["vehicle_id", "pickup_time", "return_time"])
@@ -88,21 +69,41 @@ defmodule SpatoWeb.VehicleBookingLive.FormComponent do
         {k, v}, acc -> Map.put(acc, k, v)
       end)
 
+    # Merge in vehicle details if available
+    attrs =
+      if vehicle do
+        Map.merge(attrs, %{
+          "vehicle_id" => vehicle.id,
+          "vehicle_model" => vehicle.vehicle_model,
+          "plate_number" => vehicle.plate_number,
+          "capacity" => vehicle.capacity,
+          "status" => vehicle.status
+        })
+      else
+        attrs
+      end
+
+    # Build changeset
     changeset = Bookings.change_vehicle_booking(vehicle_booking, attrs)
 
     {:ok,
      socket
      |> assign(assigns)
+     |> assign(:vehicle, vehicle)
      |> assign(:form, to_form(changeset))}
   end
 
-
+  # Live validation
   @impl true
   def handle_event("validate", %{"vehicle_booking" => vehicle_booking_params}, socket) do
-    changeset = Bookings.change_vehicle_booking(socket.assigns.vehicle_booking, vehicle_booking_params)
+    changeset =
+      Bookings.change_vehicle_booking(socket.assigns.vehicle_booking, vehicle_booking_params)
+
     {:noreply, assign(socket, form: to_form(changeset, action: :validate))}
   end
 
+  # Save booking
+  @impl true
   def handle_event("save", %{"vehicle_booking" => vehicle_booking_params}, socket) do
     save_vehicle_booking(socket, socket.assigns.action, vehicle_booking_params)
   end
@@ -114,7 +115,7 @@ defmodule SpatoWeb.VehicleBookingLive.FormComponent do
 
         {:noreply,
          socket
-         |> put_flash(:info, "Vehicle booking updated successfully")
+         |> put_flash(:info, "Tempahan kenderaan berjaya dikemaskini")
          |> push_patch(to: socket.assigns.patch)}
 
       {:error, %Ecto.Changeset{} = changeset} ->
@@ -133,7 +134,7 @@ defmodule SpatoWeb.VehicleBookingLive.FormComponent do
 
         {:noreply,
          socket
-         |> put_flash(:info, "Vehicle booking created successfully")
+         |> put_flash(:info, "Tempahan kenderaan berjaya dibuat")
          |> push_patch(to: socket.assigns.patch)}
 
       {:error, %Ecto.Changeset{} = changeset} ->

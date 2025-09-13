@@ -4,6 +4,7 @@ defmodule SpatoWeb.AvailableVehicleLive do
   import SpatoWeb.Components.Headbar
 
   alias Spato.Bookings
+  alias Spato.Bookings.VehicleBooking
 
   on_mount {SpatoWeb.UserAuth, :ensure_authenticated}
 
@@ -28,10 +29,12 @@ defmodule SpatoWeb.AvailableVehicleLive do
      |> assign(:form, to_form(filters))
      |> assign(:page, 1)
      |> assign(:total_pages, 1)
-     |> assign(:total, 0)}
+     |> assign(:total, 0)
+     |> assign(:vehicle_booking, nil)
+     |> assign(:params, %{})
+     |> assign(:live_action, :index)}
   end
 
-  # Load vehicles based on filters and page
   defp load_vehicles(socket) do
     filters = socket.assigns.filters
     vehicles = Bookings.available_vehicles(filters)
@@ -43,14 +46,13 @@ defmodule SpatoWeb.AvailableVehicleLive do
     |> assign(:total, length(vehicles))
   end
 
-
   @impl true
   def handle_event("search", params, socket) do
-    # Handle both direct params and wrapped params
-    filters = case params do
-      %{"filters" => filters} -> filters
-      filters when is_map(filters) -> filters
-    end
+    filters =
+      case params do
+        %{"filters" => filters} -> filters
+        filters when is_map(filters) -> filters
+      end
 
     new_filters = %{
       "query" => Map.get(filters, "query", ""),
@@ -69,24 +71,34 @@ defmodule SpatoWeb.AvailableVehicleLive do
   end
 
   @impl true
-  def handle_event("toggle_sidebar", _, socket), do: {:noreply, update(socket, :sidebar_open, &(!&1))}
+  def handle_event("toggle_sidebar", _, socket),
+    do: {:noreply, update(socket, :sidebar_open, &(!&1))}
 
   @impl true
   def handle_params(params, _url, socket) do
-    page =
-      case Map.get(params, "page") do
-        nil -> 1
-        p when is_binary(p) ->
-          case Integer.parse(p) do
-            {num, _} -> num
-            :error -> 1
-          end
+    socket =
+      case params["action"] do
+        "new" ->
+          vehicle_booking = %VehicleBooking{}
+
+          socket
+          |> assign(:live_action, :new)
+          |> assign(:page_title, "Tambah Tempahan Kenderaan")
+          |> assign(:vehicle_booking, vehicle_booking)
+          |> assign(:params, params)
+
+        _ ->
+          socket
+          |> assign(:live_action, :index)
+          |> assign(:vehicle_booking, nil)
       end
 
-    {:noreply,
-     socket
-     |> assign(:page, page)
-     |> load_vehicles()}
+    {:noreply, socket |> load_vehicles()}
+  end
+
+  @impl true
+  def handle_info({SpatoWeb.VehicleBookingLive.FormComponent, {:saved, _booking}}, socket) do
+    {:noreply, socket |> load_vehicles()}
   end
 
   @impl true
@@ -126,46 +138,33 @@ defmodule SpatoWeb.AvailableVehicleLive do
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               <%= for vehicle <- @vehicles do %>
                 <div class="bg-white rounded-2xl shadow-md p-4 hover:shadow-lg transition-shadow">
-                  <!-- Image with overlay badge -->
                   <div class="relative mb-3">
                     <img src={vehicle.photo_url || "/images/vehicle.jpg"} class="w-full h-40 object-cover rounded-lg" />
-                    <!-- Vehicle Type badge overlaid on image -->
                     <div class="absolute top-2 right-2">
                       <%= case vehicle.type do %>
-                        <% "kereta" -> %>
-                          <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-blue-500">Kereta</span>
-                        <% "mpv" -> %>
-                          <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-indigo-500">SUV / MPV</span>
-                        <% "pickup" -> %>
-                          <span class="px-1.5 py-0.5 rounded-full text-black text-xs font-semibold bg-yellow-400">Pickup / 4WD</span>
-                        <% "van" -> %>
-                          <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-green-500">Van</span>
-                        <% "bas" -> %>
-                          <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-purple-600">Bas</span>
-                        <% "motosikal" -> %>
-                          <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-red-500">Motosikal</span>
-                        <% _ -> %>
-                          <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-gray-400">Lain</span>
+                        <% "kereta" -> %><span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-blue-500">Kereta</span>
+                        <% "mpv" -> %><span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-indigo-500">SUV / MPV</span>
+                        <% "pickup" -> %><span class="px-1.5 py-0.5 rounded-full text-black text-xs font-semibold bg-yellow-400">Pickup / 4WD</span>
+                        <% "van" -> %><span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-green-500">Van</span>
+                        <% "bas" -> %><span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-purple-600">Bas</span>
+                        <% "motosikal" -> %><span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-red-500">Motosikal</span>
+                        <% _ -> %><span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-gray-400">Lain</span>
                       <% end %>
                     </div>
                   </div>
 
-                  <!-- Vehicle Name -->
                   <h3 class="font-bold text-lg mb-1"><%= vehicle.name %></h3>
-
-                  <!-- Plate Number -->
                   <p class="text-gray-600 mb-2"><%= vehicle.plate_number %></p>
-
-                  <!-- Capacity -->
                   <p class="text-sm text-gray-500 mb-3"><%= vehicle.capacity %> penumpang</p>
+
                   <.link
-                    navigate={
-                      ~p"/vehicle_bookings/new?" <>
-                        URI.encode_query(%{
-                          vehicle_id: vehicle.id,
-                          pickup_time: @filters["pickup_time"],
-                          return_time: @filters["return_time"]
-                        })
+                    patch={
+                      ~p"/available_vehicles?#{%{
+                        action: "new",
+                        vehicle_id: vehicle.id,
+                        pickup_time: @filters["pickup_time"],
+                        return_time: @filters["return_time"]
+                      }}"
                     }
                     class="block"
                   >
@@ -177,39 +176,25 @@ defmodule SpatoWeb.AvailableVehicleLive do
               <% end %>
             </div>
 
-            <!-- No vehicles message -->
             <%= if Enum.empty?(@vehicles) do %>
               <div class="text-center py-12">
                 <p class="text-gray-500 text-lg">Tiada kenderaan tersedia dengan kriteria carian anda.</p>
               </div>
             <% end %>
 
-            <!-- Pagination -->
-            <%= if @total_pages > 1 do %>
-              <div class="flex justify-center mt-8 space-x-2">
-                <%= for p <- 1..@total_pages do %>
-                  <.link patch={~p"/available_vehicles?page=#{p}"}
-                    class={"px-3 py-1 rounded #{if @page == p, do: "bg-blue-500 text-white", else: "bg-gray-200 hover:bg-gray-300"}"}>
-                    <%= p %>
-                  </.link>
-                <% end %>
-              </div>
-            <% end %>
-
-              <!-- Modal -->
-              <.modal :if={@live_action in [:new, :edit]} id="vehicle_booking-modal" show on_cancel={JS.patch(~p"/available_vehicles")}>
-                <.live_component
-                  module={SpatoWeb.VehicleBookingLive.FormComponent}
-                  id={@vehicle_booking.id || :new}
-                  title={@page_title}
-                  action={@live_action}
-                  vehicle_booking={@vehicle_booking}
-                  current_user={@current_user}
-                  patch={~p"/available_vehicles"}
-                  params={@params}
-                />
-              </.modal>
-
+            <!-- Modal -->
+            <.modal :if={@live_action in [:new, :edit]} id="vehicle_booking-modal" show on_cancel={JS.patch(~p"/available_vehicles")}>
+              <.live_component
+                module={SpatoWeb.VehicleBookingLive.FormComponent}
+                id={@vehicle_booking && @vehicle_booking.id || :new}
+                title={@page_title}
+                action={@live_action}
+                vehicle_booking={@vehicle_booking}
+                current_user={@current_user}
+                patch={~p"/available_vehicles"}
+                params={@params}
+              />
+            </.modal>
           </section>
         </main>
       </div>

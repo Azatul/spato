@@ -1,4 +1,4 @@
-defmodule SpatoWeb.AdminVehicleBookingLive.ShowComponent do
+defmodule SpatoWeb.VehicleBookingLive.AdminShowComponent do
   use SpatoWeb, :live_component
 
   @impl true

@@ -31,21 +31,11 @@ def render(assigns) do
     <.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title={@page_title} />
 
     <!-- Main Content -->
-    <main class="flex-1 pt-16 p-8 overflow-y-auto bg-gray-50">
-      <!-- Header -->
-      <div class="flex justify-between items-center pb-4 mb-8 border-b border-gray-200">
-        <h2 class="text-xl font-semibold">User Panel</h2>
-        <div class="flex items-center space-x-2">
-          <span class="text-gray-700">Arissa</span>
-          <div class="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
-            <i class="fa-solid fa-user text-gray-600"></i>
-          </div>
-        </div>
-      </div>
+    <main class="flex-1 pt-20 p-8 overflow-y-auto bg-gray-50">
 
       <!-- Welcome -->
       <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-800">Selamat Kembali, Arissa!</h1>
+        <h1 class="text-3xl font-bold text-gray-800">Selamat Kembali, <%= if @current_user.user_profile do %><%= @current_user.user_profile.full_name %><% else %><%= @current_user.email %><% end %>!</h1>
         <p class="text-gray-500 mt-1">
           Berikut ialah ikhtisar ringkas tempahan dan aktiviti anda
         </p>

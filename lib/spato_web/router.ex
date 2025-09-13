@@ -35,7 +35,6 @@ defmodule SpatoWeb.Router do
     pipe_through :browser
 
     live "/", UserLoginLive
-    live "/available_vehicles", AvailableVehicleLive
   end
 
   scope "/", SpatoWeb do
@@ -46,6 +45,7 @@ defmodule SpatoWeb.Router do
     live "/vehicle_bookings/new", VehicleBookingLive.Index, :new
     live "/vehicle_bookings/:id/edit", VehicleBookingLive.Index, :edit
     live "/vehicle_bookings/:id", VehicleBookingLive.Index, :show
+    live "/available_vehicles", AvailableVehicleLive
 
   end
 
@@ -85,8 +85,8 @@ defmodule SpatoWeb.Router do
       live "/catering_menus/:id/edit", CateringMenuLive.Index, :edit
       live "/catering_menus/:id", CateringMenuLive.Index, :show
 
-      live "/vehicle_bookings", AdminVehicleBookingLive.Index, :index
-      live "/vehicle_bookings/:id", AdminVehicleBookingLive.Index, :show
+      live "/vehicle_bookings", VehicleBookingLive.AdminIndex, :index
+      live "/vehicle_bookings/:id", VehicleBookingLive.AdminIndex, :show
     end
   end
 

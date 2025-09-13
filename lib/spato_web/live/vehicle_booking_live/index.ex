@@ -19,6 +19,8 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
      |> assign(:search_query, "")
      |> assign(:page, 1)
      |> assign(:filter_date, "")
+     |> assign(:vehicle_booking, nil)
+     |> assign(:params, %{})
      |> load_vehicle_bookings()}
   end
 
@@ -37,7 +39,6 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
       |> assign(:filter_date, date)
       |> load_vehicle_bookings()
 
-    # Block editing if not pending or not owner
     socket =
       case socket.assigns.live_action do
         :edit ->
@@ -52,32 +53,34 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
             |> push_patch(to: ~p"/vehicle_bookings")
           end
 
-        _ ->
-          apply_action(socket, socket.assigns.live_action, params)
+        action ->
+          apply_action(socket, action, params)
       end
 
     {:noreply, socket}
   end
 
-  defp apply_action(socket, :edit, %{"id" => id}) do
-    socket
-    |> assign(:page_title, "Kemaskini Tempahan Kenderaan")
-    |> assign(:vehicle_booking, Bookings.get_vehicle_booking!(id))
-  end
-
-  defp apply_action(socket, :new, params) do
-    vehicle_booking = %VehicleBooking{}
-
-    socket
-    |> assign(:page_title, "Tambah Tempahan Kenderaan")
-    |> assign(:vehicle_booking, vehicle_booking)
-    |> assign(:params, params)
-  end
+  # --- APPLY ACTIONS ---
 
   defp apply_action(socket, :index, _params) do
     socket
     |> assign(:page_title, "Senarai Tempahan Kenderaan")
     |> assign(:vehicle_booking, nil)
+    |> assign(:params, %{})
+  end
+
+  defp apply_action(socket, :new, params) do
+    socket
+    |> assign(:page_title, "Tambah Tempahan Kenderaan")
+    |> assign(:vehicle_booking, %VehicleBooking{})
+    |> assign(:params, params)
+  end
+
+  defp apply_action(socket, :edit, %{"id" => id} = params) do
+    socket
+    |> assign(:page_title, "Kemaskini Tempahan Kenderaan")
+    |> assign(:vehicle_booking, Bookings.get_vehicle_booking!(id))
+    |> assign(:params, params)
   end
 
   defp apply_action(socket, :show, %{"id" => id}) do
@@ -85,6 +88,27 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
     |> assign(:page_title, "Tempahan Kenderaan")
     |> assign(:vehicle_booking, Bookings.get_vehicle_booking!(id))
   end
+
+  # --- LOAD BOOKINGS ---
+
+  defp load_vehicle_bookings(socket) do
+    params = %{
+      "page" => socket.assigns.page,
+      "search" => socket.assigns.search_query,
+      "status" => socket.assigns.filter_status,
+      "date" => socket.assigns.filter_date
+    }
+
+    data = Bookings.list_vehicle_bookings_paginated(params, socket.assigns.current_user)
+
+    socket
+    |> assign(:vehicle_bookings_page, data.vehicle_bookings_page)
+    |> assign(:total_pages, data.total_pages)
+    |> assign(:filtered_count, data.total)
+    |> assign(:page, data.page)
+  end
+
+  # --- HANDLE EVENTS ---
 
   @impl true
   def handle_info({SpatoWeb.VehicleBookingLive.FormComponent, {:saved, _vehicle_booking}}, socket) do
@@ -108,8 +132,9 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
   @impl true
   def handle_event("filter_status", %{"status" => status}, socket) do
     {:noreply,
-      push_patch(socket,
-        to: ~p"/vehicle_bookings?page=1&q=#{socket.assigns.search_query}&status=#{status}")}
+     push_patch(socket,
+       to: ~p"/vehicle_bookings?page=1&q=#{socket.assigns.search_query}&status=#{status}"
+     )}
   end
 
   @impl true
@@ -123,9 +148,10 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
   @impl true
   def handle_event("filter_date", %{"date" => date}, socket) do
     {:noreply,
-    push_patch(socket,
-      to: ~p"/vehicle_bookings?page=1&q=#{socket.assigns.search_query}&status=#{socket.assigns.filter_status}&date=#{date}"
-    )}
+     push_patch(socket,
+       to:
+         ~p"/vehicle_bookings?page=1&q=#{socket.assigns.search_query}&status=#{socket.assigns.filter_status}&date=#{date}"
+     )}
   end
 
   @impl true
@@ -141,23 +167,7 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
     end
   end
 
-  # --- LOAD BOOKINGS ---
-  defp load_vehicle_bookings(socket) do
-    params = %{
-      "page" => socket.assigns.page,
-      "search" => socket.assigns.search_query,
-      "status" => socket.assigns.filter_status,
-      "date" => socket.assigns.filter_date
-    }
-
-    data = Bookings.list_vehicle_bookings_paginated(params, socket.assigns.current_user)
-
-    socket
-    |> assign(:vehicle_bookings_page, data.vehicle_bookings_page)
-    |> assign(:total_pages, data.total_pages)
-    |> assign(:filtered_count, data.total)
-    |> assign(:page, data.page)
-  end
+  # --- RENDER ---
 
   @impl true
   def render(assigns) do
@@ -178,7 +188,7 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
                 <div class="flex items-center justify-between">
                   <h2 class="text-lg font-semibold text-gray-900">Senarai Tempahan Kenderaan</h2>
                   <.link patch={~p"/available_vehicles"}>
-                    <.button>Tambah Tempahan Kenderaan</.button>
+                    <.button>Tempah Kenderaan</.button>
                   </.link>
                 </div>
 
@@ -217,17 +227,50 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
               <.table
                 id="vehicle_bookings"
                 rows={@vehicle_bookings_page}
-                row_click={fn vehicle_booking -> JS.patch(
-                  ~p"/vehicle_bookings/#{vehicle_booking.id}?action=show&page=#{@page}&q=#{@search_query}&status=#{@filter_status}"
-                ) end}
+                row_click={fn vehicle_booking ->
+                  JS.patch(~p"/vehicle_bookings/#{vehicle_booking.id}?action=show&page=#{@page}&q=#{@search_query}&status=#{@filter_status}")
+                end}
               >
+                <:col :let={vehicle} label="Kenderaan">
+                  <div class="flex flex-col">
+                    <!-- Vehicle Name -->
+                    <div class="font-semibold text-gray-900">
+                      <%= vehicle.name %>
+                    </div>
+
+                    <!-- Plate Number -->
+                    <div class="text-sm text-gray-500">
+                      <%= vehicle.plate_number %>
+                    </div>
+
+                    <!-- Vehicle Type (colored pill badge) -->
+                    <div class="mt-1">
+                      <%= case vehicle.type do %>
+                        <% "kereta" -> %>
+                          <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-blue-500">Kereta</span>
+                        <% "mpv" -> %>
+                          <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-indigo-500">SUV / MPV</span>
+                        <% "pickup" -> %>
+                          <span class="px-1.5 py-0.5 rounded-full text-black text-xs font-semibold bg-yellow-400">Pickup / 4WD</span>
+                        <% "van" -> %>
+                          <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-green-500">Van</span>
+                        <% "bas" -> %>
+                          <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-purple-600">Bas</span>
+                        <% "motosikal" -> %>
+                          <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-red-500">Motosikal</span>
+                        <% _ -> %>
+                          <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-gray-400">Lain</span>
+                      <% end %>
+                    </div>
+                  </div>
+                </:col>
                 <:col :let={vehicle_booking} label="ID"><%= vehicle_booking.id %></:col>
                 <:col :let={vehicle_booking} label="Tujuan">{vehicle_booking.purpose}</:col>
-                <:col :let={vehicle_booking} label="Destinasi Perjalanan">{vehicle_booking.trip_destination}</:col>
+                <:col :let={vehicle_booking} label="Destinasi">{vehicle_booking.trip_destination}</:col>
                 <:col :let={vehicle_booking} label="Masa Pickup">{vehicle_booking.pickup_time}</:col>
                 <:col :let={vehicle_booking} label="Masa Pulang">{vehicle_booking.return_time}</:col>
                 <:col :let={vehicle_booking} label="Status">{vehicle_booking.status}</:col>
-                <:col :let={vehicle_booking} label="Catatan Tambahan">{vehicle_booking.additional_notes}</:col>
+                <:col :let={vehicle_booking} label="Catatan">{vehicle_booking.additional_notes}</:col>
                 <:action :let={vehicle_booking}>
                   <%= if vehicle_booking.status == "pending" do %>
                     <.link phx-click={JS.push("cancel", value: %{id: vehicle_booking.id})} data-confirm="Batal tempahan?">
@@ -242,7 +285,7 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
               <!-- Pagination -->
               <%= if @filtered_count > 1 do %>
                 <div class="relative flex items-center mt-4">
-                  <!-- Previous button -->
+                  <!-- Previous -->
                   <div class="flex-1">
                     <.link
                       patch={~p"/vehicle_bookings?page=#{max(@page - 1, 1)}&q=#{@search_query}&status=#{@filter_status}&date=#{@filter_date}"}
@@ -268,7 +311,7 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
                     <% end %>
                   </div>
 
-                  <!-- Next button -->
+                  <!-- Next -->
                   <div class="flex-1 text-right">
                     <.link
                       patch={~p"/vehicle_bookings?page=#{min(@page + 1, @total_pages)}&q=#{@search_query}&status=#{@filter_status}&date=#{@filter_date}"}
@@ -282,7 +325,7 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
                 </div>
               <% end %>
 
-              <!-- Modal -->
+              <!-- Modal for show -->
               <.modal
                 :if={@live_action == :show}
                 id="vehicle-booking-show-modal"
