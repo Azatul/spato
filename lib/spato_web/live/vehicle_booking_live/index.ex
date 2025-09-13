@@ -65,10 +65,13 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
     |> assign(:vehicle_booking, Bookings.get_vehicle_booking!(id))
   end
 
-  defp apply_action(socket, :new, _params) do
+  defp apply_action(socket, :new, params) do
+    vehicle_booking = %VehicleBooking{}
+
     socket
     |> assign(:page_title, "Tambah Tempahan Kenderaan")
-    |> assign(:vehicle_booking, %VehicleBooking{})
+    |> assign(:vehicle_booking, vehicle_booking)
+    |> assign(:params, params)
   end
 
   defp apply_action(socket, :index, _params) do
@@ -169,14 +172,12 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
             <h1 class="text-xl font-bold mb-1">Tempahan Kenderaan Saya</h1>
             <p class="text-md text-gray-500 mb-4">Semak semua tempahan kenderaan yang anda buat</p>
 
-
-
             <!-- Booking Table Section -->
             <section class="bg-white p-4 md:p-6 rounded-xl shadow-md">
               <div class="flex flex-col mb-4 gap-2">
                 <div class="flex items-center justify-between">
                   <h2 class="text-lg font-semibold text-gray-900">Senarai Tempahan Kenderaan</h2>
-                  <.link patch={~p"/vehicle_bookings/new"}>
+                  <.link patch={~p"/available_vehicles"}>
                     <.button>Tambah Tempahan Kenderaan</.button>
                   </.link>
                 </div>
@@ -280,19 +281,6 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
                   </div>
                 </div>
               <% end %>
-
-              <!-- Modal -->
-              <.modal :if={@live_action in [:new, :edit]} id="vehicle_booking-modal" show on_cancel={JS.patch(~p"/vehicle_bookings")}>
-                <.live_component
-                  module={SpatoWeb.VehicleBookingLive.FormComponent}
-                  id={@vehicle_booking.id || :new}
-                  title={@page_title}
-                  action={@live_action}
-                  vehicle_booking={@vehicle_booking}
-                  current_user={@current_user}
-                  patch={~p"/vehicle_bookings"}
-                />
-              </.modal>
 
               <!-- Modal -->
               <.modal

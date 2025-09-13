@@ -128,7 +128,7 @@ defmodule SpatoWeb.AvailableVehicleLive do
                 <div class="bg-white rounded-2xl shadow-md p-4 hover:shadow-lg transition-shadow">
                   <!-- Image with overlay badge -->
                   <div class="relative mb-3">
-                    <img src={vehicle.photo_url || "/images/placeholder-vehicle.jpg"} class="w-full h-40 object-cover rounded-lg" />
+                    <img src={vehicle.photo_url || "/images/vehicle.jpg"} class="w-full h-40 object-cover rounded-lg" />
                     <!-- Vehicle Type badge overlaid on image -->
                     <div class="absolute top-2 right-2">
                       <%= case vehicle.type do %>
@@ -158,21 +158,21 @@ defmodule SpatoWeb.AvailableVehicleLive do
 
                   <!-- Capacity -->
                   <p class="text-sm text-gray-500 mb-3"><%= vehicle.capacity %> penumpang</p>
-                    <.link
-                      navigate={
-                        ~p"/vehicle_bookings/new?" <>
-                          URI.encode_query(%{
-                            vehicle_id: vehicle.id,
-                            pickup_time: @filters["pickup_time"],
-                            return_time: @filters["return_time"]
-                          })
-                      }
-                      class="block"
-                    >
-                      <.button class="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
-                        Tempah Sekarang
-                      </.button>
-                    </.link>
+                  <.link
+                    navigate={
+                      ~p"/vehicle_bookings/new?" <>
+                        URI.encode_query(%{
+                          vehicle_id: vehicle.id,
+                          pickup_time: @filters["pickup_time"],
+                          return_time: @filters["return_time"]
+                        })
+                    }
+                    class="block"
+                  >
+                    <.button class="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                      Tempah Sekarang
+                    </.button>
+                  </.link>
                 </div>
               <% end %>
             </div>
@@ -195,6 +195,21 @@ defmodule SpatoWeb.AvailableVehicleLive do
                 <% end %>
               </div>
             <% end %>
+
+              <!-- Modal -->
+              <.modal :if={@live_action in [:new, :edit]} id="vehicle_booking-modal" show on_cancel={JS.patch(~p"/available_vehicles")}>
+                <.live_component
+                  module={SpatoWeb.VehicleBookingLive.FormComponent}
+                  id={@vehicle_booking.id || :new}
+                  title={@page_title}
+                  action={@live_action}
+                  vehicle_booking={@vehicle_booking}
+                  current_user={@current_user}
+                  patch={~p"/available_vehicles"}
+                  params={@params}
+                />
+              </.modal>
+
           </section>
         </main>
       </div>

@@ -19,24 +19,23 @@ defmodule SpatoWeb.VehicleBookingLive.FormComponent do
         phx-change="validate"
         phx-submit="save"
       >
-         <!-- Vehicle info (readonly, prefilled) -->
-      <%= if @vehicle do %>
-        <.input field={@form[:vehicle_model]} label="Model" readonly />
-        <.input field={@form[:plate_number]} label="No. Plat" readonly />
-        <.input field={@form[:capacity]} label="Kapasiti" readonly />
-        <.input field={@form[:status]} label="Status" readonly />
-      <% end %>
+        <!-- Vehicle info (readonly, prefilled) -->
+        <%= if @vehicle do %>
+          <.input field={@form[:vehicle_model]} label="Model" readonly />
+          <.input field={@form[:plate_number]} label="No. Plat" readonly />
+          <.input field={@form[:capacity]} label="Kapasiti" readonly />
+          <.input field={@form[:status]} label="Status" readonly />
+        <% end %>
 
-      <!-- Prefilled times -->
-      <.input field={@form[:pickup_time]} type="datetime-local" label="Pickup time" />
-      <.input field={@form[:return_time]} type="datetime-local" label="Return time" />
+        <!-- Prefilled times -->
+        <.input field={@form[:pickup_time]} type="datetime-local" label="Pickup time" />
+        <.input field={@form[:return_time]} type="datetime-local" label="Return time" />
 
-      <!-- Other fields -->
-      <.input field={@form[:purpose]} type="text" label="Purpose" />
-      <.input field={@form[:trip_destination]} type="text" label="Trip destination" />
-      <.input field={@form[:additional_notes]} type="text" label="Additional notes" />
+        <!-- Other fields -->
+        <.input field={@form[:purpose]} type="text" label="Purpose" />
+        <.input field={@form[:trip_destination]} type="text" label="Trip destination" />
+        <.input field={@form[:additional_notes]} type="text" label="Additional notes" />
 
-      <!-- Save button -->
         <:actions>
           <.button phx-disable-with="Saving...">
             <%= if @action == :new do %>
@@ -51,6 +50,7 @@ defmodule SpatoWeb.VehicleBookingLive.FormComponent do
     """
   end
 
+  # Case: params present (edit, or selecting vehicle by param)
   @impl true
   def update(%{vehicle_booking: vehicle_booking, params: params} = assigns, socket) do
     vehicle =
@@ -76,6 +76,26 @@ defmodule SpatoWeb.VehicleBookingLive.FormComponent do
      |> assign(:vehicle, vehicle)
      |> assign(:form, to_form(changeset))}
   end
+
+  # Case: no params (new booking form)
+  def update(%{vehicle_booking: vehicle_booking, params: params} = assigns, socket) do
+    attrs =
+      params
+      |> Map.take(["vehicle_id", "pickup_time", "return_time"])
+      |> Enum.reduce(%{}, fn
+        {"pickup_time", ""}, acc -> Map.put(acc, "pickup_time", nil)
+        {"return_time", ""}, acc -> Map.put(acc, "return_time", nil)
+        {k, v}, acc -> Map.put(acc, k, v)
+      end)
+
+    changeset = Bookings.change_vehicle_booking(vehicle_booking, attrs)
+
+    {:ok,
+     socket
+     |> assign(assigns)
+     |> assign(:form, to_form(changeset))}
+  end
+
 
   @impl true
   def handle_event("validate", %{"vehicle_booking" => vehicle_booking_params}, socket) do
