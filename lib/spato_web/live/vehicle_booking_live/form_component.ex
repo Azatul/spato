@@ -20,10 +20,14 @@ defmodule SpatoWeb.VehicleBookingLive.FormComponent do
         phx-submit="save"
       >
         <!-- Vehicle info (readonly, prefilled if chosen) -->
+
         <%= if @vehicle do %>
-          <.input field={@form[:vehicle_model]} label="Model" readonly />
-          <.input field={@form[:plate_number]} label="No. Plat" readonly />
-          <.input field={@form[:capacity]} label="Kapasiti" readonly />
+            <.input field={@form[:vehicle_model]} label="Model" readonly />
+            <.input field={@form[:plate_number]} label="No. Plat" readonly />
+            <.input field={@form[:capacity]} label="Kapasiti" readonly />
+            <.input field={@form[:vehicle_name]} label="Nama Kenderaan" readonly />
+            <.input field={@form[:vehicle_type]} label="Jenis" readonly />
+            <input type="hidden" name="vehicle_booking[vehicle_id]" value={@vehicle.id} />
         <% end %>
 
         <!-- Prefilled times -->
@@ -74,10 +78,12 @@ defmodule SpatoWeb.VehicleBookingLive.FormComponent do
       if vehicle do
         Map.merge(attrs, %{
           "vehicle_id" => vehicle.id,
+          "vehicle_name" => vehicle.name,
           "vehicle_model" => vehicle.vehicle_model,
           "plate_number" => vehicle.plate_number,
           "capacity" => vehicle.capacity,
-          "status" => vehicle.status
+          "status" => vehicle.status,
+          "vehicle_type" => vehicle.type
         })
       else
         attrs

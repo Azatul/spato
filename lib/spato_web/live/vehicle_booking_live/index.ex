@@ -20,6 +20,7 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
      |> assign(:page, 1)
      |> assign(:filter_date, "")
      |> assign(:vehicle_booking, nil)
+     |> assign(:vehicles, [])
      |> assign(:params, %{})
      |> load_vehicle_bookings()}
   end
@@ -231,40 +232,23 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
                   JS.patch(~p"/vehicle_bookings/#{vehicle_booking.id}?action=show&page=#{@page}&q=#{@search_query}&status=#{@filter_status}")
                 end}
               >
-                <:col :let={vehicle} label="Kenderaan">
-                  <div class="flex flex-col">
-                    <!-- Vehicle Name -->
-                    <div class="font-semibold text-gray-900">
-                      <%= vehicle.name %>
-                    </div>
-
-                    <!-- Plate Number -->
-                    <div class="text-sm text-gray-500">
-                      <%= vehicle.plate_number %>
-                    </div>
-
-                    <!-- Vehicle Type (colored pill badge) -->
-                    <div class="mt-1">
-                      <%= case vehicle.type do %>
-                        <% "kereta" -> %>
-                          <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-blue-500">Kereta</span>
-                        <% "mpv" -> %>
-                          <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-indigo-500">SUV / MPV</span>
-                        <% "pickup" -> %>
-                          <span class="px-1.5 py-0.5 rounded-full text-black text-xs font-semibold bg-yellow-400">Pickup / 4WD</span>
-                        <% "van" -> %>
-                          <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-green-500">Van</span>
-                        <% "bas" -> %>
-                          <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-purple-600">Bas</span>
-                        <% "motosikal" -> %>
-                          <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-red-500">Motosikal</span>
-                        <% _ -> %>
-                          <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-gray-400">Lain</span>
-                      <% end %>
-                    </div>
-                  </div>
-                </:col>
                 <:col :let={vehicle_booking} label="ID"><%= vehicle_booking.id %></:col>
+
+                <:col :let={booking} label="Nama Kenderaan">
+                  <%= booking.vehicle && booking.vehicle.name %>
+                </:col>
+                <:col :let={booking} label="Model">
+                  <%= booking.vehicle && booking.vehicle.vehicle_model %>
+                </:col>
+                <:col :let={booking} label="No. Plat">
+                  <%= booking.vehicle && booking.vehicle.plate_number %>
+                </:col>
+                <:col :let={booking} label="Jenis">
+                  <%= booking.vehicle && booking.vehicle.type %>
+                </:col>
+                <:col :let={booking} label="Kapasiti">
+                  <%= booking.vehicle && booking.vehicle.capacity %> penumpang
+                </:col>
                 <:col :let={vehicle_booking} label="Tujuan">{vehicle_booking.purpose}</:col>
                 <:col :let={vehicle_booking} label="Destinasi">{vehicle_booking.trip_destination}</:col>
                 <:col :let={vehicle_booking} label="Masa Pickup">{vehicle_booking.pickup_time}</:col>

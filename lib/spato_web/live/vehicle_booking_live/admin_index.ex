@@ -181,6 +181,22 @@ def render(assigns) do
               ~p"/admin/vehicle_bookings/#{booking.id}?action=show&page=#{@page}&q=#{@search_query}&status=#{@filter_status}&date=#{@filter_date}"
             ) end}>
               <:col :let={booking} label="ID"><%= booking.id %></:col>
+              <:col :let={booking} label="Kenderaan">
+                <%= if booking.vehicle do %>
+                  <%= booking.vehicle.name %> (<%= booking.vehicle.plate_number %>)
+                <% else %>
+                  -
+                <% end %>
+              </:col>
+              <:col :let={booking} label="Jenis">
+                <%= booking.vehicle && booking.vehicle.type || "-" %>
+              </:col>
+              <:col :let={booking} label="Model">
+                <%= booking.vehicle && booking.vehicle.vehicle_model || "-" %>
+              </:col>
+              <:col :let={booking} label="Kapasiti">
+                <%= booking.vehicle && booking.vehicle.capacity || "-" %>
+              </:col>
               <:col :let={booking} label="Dibuat Oleh">
                 <%= if booking.user do %>
                   <%= User.display_name(booking.user) %>
