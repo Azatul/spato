@@ -71,11 +71,16 @@ defmodule Spato.Bookings do
         from vb in date_query,
           left_join: u in assoc(vb, :user),
           left_join: up in assoc(u, :user_profile),
+          left_join: v in assoc(vb, :vehicle),
           where:
             ilike(vb.purpose, ^like_search) or
             ilike(vb.trip_destination, ^like_search) or
             ilike(vb.status, ^like_search) or
             ilike(u.email, ^like_search) or
+            ilike(v.name, ^like_search) or
+            ilike(v.plate_number, ^like_search) or
+            ilike(v.type, ^like_search) or
+            ilike(v.vehicle_model, ^like_search) or
             ilike(up.full_name, ^like_search),
           distinct: vb.id,
           select: vb
@@ -113,13 +118,48 @@ defmodule Spato.Bookings do
 
     pickup_time = filters["pickup_time"]
     return_time = filters["return_time"]
+    query       = filters["query"]
+    type        = filters["type"]
+    capacity    = filters["capacity"]
 
     base_query =
       from v in Spato.Assets.Vehicle,
         preload: [:vehicle_bookings]
 
-    # If no pickup/return time provided, just return all
-    if is_nil(pickup_time) or is_nil(return_time) do
+    # 🔹 Type filter
+    base_query =
+      if type && type != "all" do
+        from v in base_query, where: v.type == ^type
+      else
+        base_query
+      end
+
+    # 🔹 Capacity filter
+    base_query =
+      if capacity != "" and not is_nil(capacity) do
+        case Integer.parse(capacity) do
+          {cap, _} -> from v in base_query, where: v.capacity >= ^cap
+          :error -> base_query
+        end
+      else
+        base_query
+      end
+
+    # 🔹 Text search (name, plate number, model)
+    base_query =
+      if query != "" and not is_nil(query) do
+        like_q = "%#{query}%"
+        from v in base_query,
+          where:
+            ilike(v.name, ^like_q) or
+            ilike(v.plate_number, ^like_q) or
+            ilike(v.vehicle_model, ^like_q)
+      else
+        base_query
+      end
+
+    # 🔹 If no pickup/return time provided, just return filtered vehicles
+    if is_nil(pickup_time) or pickup_time == "" or is_nil(return_time) or return_time == "" do
       Spato.Repo.all(base_query)
     else
       from(v in base_query,

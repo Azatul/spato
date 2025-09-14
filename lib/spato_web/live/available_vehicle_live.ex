@@ -58,14 +58,14 @@ defmodule SpatoWeb.AvailableVehicleLive do
       "query" => Map.get(filters, "query", ""),
       "type" => Map.get(filters, "type", "all"),
       "capacity" => Map.get(filters, "capacity", ""),
-      "pickup_time" => Map.get(filters, "pickup_time", nil),
-      "return_time" => Map.get(filters, "return_time", nil)
+      "pickup_time" => parse_datetime(Map.get(filters, "pickup_time")),
+      "return_time" => parse_datetime(Map.get(filters, "return_time"))
     }
 
     {:noreply,
      socket
      |> assign(:filters, new_filters)
-     |> assign(:form, to_form(new_filters))
+     |> assign(:form, to_form(filters)) # keep form fields as raw strings
      |> assign(:page, 1)
      |> load_vehicles()}
   end
@@ -101,6 +101,15 @@ defmodule SpatoWeb.AvailableVehicleLive do
     {:noreply, socket |> load_vehicles()}
   end
 
+  defp parse_datetime(nil), do: nil
+  defp parse_datetime(""), do: nil
+  defp parse_datetime(val) do
+    case NaiveDateTime.from_iso8601(val) do
+      {:ok, naive} -> DateTime.from_naive!(naive, "Etc/UTC")
+      _ -> nil
+    end
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -115,22 +124,52 @@ defmodule SpatoWeb.AvailableVehicleLive do
             <p class="text-md text-gray-500 mb-4">Cari dan tempah kenderaan yang tersedia</p>
 
             <!-- Filters -->
-            <.form for={@form} phx-submit="search" class="mb-6 bg-white p-4 rounded-xl shadow-md">
-              <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
-                <.input field={@form[:query]} placeholder="Cari mengikut nama atau nombor plat" />
-                <.input field={@form[:type]} type="select" options={[
-                  {"Semua", "all"},
-                  {"SUV", "SUV"},
-                  {"Van", "Van"},
-                  {"Sedan", "Sedan"},
-                  {"Pickup", "Pickup"},
-                  {"Bas", "Bas"},
-                  {"Motosikal", "Motosikal"}
-                ]} />
-                <.input field={@form[:capacity]} type="number" placeholder="Kapasiti minimum" />
-                <.input field={@form[:pickup_time]} type="datetime-local" label="Masa Ambil" />
-                <.input field={@form[:return_time]} type="datetime-local" label="Masa Pulang" />
-                <.button class="bg-gray-900 text-white px-4 py-2 rounded-md hover:bg-gray-700">Cari</.button>
+            <.form for={@form} phx-submit="search" class="mb-6 bg-white p-3 rounded-xl shadow-md">
+              <div class="flex flex-col md:flex-row items-center gap-3">
+                <!-- Main search -->
+                <.input
+                  field={@form[:query]}
+                  label="Carian"
+                  placeholder="Cari kenderaan, nombor plat..."
+                  class="flex-1"
+                />
+
+                <!-- Capacity -->
+                <.input
+                  field={@form[:capacity]}
+                  type="number"
+                  label="Kapasiti"
+                  placeholder="0"
+                  class="w-32"
+                />
+
+                <!-- Type -->
+                <.input
+                  field={@form[:type]}
+                  type="select"
+                  label="Jenis"
+                  options={[
+                    {"Semua", "all"},
+                    {"SUV", "SUV"},
+                    {"Van", "Van"},
+                    {"Sedan", "Sedan"},
+                    {"Pickup", "Pickup"},
+                    {"Bas", "Bas"},
+                    {"Motosikal", "Motosikal"}
+                  ]}
+                  class="w-32"
+                />
+
+                <!-- Date range -->
+                <.input field={@form[:pickup_time]} type="datetime-local" label="Tarikh & Masa Ambil" class="w-44" />
+                <.input field={@form[:return_time]} type="datetime-local" label="Tarikh & Maasa Pulang" class="w-44" />
+
+                <!-- Search button -->
+                <.button
+                  class="bg-gray-900 text-white px-5 py-2 rounded-lg shadow-md hover:bg-gray-700 transition"
+                >
+                  Cari
+                </.button>
               </div>
             </.form>
 

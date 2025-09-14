@@ -3,11 +3,11 @@ defmodule SpatoWeb.UserLoginLive do
 
   def render(assigns) do
     ~H"""
-      <div class="bg-gradient-to-br from-[#cde2f3] to-[#a1c4e8] min-h-screen w-full flex items-center justify-center font-inter">
-      <div class="bg-white rounded-2xl shadow-xl p-10 w-full max-w-md">
+      <div class="bg-white min-h-screen w-full flex items-center justify-center font-inter">
+      <div class="bg-white-50 rounded-2xl shadow-2xl p-6 w-full max-w-sm">
 
         <!-- Logo + Title -->
-        <div class="flex flex-col items-center justify-center mb-8 text-center">
+        <div class="flex flex-col items-center justify-center mt-6 mb-8 text-center">
           <img src={~p"/images/spato.png"} alt="SPATO Logo" class="w-64 mb-4">
         </div>
 
@@ -21,7 +21,7 @@ defmodule SpatoWeb.UserLoginLive do
               field={@form[:email]}
               type="email"
               placeholder="Masukkan emel"
-              class="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#224179] focus:border-[#224179] transition"
+              class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#224179] focus:border-[#224179] transition"
               required
             />
           </div>
@@ -33,7 +33,7 @@ defmodule SpatoWeb.UserLoginLive do
               field={@form[:password]}
               type="password"
               placeholder="Masukkan kata laluan"
-              class="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#224179] focus:border-[#224179] transition"
+              class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#224179] focus:border-[#224179] transition"
               required
             />
             <div class="text-right mt-2">
@@ -45,7 +45,7 @@ defmodule SpatoWeb.UserLoginLive do
 
           <!-- Actions: Log in button -->
           <:actions>
-            <.button phx-disable-with="Logging in..." class="block w-full py-3 rounded-lg text-white font-semibold bg-gradient-to-r from-[#224179] to-[#1b2f5a] hover:from-[#1b2f5a] hover:to-[#16306a] transition">
+            <.button phx-disable-with="Mengelog masuk..." class="block w-full py-2.5 rounded-lg text-white font-semibold bg-gradient-to-r from-[#224179] to-[#1b2f5a] hover:from-[#1b2f5a] hover:to-[#16306a] transition">
               Log Masuk
             </.button>
           </:actions>

@@ -233,18 +233,42 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
                 end}
               >
                 <:col :let={vehicle_booking} label="ID"><%= vehicle_booking.id %></:col>
+                <:col :let={booking} label="Kenderaan">
+                  <%= if booking.vehicle do %>
+                    <div class="flex flex-col">
+                      <!-- Vehicle Name -->
+                      <div class="font-semibold text-gray-900">
+                        <%= booking.vehicle.name %>
+                      </div>
 
-                <:col :let={booking} label="Nama Kenderaan">
-                  <%= booking.vehicle && booking.vehicle.name %>
-                </:col>
-                <:col :let={booking} label="Model">
-                  <%= booking.vehicle && booking.vehicle.vehicle_model %>
-                </:col>
-                <:col :let={booking} label="No. Plat">
-                  <%= booking.vehicle && booking.vehicle.plate_number %>
-                </:col>
-                <:col :let={booking} label="Jenis">
-                  <%= booking.vehicle && booking.vehicle.type %>
+                      <!-- Plate Number -->
+                      <div class="text-sm text-gray-500">
+                        <%= booking.vehicle.plate_number %>
+                      </div>
+
+                      <!-- Vehicle Type (colored pill badge) -->
+                      <div class="mt-1">
+                        <%= case booking.vehicle.type do %>
+                          <% "kereta" -> %>
+                            <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-blue-500">Kereta</span>
+                          <% "mpv" -> %>
+                            <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-indigo-500">SUV / MPV</span>
+                          <% "pickup" -> %>
+                            <span class="px-1.5 py-0.5 rounded-full text-black text-xs font-semibold bg-yellow-400">Pickup / 4WD</span>
+                          <% "van" -> %>
+                            <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-green-500">Van</span>
+                          <% "bas" -> %>
+                            <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-purple-600">Bas</span>
+                          <% "motosikal" -> %>
+                            <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-red-500">Motosikal</span>
+                          <% _ -> %>
+                            <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-gray-400">Lain</span>
+                        <% end %>
+                      </div>
+                    </div>
+                  <% else %>
+                    <span class="text-gray-400">—</span>
+                  <% end %>
                 </:col>
                 <:col :let={booking} label="Kapasiti">
                   <%= booking.vehicle && booking.vehicle.capacity %> penumpang
