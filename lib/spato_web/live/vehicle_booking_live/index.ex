@@ -228,25 +228,21 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
               <.table
                 id="vehicle_bookings"
                 rows={@vehicle_bookings_page}
-                row_click={fn vehicle_booking ->
-                  JS.patch(~p"/vehicle_bookings/#{vehicle_booking.id}?action=show&page=#{@page}&q=#{@search_query}&status=#{@filter_status}")
+                row_click={fn booking ->
+                  JS.patch(~p"/vehicle_bookings/#{booking.id}?action=show&page=#{@page}&q=#{@search_query}&status=#{@filter_status}&date=#{@filter_date}")
                 end}
               >
-                <:col :let={vehicle_booking} label="ID"><%= vehicle_booking.id %></:col>
+                <:col :let={booking} label="ID"><%= booking.id %></:col>
+
                 <:col :let={booking} label="Kenderaan">
                   <%= if booking.vehicle do %>
                     <div class="flex flex-col">
-                      <!-- Vehicle Name -->
                       <div class="font-semibold text-gray-900">
                         <%= booking.vehicle.name %>
                       </div>
-
-                      <!-- Plate Number -->
                       <div class="text-sm text-gray-500">
                         <%= booking.vehicle.plate_number %>
                       </div>
-
-                      <!-- Vehicle Type (colored pill badge) -->
                       <div class="mt-1">
                         <%= case booking.vehicle.type do %>
                           <% "kereta" -> %>
@@ -270,22 +266,75 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
                     <span class="text-gray-400">—</span>
                   <% end %>
                 </:col>
+
                 <:col :let={booking} label="Kapasiti">
-                  <%= booking.vehicle && booking.vehicle.capacity %> penumpang
-                </:col>
-                <:col :let={vehicle_booking} label="Tujuan">{vehicle_booking.purpose}</:col>
-                <:col :let={vehicle_booking} label="Destinasi">{vehicle_booking.trip_destination}</:col>
-                <:col :let={vehicle_booking} label="Masa Pickup">{vehicle_booking.pickup_time}</:col>
-                <:col :let={vehicle_booking} label="Masa Pulang">{vehicle_booking.return_time}</:col>
-                <:col :let={vehicle_booking} label="Status">{vehicle_booking.status}</:col>
-                <:col :let={vehicle_booking} label="Catatan">{vehicle_booking.additional_notes}</:col>
-                <:action :let={vehicle_booking}>
-                  <%= if vehicle_booking.status == "pending" do %>
-                    <.link phx-click={JS.push("cancel", value: %{id: vehicle_booking.id})} data-confirm="Batal tempahan?">
-                      Batal
-                    </.link>
+                  <%= if booking.vehicle do %>
+                    <div class="flex items-center gap-1">
+                      <.icon name="hero-user" class="w-4 h-4 text-gray-500" />
+                      <span><%= booking.vehicle.capacity %></span>
+                    </div>
                   <% else %>
-                    <span class="text-gray-400">—</span>
+                    -
+                  <% end %>
+                </:col>
+
+                <:col :let={booking} label="Tujuan & Lokasi">
+                  <div class="flex flex-col">
+                    <span class="font-medium text-gray-900"><%= booking.purpose %></span>
+                    <span class="text-sm text-gray-500"><%= booking.trip_destination %></span>
+                  </div>
+                </:col>
+
+                <:col :let={booking} label="Masa Pickup">
+                  <div class="flex flex-col">
+                    <span class="font-medium text-gray-900">
+                      <%= Calendar.strftime(booking.pickup_time, "%d-%m-%Y") %>
+                    </span>
+                    <span class="text-sm text-gray-500">
+                      <%= Calendar.strftime(booking.pickup_time, "%H:%M") %>
+                    </span>
+                  </div>
+                </:col>
+
+                <:col :let={booking} label="Masa Pulang">
+                  <div class="flex flex-col">
+                    <span class="font-medium text-gray-900">
+                      <%= Calendar.strftime(booking.return_time, "%d-%m-%Y") %>
+                    </span>
+                    <span class="text-sm text-gray-500">
+                      <%= Calendar.strftime(booking.return_time, "%H:%M") %>
+                    </span>
+                  </div>
+                </:col>
+
+                <:col :let={booking} label="Status">
+                  <span class={"px-1.5 py-0.5 rounded-full text-white text-xs font-semibold " <>
+                    case booking.status do
+                      "pending" -> "bg-yellow-500"
+                      "approved" -> "bg-green-500"
+                      "rejected" -> "bg-red-500"
+                      "completed" -> "bg-blue-500"
+                      "cancelled" -> "bg-gray-400"
+                      _ -> "bg-gray-400"
+                    end}>
+                    <%= Spato.Bookings.VehicleBooking.human_status(booking.status) %>
+                  </span>
+                </:col>
+
+                <:col :let={booking} label="Catatan">{booking.additional_notes}</:col>
+
+                <:action :let={booking}>
+                  <%= if booking.status == "pending" do %>
+                    <.button
+                      phx-click="cancel"
+                      phx-value-id={booking.id}
+                      data-confirm="Batal tempahan?"
+                      class="bg-red-600 text-white px-2 py-1 rounded-md"
+                    >
+                      Batal
+                    </.button>
+                  <% else %>
+                    <span class="text-gray-500">—</span>
                   <% end %>
                 </:action>
               </.table>

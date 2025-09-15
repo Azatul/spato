@@ -15,7 +15,7 @@ defmodule Spato.Bookings do
     VehicleBooking
     |> scope_by_user(user)
     |> order_by([vb], desc: vb.inserted_at)
-    |> preload([:vehicle, user: [:user_profile]])
+    |> preload([:vehicle, user: [user_profile: [:department]]])
     |> Repo.all()
   end
 
@@ -100,9 +100,7 @@ defmodule Spato.Bookings do
       |> limit(^per_page)
       |> offset(^offset)
       |> Repo.all()
-      |> Repo.preload(user: [:user_profile])
-      |> Repo.preload([:vehicle, user: [:user_profile]])
-
+      |> Repo.preload([:vehicle, user: [user_profile: [:department]]])
     total_pages = ceil(total / per_page)
 
     %{
@@ -116,27 +114,50 @@ defmodule Spato.Bookings do
   def available_vehicles(filters) do
     import Ecto.Query
 
-    pickup_time = filters["pickup_time"]
-    return_time = filters["return_time"]
     query       = filters["query"]
     type        = filters["type"]
     capacity    = filters["capacity"]
 
+    # Parse pickup & return times only here (keep strings in LiveView)
+    pickup_time =
+      case filters["pickup_time"] do
+        "" -> nil
+        nil -> nil
+        val ->
+          case NaiveDateTime.from_iso8601(val) do
+            {:ok, naive} -> DateTime.from_naive!(naive, "Etc/UTC")
+            _ -> nil
+          end
+      end
+
+    return_time =
+      case filters["return_time"] do
+        "" -> nil
+        nil -> nil
+        val ->
+          case NaiveDateTime.from_iso8601(val) do
+            {:ok, naive} -> DateTime.from_naive!(naive, "Etc/UTC")
+            _ -> nil
+          end
+      end
+
+    # Base query – only available vehicles
     base_query =
       from v in Spato.Assets.Vehicle,
-        preload: [:vehicle_bookings]
+        preload: [:vehicle_bookings],
+        where: v.status == "tersedia"
 
-    # 🔹 Type filter
+    # Type filter
     base_query =
       if type && type != "all" do
-        from v in base_query, where: v.type == ^type
+        from v in base_query, where: v.type == ^String.downcase(type)
       else
         base_query
       end
 
-    # 🔹 Capacity filter
+    # Capacity filter
     base_query =
-      if capacity != "" and not is_nil(capacity) do
+      if capacity not in [nil, ""] do
         case Integer.parse(capacity) do
           {cap, _} -> from v in base_query, where: v.capacity >= ^cap
           :error -> base_query
@@ -145,9 +166,9 @@ defmodule Spato.Bookings do
         base_query
       end
 
-    # 🔹 Text search (name, plate number, model)
+    # Search filter
     base_query =
-      if query != "" and not is_nil(query) do
+      if query not in [nil, ""] do
         like_q = "%#{query}%"
         from v in base_query,
           where:
@@ -158,25 +179,25 @@ defmodule Spato.Bookings do
         base_query
       end
 
-    # 🔹 If no pickup/return time provided, just return filtered vehicles
-    if is_nil(pickup_time) or pickup_time == "" or is_nil(return_time) or return_time == "" do
+    # Availability filter – only apply if both times are filled
+    if is_nil(pickup_time) or is_nil(return_time) do
       Spato.Repo.all(base_query)
     else
       from(v in base_query,
-        left_join: b in assoc(v, :vehicle_bookings),
-        on:
-          b.vehicle_id == v.id and
-            b.status in ["pending", "approved"] and
-            fragment(
-              "tsrange(?, ?) && tsrange(?, ?)",
-              b.pickup_time,
-              b.return_time,
-              ^pickup_time,
-              ^return_time
-            ),
-        where: is_nil(b.id)
-      )
-      |> Spato.Repo.all()
+      left_join: b in assoc(v, :vehicle_bookings),
+      on:
+        b.vehicle_id == v.id and
+          b.status in ["pending", "approved"] and
+          fragment(
+            "tsrange(?::timestamp, ?::timestamp) && tsrange(?::timestamp, ?::timestamp)",
+            b.pickup_time,
+            b.return_time,
+            ^pickup_time,
+            ^return_time
+          ),
+      where: is_nil(b.id)
+    )
+    |> Spato.Repo.all()
     end
   end
 
@@ -186,7 +207,7 @@ defmodule Spato.Bookings do
     Repo.get!(VehicleBooking, id)
     |> Repo.preload([
       :vehicle,
-      :user,
+      [user: [user_profile: [:department]]],
       :approved_by_user,
       :cancelled_by_user
     ])
@@ -237,4 +258,35 @@ defmodule Spato.Bookings do
   defp to_int(val) when is_integer(val), do: val
   defp to_int(val) when is_binary(val), do: String.to_integer(val)
   defp to_int(_), do: 1
+
+  import Ecto.Query
+
+  def get_booking_stats do
+    total = Repo.aggregate(VehicleBooking, :count, :id)
+
+    pending =
+      from(vb in VehicleBooking, where: vb.status == "pending")
+      |> Repo.aggregate(:count, :id)
+
+    approved =
+      from(vb in VehicleBooking, where: vb.status == "approved")
+      |> Repo.aggregate(:count, :id)
+
+    rejected =
+      from(vb in VehicleBooking, where: vb.status == "rejected")
+      |> Repo.aggregate(:count, :id)
+
+    completed =
+      from(vb in VehicleBooking, where: vb.status == "completed")
+      |> Repo.aggregate(:count, :id)
+
+    %{
+      total: total,
+      pending: pending,
+      approved: approved,
+      rejected: rejected,
+      completed: completed
+    }
+  end
+
 end

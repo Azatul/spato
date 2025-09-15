@@ -54,13 +54,13 @@ defmodule SpatoWeb.AvailableVehicleLive do
         filters when is_map(filters) -> filters
       end
 
-    new_filters = %{
-      "query" => Map.get(filters, "query", ""),
-      "type" => Map.get(filters, "type", "all"),
-      "capacity" => Map.get(filters, "capacity", ""),
-      "pickup_time" => parse_datetime(Map.get(filters, "pickup_time")),
-      "return_time" => parse_datetime(Map.get(filters, "return_time"))
-    }
+      new_filters = %{
+        "query" => Map.get(filters, "query", ""),
+        "type" => Map.get(filters, "type", "all"),
+        "capacity" => Map.get(filters, "capacity", ""),
+        "pickup_time" => Map.get(filters, "pickup_time", ""),
+        "return_time" => Map.get(filters, "return_time", "")
+      }
 
     {:noreply,
      socket
@@ -99,15 +99,6 @@ defmodule SpatoWeb.AvailableVehicleLive do
   @impl true
   def handle_info({SpatoWeb.VehicleBookingLive.FormComponent, {:saved, _booking}}, socket) do
     {:noreply, socket |> load_vehicles()}
-  end
-
-  defp parse_datetime(nil), do: nil
-  defp parse_datetime(""), do: nil
-  defp parse_datetime(val) do
-    case NaiveDateTime.from_iso8601(val) do
-      {:ok, naive} -> DateTime.from_naive!(naive, "Etc/UTC")
-      _ -> nil
-    end
   end
 
   @impl true
@@ -150,12 +141,12 @@ defmodule SpatoWeb.AvailableVehicleLive do
                   label="Jenis"
                   options={[
                     {"Semua", "all"},
-                    {"SUV", "SUV"},
-                    {"Van", "Van"},
-                    {"Sedan", "Sedan"},
-                    {"Pickup", "Pickup"},
-                    {"Bas", "Bas"},
-                    {"Motosikal", "Motosikal"}
+                    {"SUV / MPV", "mpv"},
+                    {"Van", "van"},
+                    {"Kereta", "kereta"},
+                    {"Pickup / 4WD", "pickup"},
+                    {"Bas", "bas"},
+                    {"Motosikal", "motosikal"}
                   ]}
                   class="w-32"
                 />
@@ -196,6 +187,7 @@ defmodule SpatoWeb.AvailableVehicleLive do
                   <p class="text-gray-600 mb-2"><%= vehicle.plate_number %></p>
                   <p class="text-sm text-gray-500 mb-3"><%= vehicle.capacity %> penumpang</p>
 
+                <%= if @filters["pickup_time"] && @filters["return_time"] do %>
                   <.link
                     patch={
                       ~p"/available_vehicles?#{%{
@@ -211,6 +203,11 @@ defmodule SpatoWeb.AvailableVehicleLive do
                       Tempah Sekarang
                     </.button>
                   </.link>
+                <% else %>
+                  <button class="w-full bg-gray-300 text-gray-500 px-4 py-2 rounded-md cursor-not-allowed" disabled>
+                    Pilih Tarikh & Masa Dahulu
+                  </button>
+                <% end %>
                 </div>
               <% end %>
             </div>
