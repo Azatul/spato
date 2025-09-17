@@ -76,7 +76,9 @@ defmodule SpatoWeb.VehicleBookingLive.ShowComponent do
                 <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-gray-400">Lain</span>
             <% end %>
           </:item>
-          <:item title="Kapasiti"><%= @vehicle_booking.vehicle.capacity %> penumpang</:item>
+          <:item title="Kapasiti">
+            <%= @vehicle_booking.passengers_number %> / <%= @vehicle_booking.vehicle.capacity %> penumpang
+          </:item>
         </.list>
       <% else %>
         <p class="mt-6 text-gray-500">Tiada maklumat kenderaan dilampirkan.</p>

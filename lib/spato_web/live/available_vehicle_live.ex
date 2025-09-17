@@ -136,6 +136,13 @@ defmodule SpatoWeb.AvailableVehicleLive do
             <h1 class="text-xl font-bold mb-1">Kenderaan Tersedia</h1>
             <p class="text-md text-gray-500 mb-4">Cari dan tempah kenderaan yang tersedia</p>
 
+            <!-- Middle Section: Add Vehicle Button -->
+            <section class="mb-4 flex justify-end">
+              <.link patch={~p"/vehicle_bookings"}>
+                    <.button class="bg-gray-900 text-white px-4 py-2 rounded-md hover:bg-gray-700">Lihat Senarai Tempahan</.button>
+                  </.link>
+            </section>
+
           <!-- Filters -->
           <.form for={@form} phx-submit="search" class="mb-6 bg-white p-4 rounded-xl shadow-md w-full">
             <div class="flex flex-wrap items-end gap-4 w-full">

@@ -206,14 +206,18 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
               <% end %>
             </div>
 
+            <!-- Middle Section: Add Vehicle Button -->
+            <section class="mb-4 flex justify-end">
+              <.link patch={~p"/available_vehicles"}>
+                    <.button class="bg-gray-900 text-white px-4 py-2 rounded-md hover:bg-gray-700">Tempah Kenderaan</.button>
+                  </.link>
+            </section>
+
             <!-- Booking Table Section -->
             <section class="bg-white p-4 md:p-6 rounded-xl shadow-md">
               <div class="flex flex-col mb-4 gap-2">
                 <div class="flex items-center justify-between">
                   <h2 class="text-lg font-semibold text-gray-900">Senarai Tempahan Kenderaan</h2>
-                  <.link patch={~p"/available_vehicles"}>
-                    <.button>Tempah Kenderaan</.button>
-                  </.link>
                 </div>
 
                 <div class="flex flex-wrap gap-2 mt-2">
@@ -346,20 +350,21 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
                   </span>
                 </:col>
 
-                <:action :let={booking}>
-                  <%= if booking.status == "pending" do %>
-                    <.button
-                      phx-click="cancel"
-                      phx-value-id={booking.id}
-                      data-confirm="Batal tempahan?"
-                      class="bg-red-600 text-white px-2 py-1 rounded-md"
-                    >
-                      Batal
-                    </.button>
-                  <% else %>
-                    <span class="text-gray-500"></span>
-                  <% end %>
-                </:action>
+              <:action :let={booking}>
+                <%= if booking.status == "pending" do %>
+                  <button
+                    phx-click="cancel"
+                    phx-value-id={booking.id}
+                    data-confirm="Batal tempahan?"
+                    class="flex items-center justify-center w-8 h-8 rounded-full bg-red-600 hover:bg-red-700 text-white transition-colors"
+                    title="Batalkan Tempahan"
+                  >
+                    <.icon name="hero-x-mark" class="w-4 h-4" />
+                  </button>
+                <% else %>
+                  <span class="text-gray-500"></span>
+                <% end %>
+              </:action>
               </.table>
 
               <!-- Pagination -->
