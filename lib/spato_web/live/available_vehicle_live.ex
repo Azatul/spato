@@ -267,15 +267,19 @@ defmodule SpatoWeb.AvailableVehicleLive do
             <% end %>
 
             <div class="flex justify-center mt-6 space-x-2">
-              <%= if @page > 1 do %>
-                <button phx-click="prev_page" class="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400">Prev</button>
-              <% end %>
+            <%= if @total > 0 and @total_pages > 1 do %>
+              <div class="flex justify-center mt-6 space-x-2">
+                <%= if @page > 1 do %>
+                  <button phx-click="prev_page" class="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400">Prev</button>
+                <% end %>
 
-              <span class="px-3 py-1">Page <%= @page %> of <%= @total_pages %></span>
+                <span class="px-3 py-1">Page <%= @page %> of <%= @total_pages %></span>
 
-              <%= if @page < @total_pages do %>
-                <button phx-click="next_page" class="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400">Next</button>
-              <% end %>
+                <%= if @page < @total_pages do %>
+                  <button phx-click="next_page" class="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400">Next</button>
+                <% end %>
+              </div>
+            <% end %>
             </div>
 
             <!-- Modal -->
