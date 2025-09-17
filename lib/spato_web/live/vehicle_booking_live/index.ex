@@ -294,7 +294,7 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
                   <%= if booking.vehicle do %>
                     <div class="flex items-center gap-1">
                       <.icon name="hero-user" class="w-4 h-4 text-gray-500" />
-                      <span><%= booking.vehicle.capacity %></span>
+                      <span><%= booking.passengers_number %> / <%= booking.vehicle.capacity %></span>
                     </div>
                   <% else %>
                     -

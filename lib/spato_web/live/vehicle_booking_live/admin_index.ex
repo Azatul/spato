@@ -136,16 +136,14 @@ defmodule SpatoWeb.VehicleBookingLive.AdminIndex do
             <p class="text-md text-gray-500 mb-4">Semak dan urus semua tempahan kenderaan dalam sistem</p>
 
             <!-- Stats Cards -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
+            <div class="flex flex-wrap gap-4 mb-4">
               <%= for {label, value, color} <- [
                     {"Jumlah Tempahan", @stats.total, "text-gray-700"},
                     {"Menunggu Kelulusan", @stats.pending, "text-yellow-500"},
                     {"Diluluskan", @stats.approved, "text-green-500"},
-                    {"Ditolak", @stats.rejected, "text-red-500"},
-                    {"Selesai", @stats.completed, "text-blue-500"}
+                    {"Aktif", @stats.active, "text-blue-500"}
                   ] do %>
-
-                <div class="bg-white p-4 rounded-xl shadow-md flex flex-col justify-between h-30 transition-transform hover:scale-105">
+                <div class="flex-1 min-w-[180px] bg-white p-4 rounded-xl shadow-md flex flex-col justify-between h-30 transition-transform hover:scale-105">
                   <div>
                     <p class="text-sm text-gray-500"><%= label %></p>
                     <p class={"text-3xl font-bold mt-1 #{color}"}><%= value %></p>
@@ -153,7 +151,6 @@ defmodule SpatoWeb.VehicleBookingLive.AdminIndex do
                 </div>
               <% end %>
             </div>
-
 
             <!-- Table Section -->
             <section class="bg-white p-4 md:p-6 rounded-xl shadow-md">
@@ -265,7 +262,7 @@ defmodule SpatoWeb.VehicleBookingLive.AdminIndex do
                   <%= if booking.vehicle do %>
                     <div class="flex items-center gap-1">
                       <.icon name="hero-user" class="w-4 h-4 text-gray-500" />
-                      <span><%= booking.vehicle.capacity %></span>
+                      <span><%= booking.passengers_number %> / <%= booking.vehicle.capacity %></span>
                     </div>
                   <% else %>
                     -
@@ -303,8 +300,25 @@ defmodule SpatoWeb.VehicleBookingLive.AdminIndex do
 
                 <:action :let={booking}>
                   <%= if booking.status == "pending" do %>
-                    <.button phx-click="approve" phx-value-id={booking.id} class="bg-green-600 text-white px-2 py-1 rounded-md">Luluskan</.button>
-                    <.button phx-click="reject" phx-value-id={booking.id} class="bg-red-600 text-white px-2 py-1 rounded-md ml-2">Tolak</.button>
+                    <!-- Approve: green circle with check -->
+                    <button
+                      phx-click="approve"
+                      phx-value-id={booking.id}
+                      class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-600 hover:bg-green-700 text-white"
+                      title="Luluskan"
+                    >
+                      <.icon name="hero-check" class="w-4 h-4" />
+                    </button>
+
+                    <!-- Reject: red circle with x -->
+                    <button
+                      phx-click="reject"
+                      phx-value-id={booking.id}
+                      class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-600 hover:bg-red-700 text-white ml-2"
+                      title="Tolak"
+                    >
+                      <.icon name="hero-x-mark" class="w-4 h-4" />
+                    </button>
                   <% else %>
                     <span class="text-gray-500"></span>
                   <% end %>

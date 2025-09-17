@@ -9,6 +9,7 @@ defmodule Spato.Bookings.VehicleBooking do
     field :pickup_time, :utc_datetime
     field :return_time, :utc_datetime
     field :additional_notes, :string
+    field :passengers_number, :integer
 
     belongs_to :user, Spato.Accounts.User
     belongs_to :vehicle, Spato.Assets.Vehicle
@@ -21,8 +22,8 @@ defmodule Spato.Bookings.VehicleBooking do
   @doc false
   def changeset(vehicle_booking, attrs) do
     vehicle_booking
-    |> cast(attrs, [:user_id, :vehicle_id, :approved_by_user_id, :cancelled_by_user_id, :purpose, :trip_destination, :pickup_time, :return_time, :status, :additional_notes])
-    |> validate_required([:purpose, :trip_destination, :pickup_time, :return_time, :additional_notes])
+    |> cast(attrs, [:passengers_number, :user_id, :vehicle_id, :approved_by_user_id, :cancelled_by_user_id, :purpose, :trip_destination, :pickup_time, :return_time, :status, :additional_notes])
+    |> validate_required([:purpose, :trip_destination, :pickup_time, :return_time])
     |> validate_inclusion(:status, ["pending", "approved", "rejected", "cancelled", "completed"])
     |> unique_constraint(:vehicle_id, name: :no_overlapping_bookings)
     |> update_change(:status, &String.downcase/1)

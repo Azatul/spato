@@ -275,30 +275,29 @@ defmodule Spato.Bookings do
   import Ecto.Query
 
   def get_booking_stats do
+    now = DateTime.utc_now()
+
     total = Repo.aggregate(VehicleBooking, :count, :id)
+    pending = Repo.aggregate(from(v in VehicleBooking, where: v.status == "pending"), :count, :id)
+    approved = Repo.aggregate(from(v in VehicleBooking, where: v.status == "approved"), :count, :id)
 
-    pending =
-      from(vb in VehicleBooking, where: vb.status == "pending")
-      |> Repo.aggregate(:count, :id)
-
-    approved =
-      from(vb in VehicleBooking, where: vb.status == "approved")
-      |> Repo.aggregate(:count, :id)
-
-    rejected =
-      from(vb in VehicleBooking, where: vb.status == "rejected")
-      |> Repo.aggregate(:count, :id)
-
-    completed =
-      from(vb in VehicleBooking, where: vb.status == "completed")
-      |> Repo.aggregate(:count, :id)
+    # Active = approved and current time between pickup and return
+    active =
+      Repo.aggregate(
+        from(v in VehicleBooking,
+          where: v.status == "approved" and
+                 v.pickup_time <= ^now and
+                 v.return_time >= ^now
+        ),
+        :count,
+        :id
+      )
 
     %{
       total: total,
       pending: pending,
       approved: approved,
-      rejected: rejected,
-      completed: completed
+      active: active
     }
   end
 

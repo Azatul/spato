@@ -38,6 +38,14 @@ defmodule SpatoWeb.VehicleBookingLive.FormComponent do
         <.input field={@form[:purpose]} type="text" label="Tujuan" />
         <.input field={@form[:trip_destination]} type="text" label="Destinasi" />
         <.input field={@form[:additional_notes]} type="text" label="Catatan Tambahan" />
+        <!-- Number of passengers -->
+        <.input
+          field={@form[:passengers_number]}
+          type="number"
+          label="Jumlah Penumpang"
+          min="1"
+          max={if @vehicle, do: @vehicle.capacity, else: 100}
+        />
 
         <:actions>
           <.button phx-disable-with="Saving...">
@@ -83,7 +91,8 @@ defmodule SpatoWeb.VehicleBookingLive.FormComponent do
           "plate_number" => vehicle.plate_number,
           "capacity" => vehicle.capacity,
           "status" => vehicle.status,
-          "vehicle_type" => vehicle.type
+          "vehicle_type" => vehicle.type,
+          "passengers_number" => attrs["passengers_number"] || 1  # default to 1
         })
       else
         attrs
