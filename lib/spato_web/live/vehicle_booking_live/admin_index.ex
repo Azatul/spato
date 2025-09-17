@@ -326,7 +326,7 @@ defmodule SpatoWeb.VehicleBookingLive.AdminIndex do
               </.table>
 
               <!-- Pagination -->
-              <%= if @filtered_count > 1 do %>
+              <%= if @filtered_count >= 1 do %>
                 <div class="relative flex items-center mt-4">
                   <!-- Previous -->
                   <div class="flex-1">

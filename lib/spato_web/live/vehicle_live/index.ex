@@ -267,7 +267,7 @@ defmodule SpatoWeb.VehicleLive.Index do
           </section>
 
           <!-- Pagination -->
-          <%= if @total_pages > 1 do %>
+          <%= if @total_pages >= 1 do %>
           <div class="relative flex items-center mt-4">
             <!-- Previous button -->
             <div class="flex-1">
