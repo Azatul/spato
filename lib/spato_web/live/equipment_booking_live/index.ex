@@ -6,6 +6,8 @@ defmodule SpatoWeb.EquipmentBookingLive.Index do
   alias Spato.Bookings
   alias Spato.Bookings.EquipmentBooking
 
+  on_mount {SpatoWeb.UserAuth, :ensure_authenticated}
+
   @impl true
   def mount(_params, _session, socket) do
     {:ok,
@@ -66,8 +68,8 @@ defmodule SpatoWeb.EquipmentBookingLive.Index do
 
           <main class="flex-1 overflow-y-auto pt-20 p-6 transition-all duration-300 bg-gray-100">
           <section class="mb-4">
-              <h1 class="text-xl font-bold mb-1">Urus Peralatan</h1>
-              <p class="text-md text-gray-500 mb-4">Semak dan urus semua tempahan peralatan dalam sistem</p>
+              <h1 class="text-xl font-bold mb-1">Senarai Tempahan Peralatan</h1>
+              <p class="text-md text-gray-500 mb-4">Semak semua tempahan peralatan yang anda buat</p>
 
         <!-- Middle Section: Add Equipment Button -->
         <section class="mb-4 flex justify-end">
