@@ -36,14 +36,18 @@ defmodule SpatoWeb.AvailableVehicleLive do
   end
 
   defp load_vehicles(socket) do
-    filters = socket.assigns.filters
-    vehicles = Bookings.available_vehicles(filters)
+    filters =
+      socket.assigns.filters
+      |> Map.put("page", socket.assigns.page)
+
+    %{vehicles_page: vehicles, total: total, total_pages: total_pages, page: page} =
+      Bookings.available_vehicles(filters)
 
     socket
     |> assign(:vehicles, vehicles)
-    |> assign(:page, 1)
-    |> assign(:total_pages, 1)
-    |> assign(:total, length(vehicles))
+    |> assign(:page, page)
+    |> assign(:total_pages, total_pages)
+    |> assign(:total, total)
   end
 
   @impl true
@@ -68,6 +72,24 @@ defmodule SpatoWeb.AvailableVehicleLive do
      |> assign(:form, to_form(filters)) # keep form fields as raw strings
      |> assign(:page, 1)
      |> load_vehicles()}
+  end
+
+  @impl true
+  def handle_event("next_page", _, socket) do
+    if socket.assigns.page < socket.assigns.total_pages do
+      {:noreply, socket |> assign(:page, socket.assigns.page + 1) |> load_vehicles()}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  @impl true
+  def handle_event("prev_page", _, socket) do
+    if socket.assigns.page > 1 do
+      {:noreply, socket |> assign(:page, socket.assigns.page - 1) |> load_vehicles()}
+    else
+      {:noreply, socket}
+    end
   end
 
   @impl true
@@ -217,6 +239,18 @@ defmodule SpatoWeb.AvailableVehicleLive do
                 <p class="text-gray-500 text-lg">Tiada kenderaan tersedia dengan kriteria carian anda.</p>
               </div>
             <% end %>
+
+            <div class="flex justify-center mt-6 space-x-2">
+              <%= if @page > 1 do %>
+                <button phx-click="prev_page" class="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400">Prev</button>
+              <% end %>
+
+              <span class="px-3 py-1">Page <%= @page %> of <%= @total_pages %></span>
+
+              <%= if @page < @total_pages do %>
+                <button phx-click="next_page" class="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400">Next</button>
+              <% end %>
+            </div>
 
             <!-- Modal -->
             <.modal :if={@live_action in [:new, :edit]} id="vehicle_booking-modal" show on_cancel={JS.patch(~p"/available_vehicles")}>

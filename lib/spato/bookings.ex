@@ -71,6 +71,7 @@ defmodule Spato.Bookings do
         from vb in date_query,
           left_join: u in assoc(vb, :user),
           left_join: up in assoc(u, :user_profile),
+          left_join: d in assoc(up, :department),
           left_join: v in assoc(vb, :vehicle),
           where:
             ilike(vb.purpose, ^like_search) or
@@ -81,7 +82,8 @@ defmodule Spato.Bookings do
             ilike(v.plate_number, ^like_search) or
             ilike(v.type, ^like_search) or
             ilike(v.vehicle_model, ^like_search) or
-            ilike(up.full_name, ^like_search),
+            ilike(up.full_name, ^like_search) or
+            ilike(d.name, ^like_search),
           distinct: vb.id,
           select: vb
       else
@@ -117,6 +119,9 @@ defmodule Spato.Bookings do
     query       = filters["query"]
     type        = filters["type"]
     capacity    = filters["capacity"]
+    page        = Map.get(filters, "page", 1) |> to_int()
+    per_page    = 12
+    offset      = (page - 1) * per_page
 
     # Parse pickup & return times only here (keep strings in LiveView)
     pickup_time =
@@ -179,26 +184,44 @@ defmodule Spato.Bookings do
         base_query
       end
 
-    # Availability filter – only apply if both times are filled
-    if is_nil(pickup_time) or is_nil(return_time) do
-      Spato.Repo.all(base_query)
-    else
-      from(v in base_query,
-      left_join: b in assoc(v, :vehicle_bookings),
-      on:
-        b.vehicle_id == v.id and
-          b.status in ["pending", "approved"] and
-          fragment(
-            "tsrange(?::timestamp, ?::timestamp) && tsrange(?::timestamp, ?::timestamp)",
-            b.pickup_time,
-            b.return_time,
-            ^pickup_time,
-            ^return_time
-          ),
-      where: is_nil(b.id)
-    )
-    |> Spato.Repo.all()
-    end
+    # Apply availability filter – only if both times are filled
+    final_query =
+      if is_nil(pickup_time) or is_nil(return_time) do
+        base_query
+      else
+        from(v in base_query,
+          join: b in assoc(v, :vehicle_bookings),
+          on:
+            b.vehicle_id == v.id and
+            b.status in ["pending", "approved"] and
+            fragment(
+              "tsrange(?::timestamp, ?::timestamp) && tsrange(?::timestamp, ?::timestamp)",
+              b.pickup_time,
+              b.return_time,
+              ^pickup_time,
+              ^return_time
+            ),
+          where: is_nil(b.id)
+        )
+      end
+
+    # Total count
+    total = final_query |> exclude(:order_by) |> Repo.aggregate(:count, :id)
+    total_pages = ceil(total / per_page)
+
+    # Paginated result
+    vehicles_page =
+      final_query
+      |> limit(^per_page)
+      |> offset(^offset)
+      |> Repo.all()
+
+    %{
+      vehicles_page: vehicles_page,
+      total: total,
+      total_pages: total_pages,
+      page: page
+    }
   end
 
   # --- CRUD ---

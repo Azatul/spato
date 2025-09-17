@@ -25,6 +25,7 @@ defmodule Spato.Bookings.VehicleBooking do
     |> validate_required([:purpose, :trip_destination, :pickup_time, :return_time, :additional_notes])
     |> validate_inclusion(:status, ["pending", "approved", "rejected", "cancelled", "completed"])
     |> unique_constraint(:vehicle_id, name: :no_overlapping_bookings)
+    |> update_change(:status, &String.downcase/1)
   end
 
   def human_status("pending"), do: "Menunggu Kelulusan"
