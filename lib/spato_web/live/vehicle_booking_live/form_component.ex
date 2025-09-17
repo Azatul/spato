@@ -50,7 +50,7 @@ defmodule SpatoWeb.VehicleBookingLive.FormComponent do
         <:actions>
           <.button phx-disable-with="Saving...">
             <%= if @action == :new do %>
-              Simpan Tempahan Kenderaan
+              Hantar Tempahan
             <% else %>
               Kemaskini Tempahan Kenderaan
             <% end %>

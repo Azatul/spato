@@ -330,6 +330,8 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
                   </div>
                 </:col>
 
+                <:col :let={booking} label="Catatan">{booking.additional_notes}</:col>
+
                 <:col :let={booking} label="Status">
                   <span class={"px-1.5 py-0.5 rounded-full text-white text-xs font-semibold " <>
                     case booking.status do
@@ -344,8 +346,6 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
                   </span>
                 </:col>
 
-                <:col :let={booking} label="Catatan">{booking.additional_notes}</:col>
-
                 <:action :let={booking}>
                   <%= if booking.status == "pending" do %>
                     <.button
@@ -357,7 +357,7 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
                       Batal
                     </.button>
                   <% else %>
-                    <span class="text-gray-500">—</span>
+                    <span class="text-gray-500"></span>
                   <% end %>
                 </:action>
               </.table>
