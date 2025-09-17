@@ -22,6 +22,7 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
      |> assign(:vehicle_booking, nil)
      |> assign(:vehicles, [])
      |> assign(:params, %{})
+     |> assign(:stats, Bookings.get_user_booking_stats(socket.assigns.current_user.id))
      |> load_vehicle_bookings()}
   end
 
@@ -161,7 +162,11 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
 
     case Bookings.cancel_booking(booking, socket.assigns.current_user) do
       {:ok, _} ->
-        {:noreply, load_vehicle_bookings(socket)}
+        # reload both bookings and stats
+        {:noreply,
+         socket
+         |> load_vehicle_bookings()
+         |> assign(:stats, Bookings.get_user_booking_stats(socket.assigns.current_user.id))}
 
       {:error, :not_allowed} ->
         {:noreply, socket |> put_flash(:error, "Tidak boleh batal selepas tindakan admin.")}
@@ -183,6 +188,24 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
             <h1 class="text-xl font-bold mb-1">Tempahan Kenderaan Saya</h1>
             <p class="text-md text-gray-500 mb-4">Semak semua tempahan kenderaan yang anda buat</p>
 
+            <!-- Stats Cards for Current User -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+              <%= for {label, value, color} <- [
+                    {"Jumlah Tempahan Minggu Ini", @stats.total, "text-gray-700"},
+                    {"Menunggu", @stats.pending, "text-yellow-500"},
+                    {"Diluluskan", @stats.approved, "text-green-500"},
+                    {"Selesai", @stats.completed, "text-blue-500"}
+                  ] do %>
+
+                <div class="bg-white p-4 rounded-xl shadow-md flex flex-col justify-between h-30 transition-transform hover:scale-105">
+                  <div>
+                    <p class="text-sm text-gray-500"><%= label %></p>
+                    <p class={"text-3xl font-bold mt-1 #{color}"}><%= value %></p>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+
             <!-- Booking Table Section -->
             <section class="bg-white p-4 md:p-6 rounded-xl shadow-md">
               <div class="flex flex-col mb-4 gap-2">
@@ -201,7 +224,7 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
 
                   <!-- Status filter -->
                   <form phx-change="filter_status">
-                    <select name="status" class="border rounded-md px-2 py-1 text-sm">
+                    <select name="status" class="border rounded-md px-2 pr-8 py-1 text-sm">
                       <option value="all" selected={@filter_status in [nil, "all"]}>Semua Status</option>
                       <option value="pending" selected={@filter_status == "pending"}>Menunggu</option>
                       <option value="approved" selected={@filter_status == "approved"}>Diluluskan</option>

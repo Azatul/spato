@@ -302,4 +302,30 @@ defmodule Spato.Bookings do
     }
   end
 
+  def get_user_booking_stats(user_id) do
+    now = Date.utc_today()
+    # Get the weekday (1 = Monday, 7 = Sunday)
+    weekday = Date.day_of_week(now)
+    # Beginning of week (Monday)
+    beginning_of_week = Date.add(now, -weekday + 1)
+    # End of week (Sunday)
+    end_of_week = Date.add(beginning_of_week, 6)
+
+    # Convert to DateTime in UTC
+    {:ok, beginning_of_week_dt} = DateTime.new(beginning_of_week, ~T[00:00:00], "Etc/UTC")
+    {:ok, end_of_week_dt} = DateTime.new(end_of_week, ~T[23:59:59], "Etc/UTC")
+
+    base_query =
+      from vb in VehicleBooking,
+        where: vb.user_id == ^user_id and vb.inserted_at >= ^beginning_of_week_dt and vb.inserted_at <= ^end_of_week_dt
+
+    %{
+      total: Repo.aggregate(base_query, :count, :id),
+      pending: Repo.aggregate(from(vb in base_query, where: vb.status == "pending"), :count, :id),
+      approved: Repo.aggregate(from(vb in base_query, where: vb.status == "approved"), :count, :id),
+      rejected: Repo.aggregate(from(vb in base_query, where: vb.status == "rejected"), :count, :id),
+      completed: Repo.aggregate(from(vb in base_query, where: vb.status == "completed"), :count, :id)
+    }
+  end
+
 end
