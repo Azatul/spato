@@ -168,7 +168,7 @@ defmodule SpatoWeb.VehicleLive.FormComponent do
     end
   end
 
-  defp flash_message(:edit), do: "Vehicle updated successfully"
+  defp flash_message(:edit), do: "Kenderaan berjaya dikemaskini"
   defp flash_message(:new),  do: "Kenderaan berjaya ditambah"
 
   defp notify_parent(msg), do: send(self(), {__MODULE__, msg})

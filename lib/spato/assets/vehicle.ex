@@ -25,6 +25,8 @@ defmodule Spato.Assets.Vehicle do
     |> cast(attrs, [:user_id, :created_by_id, :name, :type, :photo_url, :vehicle_model, :plate_number, :status, :capacity, :last_services_at])
     |> validate_required([:name, :type, :vehicle_model, :plate_number, :status, :capacity, :last_services_at])
     |> validate_inclusion(:status, ["tersedia", "dalam_penyelenggaraan"])
+    |> unique_constraint(:name, message: "Nama kenderaan sudah digunakan")
+    |> unique_constraint(:name, name: :vehicles_name_lower_index, message: "Nama kenderaan sudah digunakan")
   end
 
   # Map DB values to human-readable labels
