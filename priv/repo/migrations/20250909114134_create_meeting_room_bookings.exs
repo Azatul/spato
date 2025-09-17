@@ -11,8 +11,8 @@ defmodule Spato.Repo.Migrations.CreateMeetingRoomBookings do
       add :recurrence_pattern, :text
       add :status, :string
       add :notes, :text
+      add :meeting_room_id, references(:meeting_rooms, on_delete: :delete_all)
       add :user_id, references(:users, on_delete: :nothing)
-      add :room_id, references(:meeting_rooms, on_delete: :nothing)
       add :approved_by_user_id, references(:users, on_delete: :nothing)
       add :cancelled_by_user_id, references(:users, on_delete: :nothing)
 

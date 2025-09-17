@@ -11,10 +11,12 @@ defmodule Spato.Bookings.MeetingRoomBooking do
     field :is_recurring, :boolean, default: false
     field :recurrence_pattern, :string
     field :notes, :string
-    field :user_id, :id
-    field :room_id, :id
-    field :approved_by_user_id, :id
-    field :cancelled_by_user_id, :id
+
+    # Relationships
+    belongs_to :user, Spato.Accounts.User
+    belongs_to :room, Spato.Assets.MeetingRoom, foreign_key: :meeting_room_id
+    belongs_to :approved_by_user, Spato.Accounts.User
+    belongs_to :cancelled_by_user, Spato.Accounts.User
 
     timestamps(type: :utc_datetime)
   end
@@ -22,8 +24,25 @@ defmodule Spato.Bookings.MeetingRoomBooking do
   @doc false
   def changeset(meeting_room_booking, attrs) do
     meeting_room_booking
-    |> cast(attrs, [:purpose, :participants, :start_time, :end_time, :is_recurring, :recurrence_pattern, :notes])
-    |> validate_required([:purpose, :participants, :start_time, :end_time, :is_recurring, :recurrence_pattern, :notes])
+    |> cast(attrs, [
+      :purpose,
+      :participants,
+      :start_time,
+      :end_time,
+      :is_recurring,
+      :recurrence_pattern,
+      :notes,
+      :user_id,
+      :meeting_room_id,
+      :approved_by_user_id,
+      :cancelled_by_user_id
+    ])
+    |> validate_required([
+      :purpose,
+      :participants,
+      :start_time,
+      :end_time
+    ])
     |> put_change(:status, meeting_room_booking.status || "pending")
   end
 end

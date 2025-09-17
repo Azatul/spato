@@ -5,7 +5,7 @@ defmodule Spato.Bookings do
 
   import Ecto.Query, warn: false
   alias Spato.Repo
-
+  alias Spato.Assets.MeetingRoom
   alias Spato.Bookings.MeetingRoomBooking
 
   @per_page 10
@@ -21,7 +21,9 @@ defmodule Spato.Bookings do
   """
   def list_meeting_room_bookings do
     Repo.all(MeetingRoomBooking)
+    |> Repo.preload([:room, :user])
   end
+
 
   @doc """
   Gets a single meeting_room_booking.
@@ -107,6 +109,21 @@ defmodule Spato.Bookings do
     from(b in MeetingRoomBooking,
       where: b.user_id == ^user_id,
       order_by: [desc: b.inserted_at]
+    )
+    |> Repo.all()
+  end
+  def list_available_meeting_rooms(start_time, end_time, participants) do
+    import Ecto.Query
+
+    booked_rooms_ids =
+      from(b in MeetingRoomBooking,
+        where: fragment("? < ? AND ? > ?", b.start_time, ^end_time, b.end_time, ^start_time),
+        select: b.meeting_room_id
+      )
+      |> Repo.all()
+
+    from(r in Spato.Assets.MeetingRoom,
+      where: r.capacity >= ^participants and r.id not in ^booked_rooms_ids
     )
     |> Repo.all()
   end
@@ -227,6 +244,36 @@ defmodule Spato.Bookings do
       page: page
     }
   end
+
+  def approve_meeting_room_booking(%MeetingRoomBooking{} = booking) do
+    booking
+    |> Ecto.Changeset.change(status: "approved")
+    |> Repo.update()
+  end
+
+  def reject_meeting_room_booking(%MeetingRoomBooking{} = booking) do
+    booking
+    |> Ecto.Changeset.change(status: "rejected")
+    |> Repo.update()
+  end
+
+  def list_available_meeting_rooms(opts \\ %{}) do
+    import Ecto.Query
+    alias Spato.Repo
+
+    query = from r in MeetingRoom,
+      where: r.status == "tersedia",
+      order_by: [asc: r.name]
+
+    # Apply capacity filter
+    query = if opts[:capacity], do: from(r in query, where: r.capacity >= ^opts[:capacity]), else: query
+
+    # Apply search filter
+    query = if opts[:search], do: from(r in query, where: ilike(r.name, ^"%#{opts[:search]}%")), else: query
+
+    Repo.all(query)
+  end
+
 
   defp to_int(val) when is_integer(val), do: val
   defp to_int(val) when is_binary(val), do: String.to_integer(val)

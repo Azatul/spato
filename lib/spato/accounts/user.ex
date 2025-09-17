@@ -14,6 +14,10 @@ defmodule Spato.Accounts.User do
     has_many :vehicles, Spato.Assets.Vehicle, on_delete: :delete_all
     has_many :equipments, Spato.Assets.Equipment, on_delete: :delete_all
     has_many :meeting_rooms, Spato.Assets.MeetingRoom, on_delete: :delete_all
+    has_many :requested_bookings, Spato.Bookings.MeetingRoomBooking, foreign_key: :user_id
+    has_many :approved_bookings, Spato.Bookings.MeetingRoomBooking, foreign_key: :approved_by_user_id
+    has_many :cancelled_bookings, Spato.Bookings.MeetingRoomBooking, foreign_key: :cancelled_by_user_id
+
 
     timestamps(type: :utc_datetime)
   end

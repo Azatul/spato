@@ -2,6 +2,7 @@ defmodule SpatoWeb.CateringMenuLive.FormComponent do
   use SpatoWeb, :live_component
 
   alias Spato.Assets
+  alias Spato.Bookings
 
   @impl true
   def render(assigns) do
@@ -111,10 +112,6 @@ def handle_event("save", %{"meeting_room_booking" => booking_params}, socket) do
   end
 end
 
-defp notify_parent(msg), do: send(self(), {__MODULE__, msg})
-
-
-
   def handle_event("remove_menu_image", _params, socket) do
     socket =
       Enum.reduce(socket.assigns.uploads.menu_image.entries, socket, fn entry, acc ->
@@ -127,7 +124,7 @@ defp notify_parent(msg), do: send(self(), {__MODULE__, msg})
      |> assign(:remove_menu_image, true)}
   end
 
-  defp save_catering_menu(socket, action, catering_menu_params) do
+  def save_catering_menu(socket, action, catering_menu_params) do
     uploaded_urls =
       consume_uploaded_entries(socket, :menu_image, fn %{path: path}, _entry ->
         uploads_dir = Path.expand("./uploads")

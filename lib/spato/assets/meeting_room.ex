@@ -10,8 +10,10 @@ defmodule Spato.Assets.MeetingRoom do
     field :available_facility, :string
     field :photo_url, :string
 
+
     belongs_to :user, Spato.Accounts.User
     belongs_to :created_by, Spato.Accounts.User
+    has_many :bookings, Spato.Bookings.MeetingRoomBooking
 
     timestamps(type: :utc_datetime)
   end

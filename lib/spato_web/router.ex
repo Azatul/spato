@@ -48,6 +48,7 @@ defmodule SpatoWeb.Router do
     live "/meeting_room_bookings/:id", MeetingRoomBookingLive.Show, :show
     live "/meeting_room_bookings/:id/show/edit", MeetingRoomBookingLive.Show, :edit
     live "/meeting_room_bookings/:id/show", MeetingRoomBookingLive.Index, :show
+    live "/available_meeting_rooms", AvailableMeetingRoomLive.Index, :index
 
   end
 
@@ -88,6 +89,8 @@ defmodule SpatoWeb.Router do
       live "/catering_menus/:id/edit", CateringMenuLive.Index, :edit
 
       live "/catering_menus/:id", CateringMenuLive.Index, :show
+
+      live "/meeting_room_bookings", MeetingRoomBookingLive.AdminIndex, :index
     end
   end
 
