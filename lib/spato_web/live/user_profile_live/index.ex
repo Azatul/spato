@@ -209,7 +209,7 @@ defmodule SpatoWeb.UserProfileLive.Index do
                 </select>
 
                 <select name="role" class="border rounded-md px-2 pr-8 py-1 text-sm">
-                  <option value="all" selected={@filter_role in [nil, "all"]}>Semua Status</option>
+                  <option value="all" selected={@filter_role in [nil, "all"]}>Semua Peranan</option>
                   <option value="admin" selected={@filter_role == "admin"}>Admin</option>
                   <option value="user" selected={@filter_role == "user"}>Staf Biasa</option>
                 </select>
@@ -288,8 +288,15 @@ defmodule SpatoWeb.UserProfileLive.Index do
             <:col :let={{_id, u}} label="Tarikh Lantikan"><%= if u.user_profile && Map.has_key?(u.user_profile, :date_joined), do: u.user_profile.date_joined, else: "Belum diisi" %></:col>
 
             <:action :let={{id, u}}>
-              <.link phx-click={JS.push("delete", value: %{id: u.id}) |> hide("##{id}")} data-confirm="Anda yakin?">Padam</.link>
+              <%= if u.id != @current_user.id and u.role != "admin" do %>
+                <.link phx-click={JS.push("delete", value: %{id: u.id}) |> hide("##{id}")} data-confirm="Anda yakin?">
+                  Padam
+                </.link>
+              <% else %>
+                <!-- No delete option for self or admins -->
+              <% end %>
             </:action>
+
           </.table>
         </section>
 
