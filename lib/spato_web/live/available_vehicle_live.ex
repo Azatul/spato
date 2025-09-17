@@ -136,18 +136,22 @@ defmodule SpatoWeb.AvailableVehicleLive do
             <h1 class="text-xl font-bold mb-1">Kenderaan Tersedia</h1>
             <p class="text-md text-gray-500 mb-4">Cari dan tempah kenderaan yang tersedia</p>
 
-            <!-- Filters -->
-            <.form for={@form} phx-submit="search" class="mb-6 bg-white p-3 rounded-xl shadow-md">
-              <div class="flex flex-col md:flex-row items-center gap-3">
-                <!-- Main search -->
+          <!-- Filters -->
+          <.form for={@form} phx-submit="search" class="mb-6 bg-white p-4 rounded-xl shadow-md w-full">
+            <div class="flex flex-wrap items-end gap-4 w-full">
+
+              <!-- Search box flexes -->
+              <div class="flex-1 min-w-[150px]">
                 <.input
                   field={@form[:query]}
                   label="Carian"
                   placeholder="Cari kenderaan, nombor plat..."
-                  class="flex-1"
+                  class="w-full"
                 />
+              </div>
 
-                <!-- Capacity -->
+              <!-- Right inputs + button: fixed group -->
+              <div class="flex flex-wrap items-end gap-4 min-w-0">
                 <.input
                   field={@form[:capacity]}
                   type="number"
@@ -156,7 +160,6 @@ defmodule SpatoWeb.AvailableVehicleLive do
                   class="w-32"
                 />
 
-                <!-- Type -->
                 <.input
                   field={@form[:type]}
                   type="select"
@@ -173,18 +176,30 @@ defmodule SpatoWeb.AvailableVehicleLive do
                   class="w-32"
                 />
 
-                <!-- Date range -->
-                <.input field={@form[:pickup_time]} type="datetime-local" label="Tarikh & Masa Ambil" class="w-44" />
-                <.input field={@form[:return_time]} type="datetime-local" label="Tarikh & Maasa Pulang" class="w-44" />
+                <.input
+                  field={@form[:pickup_time]}
+                  type="datetime-local"
+                  label="Tarikh & Masa Ambil"
+                  class="w-44"
+                />
 
-                <!-- Search button -->
+                <.input
+                  field={@form[:return_time]}
+                  type="datetime-local"
+                  label="Tarikh & Masa Pulang"
+                  class="w-44"
+                />
+
                 <.button
-                  class="bg-gray-900 text-white px-5 py-2 rounded-lg shadow-md hover:bg-gray-700 transition"
+                  type="submit"
+                  class="bg-gray-900 text-white px-5 py-2 rounded-lg shadow-md hover:bg-gray-700 transition flex-shrink-0"
                 >
                   Cari
                 </.button>
               </div>
-            </.form>
+
+            </div>
+          </.form>
 
             <!-- Vehicles grid -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
