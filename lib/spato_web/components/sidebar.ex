@@ -85,7 +85,7 @@ defmodule SpatoWeb.Components.Sidebar do
                     </.sidebar_link>
                   </li>
                   <li>
-                    <.sidebar_link patch="/equipments" active={@active_tab == "equipments"} open={@open}>
+                    <.sidebar_link patch="/equipment_bookings" active={@active_tab == "equipments"} open={@open}>
                       Tempahan Peralatan
                     </.sidebar_link>
                   </li>

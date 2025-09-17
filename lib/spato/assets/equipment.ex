@@ -12,6 +12,7 @@ defmodule Spato.Assets.Equipment do
 
     belongs_to :user, Spato.Accounts.User
     belongs_to :created_by, Spato.Accounts.User, foreign_key: :created_by_id
+    has_many :equipment_bookings, Spato.Bookings.EquipmentBooking, on_delete: :delete_all
 
     timestamps(type: :utc_datetime)
   end

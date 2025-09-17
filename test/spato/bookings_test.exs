@@ -66,4 +66,76 @@ defmodule Spato.BookingsTest do
       assert %Ecto.Changeset{} = Bookings.change_vehicle_booking(vehicle_booking)
     end
   end
+
+  describe "equipment_bookings" do
+    alias Spato.Bookings.EquipmentBooking
+
+    import Spato.BookingsFixtures
+
+    @invalid_attrs %{status: nil, location: nil, quantity: nil, usage_date: nil, return_date: nil, usage_time: nil, return_time: nil, additional_notes: nil, condition_before: nil, condition_after: nil}
+
+    test "list_equipment_bookings/0 returns all equipment_bookings" do
+      equipment_booking = equipment_booking_fixture()
+      assert Bookings.list_equipment_bookings() == [equipment_booking]
+    end
+
+    test "get_equipment_booking!/1 returns the equipment_booking with given id" do
+      equipment_booking = equipment_booking_fixture()
+      assert Bookings.get_equipment_booking!(equipment_booking.id) == equipment_booking
+    end
+
+    test "create_equipment_booking/1 with valid data creates a equipment_booking" do
+      valid_attrs = %{status: "some status", location: "some location", quantity: 42, usage_date: ~D[2025-09-16], return_date: ~D[2025-09-16], usage_time: ~T[14:00:00], return_time: ~T[14:00:00], additional_notes: "some additional_notes", condition_before: "some condition_before", condition_after: "some condition_after"}
+
+      assert {:ok, %EquipmentBooking{} = equipment_booking} = Bookings.create_equipment_booking(valid_attrs)
+      assert equipment_booking.status == "some status"
+      assert equipment_booking.location == "some location"
+      assert equipment_booking.quantity == 42
+      assert equipment_booking.usage_date == ~D[2025-09-16]
+      assert equipment_booking.return_date == ~D[2025-09-16]
+      assert equipment_booking.usage_time == ~T[14:00:00]
+      assert equipment_booking.return_time == ~T[14:00:00]
+      assert equipment_booking.additional_notes == "some additional_notes"
+      assert equipment_booking.condition_before == "some condition_before"
+      assert equipment_booking.condition_after == "some condition_after"
+    end
+
+    test "create_equipment_booking/1 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} = Bookings.create_equipment_booking(@invalid_attrs)
+    end
+
+    test "update_equipment_booking/2 with valid data updates the equipment_booking" do
+      equipment_booking = equipment_booking_fixture()
+      update_attrs = %{status: "some updated status", location: "some updated location", quantity: 43, usage_date: ~D[2025-09-17], return_date: ~D[2025-09-17], usage_time: ~T[15:01:01], return_time: ~T[15:01:01], additional_notes: "some updated additional_notes", condition_before: "some updated condition_before", condition_after: "some updated condition_after"}
+
+      assert {:ok, %EquipmentBooking{} = equipment_booking} = Bookings.update_equipment_booking(equipment_booking, update_attrs)
+      assert equipment_booking.status == "some updated status"
+      assert equipment_booking.location == "some updated location"
+      assert equipment_booking.quantity == 43
+      assert equipment_booking.usage_date == ~D[2025-09-17]
+      assert equipment_booking.return_date == ~D[2025-09-17]
+      assert equipment_booking.usage_time == ~T[15:01:01]
+      assert equipment_booking.return_time == ~T[15:01:01]
+      assert equipment_booking.additional_notes == "some updated additional_notes"
+      assert equipment_booking.condition_before == "some updated condition_before"
+      assert equipment_booking.condition_after == "some updated condition_after"
+    end
+
+    test "update_equipment_booking/2 with invalid data returns error changeset" do
+      equipment_booking = equipment_booking_fixture()
+      assert {:error, %Ecto.Changeset{}} = Bookings.update_equipment_booking(equipment_booking, @invalid_attrs)
+      assert equipment_booking == Bookings.get_equipment_booking!(equipment_booking.id)
+    end
+
+    test "delete_equipment_booking/1 deletes the equipment_booking" do
+      equipment_booking = equipment_booking_fixture()
+      assert {:ok, %EquipmentBooking{}} = Bookings.delete_equipment_booking(equipment_booking)
+      assert_raise Ecto.NoResultsError, fn -> Bookings.get_equipment_booking!(equipment_booking.id) end
+    end
+
+    test "change_equipment_booking/1 returns a equipment_booking changeset" do
+      equipment_booking = equipment_booking_fixture()
+      assert %Ecto.Changeset{} = Bookings.change_equipment_booking(equipment_booking)
+    end
+  end
 end

@@ -327,4 +327,100 @@ defmodule Spato.Bookings do
     }
   end
 
+
+  alias Spato.Bookings.EquipmentBooking
+
+  @doc """
+  Returns the list of equipment_bookings.
+
+  ## Examples
+
+      iex> list_equipment_bookings()
+      [%EquipmentBooking{}, ...]
+
+  """
+  def list_equipment_bookings do
+    Repo.all(EquipmentBooking)
+  end
+
+  @doc """
+  Gets a single equipment_booking.
+
+  Raises `Ecto.NoResultsError` if the Equipment booking does not exist.
+
+  ## Examples
+
+      iex> get_equipment_booking!(123)
+      %EquipmentBooking{}
+
+      iex> get_equipment_booking!(456)
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_equipment_booking!(id), do: Repo.get!(EquipmentBooking, id)
+
+  @doc """
+  Creates a equipment_booking.
+
+  ## Examples
+
+      iex> create_equipment_booking(%{field: value})
+      {:ok, %EquipmentBooking{}}
+
+      iex> create_equipment_booking(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_equipment_booking(attrs \\ %{}) do
+    %EquipmentBooking{}
+    |> EquipmentBooking.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Updates a equipment_booking.
+
+  ## Examples
+
+      iex> update_equipment_booking(equipment_booking, %{field: new_value})
+      {:ok, %EquipmentBooking{}}
+
+      iex> update_equipment_booking(equipment_booking, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def update_equipment_booking(%EquipmentBooking{} = equipment_booking, attrs) do
+    equipment_booking
+    |> EquipmentBooking.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Deletes a equipment_booking.
+
+  ## Examples
+
+      iex> delete_equipment_booking(equipment_booking)
+      {:ok, %EquipmentBooking{}}
+
+      iex> delete_equipment_booking(equipment_booking)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def delete_equipment_booking(%EquipmentBooking{} = equipment_booking) do
+    Repo.delete(equipment_booking)
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking equipment_booking changes.
+
+  ## Examples
+
+      iex> change_equipment_booking(equipment_booking)
+      %Ecto.Changeset{data: %EquipmentBooking{}}
+
+  """
+  def change_equipment_booking(%EquipmentBooking{} = equipment_booking, attrs \\ %{}) do
+    EquipmentBooking.changeset(equipment_booking, attrs)
+  end
 end
