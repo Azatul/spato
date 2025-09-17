@@ -67,13 +67,22 @@ defmodule SpatoWeb.VehicleBookingLive.AdminShowComponent do
       </.header>
 
       <.list>
-        <:item title="Nama">
-          <%= if @vehicle_booking.user && @vehicle_booking.user.user_profile do %>
-            <%= @vehicle_booking.user.user_profile.full_name %>
-          <% else %>
-            -
-          <% end %>
-        </:item>
+          <:item title="Nama">
+            <%= if @vehicle_booking.user && @vehicle_booking.user.user_profile do %>
+              <div class="flex flex-col">
+                <span class="font-medium text-gray-900">
+                  <%= @vehicle_booking.user.user_profile.full_name %>
+                </span>
+                <%= if @vehicle_booking.user.user_profile.department do %>
+                  <span class="text-sm text-gray-500">
+                    <%= @vehicle_booking.user.user_profile.department.name %>
+                  </span>
+                <% end %>
+              </div>
+            <% else %>
+              -
+            <% end %>
+          </:item>
 
         <:item title="Emel">
           <%= @vehicle_booking.user && @vehicle_booking.user.email || "-" %>
@@ -96,22 +105,7 @@ defmodule SpatoWeb.VehicleBookingLive.AdminShowComponent do
         </.header>
 
         <.list>
-          <:item title="Nama">
-            <%= if @vehicle_booking.user && @vehicle_booking.user.user_profile do %>
-              <div class="flex flex-col">
-                <span class="font-medium text-gray-900">
-                  <%= @vehicle_booking.user.user_profile.full_name %>
-                </span>
-                <%= if @vehicle_booking.user.user_profile.department do %>
-                  <span class="text-sm text-gray-500">
-                    <%= @vehicle_booking.user.user_profile.department.name %>
-                  </span>
-                <% end %>
-              </div>
-            <% else %>
-              -
-            <% end %>
-          </:item>
+          <:item title="Kenderaan"><%= @vehicle_booking.vehicle.name%></:item>
           <:item title="Model"><%= @vehicle_booking.vehicle.vehicle_model %></:item>
           <:item title="Nombor Plat"><%= @vehicle_booking.vehicle.plate_number %></:item>
           <:item title="Jenis">
