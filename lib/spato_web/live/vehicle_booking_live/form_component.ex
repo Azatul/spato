@@ -31,8 +31,8 @@ defmodule SpatoWeb.VehicleBookingLive.FormComponent do
         <% end %>
 
         <!-- Prefilled times -->
-        <.input field={@form[:pickup_time]} type="datetime-local" label="Masa Ambil" />
-        <.input field={@form[:return_time]} type="datetime-local" label="Masa Pulang" />
+        <.input field={@form[:pickup_time]} type="datetime-local" label="Masa Ambil" readonly />
+        <.input field={@form[:return_time]} type="datetime-local" label="Masa Pulang" readonly />
 
         <!-- Other fields -->
         <.input field={@form[:purpose]} type="text" label="Tujuan" />

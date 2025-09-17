@@ -123,30 +123,11 @@ defmodule Spato.Bookings do
     per_page    = 12
     offset      = (page - 1) * per_page
 
-    # Parse pickup & return times only here (keep strings in LiveView)
-    pickup_time =
-      case filters["pickup_time"] do
-        "" -> nil
-        nil -> nil
-        val ->
-          case NaiveDateTime.from_iso8601(val) do
-            {:ok, naive} -> DateTime.from_naive!(naive, "Etc/UTC")
-            _ -> nil
-          end
-      end
+    # Parse pickup & return times (convert strings to DateTime)
+    pickup_time = parse_datetime(filters["pickup_time"])
+    return_time = parse_datetime(filters["return_time"])
 
-    return_time =
-      case filters["return_time"] do
-        "" -> nil
-        nil -> nil
-        val ->
-          case NaiveDateTime.from_iso8601(val) do
-            {:ok, naive} -> DateTime.from_naive!(naive, "Etc/UTC")
-            _ -> nil
-          end
-      end
-
-    # Base query – only available vehicles
+    # Base query – only vehicles with status "tersedia"
     base_query =
       from v in Spato.Assets.Vehicle,
         preload: [:vehicle_bookings],
@@ -184,32 +165,27 @@ defmodule Spato.Bookings do
         base_query
       end
 
-    # Apply availability filter – only if both times are filled
+    # Availability filter – hide vehicles booked on ANY day in the range
     final_query =
       if is_nil(pickup_time) or is_nil(return_time) do
         base_query
       else
-        from(v in base_query,
-          join: b in assoc(v, :vehicle_bookings),
-          on:
-            b.vehicle_id == v.id and
-            b.status in ["pending", "approved"] and
-            fragment(
-              "tsrange(?::timestamp, ?::timestamp) && tsrange(?::timestamp, ?::timestamp)",
-              b.pickup_time,
-              b.return_time,
-              ^pickup_time,
-              ^return_time
-            ),
-          where: is_nil(b.id)
-        )
+        from v in base_query,
+          as: :vehicle,
+          where: not exists(
+            from b in Spato.Bookings.VehicleBooking,
+              where:
+                b.vehicle_id == parent_as(:vehicle).id and
+                b.status in ["pending", "approved"] and
+                b.pickup_time < ^return_time and
+                b.return_time > ^pickup_time
+          )
       end
 
-    # Total count
+    # Total count & pagination
     total = final_query |> exclude(:order_by) |> Repo.aggregate(:count, :id)
     total_pages = ceil(total / per_page)
 
-    # Paginated result
     vehicles_page =
       final_query
       |> limit(^per_page)
@@ -222,6 +198,19 @@ defmodule Spato.Bookings do
       total_pages: total_pages,
       page: page
     }
+  end
+
+  defp parse_datetime(nil), do: nil
+  defp parse_datetime(""), do: nil
+  defp parse_datetime(val) do
+    case NaiveDateTime.from_iso8601(val) do
+      {:ok, naive} -> DateTime.from_naive!(naive, "Etc/UTC")
+      _ ->
+        case NaiveDateTime.from_iso8601(val <> ":00") do
+          {:ok, naive} -> DateTime.from_naive!(naive, "Etc/UTC")
+          _ -> nil
+        end
+    end
   end
 
   # --- CRUD ---
