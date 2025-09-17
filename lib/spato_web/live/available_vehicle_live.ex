@@ -251,12 +251,6 @@ defmodule SpatoWeb.AvailableVehicleLive do
               </div>
             <% end %>
 
-            <%= if Enum.empty?(@vehicles) do %>
-              <div class="text-center py-12">
-                <p class="text-gray-500 text-lg">Tiada kenderaan tersedia dengan kriteria carian anda.</p>
-              </div>
-            <% end %>
-
             <div class="flex justify-center mt-6 space-x-2">
               <%= if @page > 1 do %>
                 <button phx-click="prev_page" class="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400">Prev</button>

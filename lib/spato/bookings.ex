@@ -116,14 +116,14 @@ defmodule Spato.Bookings do
   def available_vehicles(filters) do
     import Ecto.Query
 
-    query       = filters["query"]
-    type        = filters["type"]
-    capacity    = filters["capacity"]
-    page        = Map.get(filters, "page", 1) |> to_int()
-    per_page    = 12
-    offset      = (page - 1) * per_page
+    query    = filters["query"]
+    type     = filters["type"]
+    capacity = filters["capacity"]
+    page     = Map.get(filters, "page", 1) |> to_int()
+    per_page = 12
+    offset   = (page - 1) * per_page
 
-    # Parse pickup & return times (convert strings to DateTime)
+    # Parse pickup & return times using helper
     pickup_time = parse_datetime(filters["pickup_time"])
     return_time = parse_datetime(filters["return_time"])
 
@@ -165,11 +165,9 @@ defmodule Spato.Bookings do
         base_query
       end
 
-    # Availability filter – hide vehicles booked on ANY day in the range
+    # Availability filter – hide vehicles with conflicting bookings
     final_query =
-      if is_nil(pickup_time) or is_nil(return_time) do
-        base_query
-      else
+      if pickup_time && return_time do
         from v in base_query,
           as: :vehicle,
           where: not exists(
@@ -180,6 +178,9 @@ defmodule Spato.Bookings do
                 b.pickup_time < ^return_time and
                 b.return_time > ^pickup_time
           )
+      else
+        # If no valid dates, just show all available vehicles
+        base_query
       end
 
     # Total count & pagination
