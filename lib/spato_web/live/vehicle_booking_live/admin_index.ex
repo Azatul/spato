@@ -118,6 +118,7 @@ defmodule SpatoWeb.VehicleBookingLive.AdminIndex do
     |> assign(:vehicle_bookings_page, data.vehicle_bookings_page)
     |> assign(:total_pages, data.total_pages)
     |> assign(:filtered_count, data.total)
+    |> assign(:stats, Bookings.get_booking_stats())
     |> assign(:page, data.page)
   end
 
