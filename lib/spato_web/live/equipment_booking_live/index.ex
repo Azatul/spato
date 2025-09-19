@@ -106,6 +106,7 @@ defmodule SpatoWeb.EquipmentBookingLive.Index do
     |> assign(:equipment_bookings_page, data.equipment_bookings_page)
     |> assign(:total_pages, data.total_pages)
     |> assign(:filtered_count, data.total)
+    |> assign(:stats, Bookings.get_user_equipment_booking_stats(socket.assigns.current_user.id))
     |> assign(:page, data.page)
   end
 

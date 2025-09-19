@@ -19,8 +19,8 @@ defmodule SpatoWeb.EquipmentBookingLive.AdminIndex do
      |> assign(:search_query, "")
      |> assign(:page, 1)
      |> assign(:filter_date, "")
-     |> load_equipment_bookings()
-     |> assign(:stats, Bookings.get_equipment_booking_stats())}
+     |> assign(:stats, Bookings.get_equipment_booking_stats())
+     |> load_equipment_bookings()}
   end
 
   @impl true
@@ -120,6 +120,7 @@ defmodule SpatoWeb.EquipmentBookingLive.AdminIndex do
     |> assign(:equipment_bookings_page, data.equipment_bookings_page)
     |> assign(:total_pages, data.total_pages)
     |> assign(:filtered_count, data.total)
+    |> assign(:stats, Bookings.get_equipment_booking_stats())
     |> assign(:page, data.page)
   end
 
