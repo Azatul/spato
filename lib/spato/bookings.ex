@@ -477,6 +477,12 @@ defmodule Spato.Bookings do
   def delete_equipment_booking(%EquipmentBooking{} = eb), do: Repo.delete(eb)
   def change_equipment_booking(%EquipmentBooking{} = eb, attrs \\ %{}), do: EquipmentBooking.changeset(eb, attrs)
 
+  # Only allow admins to edit condition_before and condition_after
+    def change_equipment_booking_admin(%EquipmentBooking{} = booking, attrs \\ %{}) do
+      Ecto.Changeset.change(booking, attrs)
+      |> Ecto.Changeset.cast(attrs, [:condition_before, :condition_after])
+    end
+
   def approve_equipment_booking(%EquipmentBooking{} = eb), do: update_equipment_booking(eb, %{status: "approved"})
   def reject_equipment_booking(%EquipmentBooking{} = eb), do: update_equipment_booking(eb, %{status: "rejected"})
 

@@ -301,14 +301,19 @@ defmodule SpatoWeb.AvailableEquipmentLive do
 
             <.modal :if={@live_action in [:new, :edit]} id="equipment_booking-modal" show on_cancel={JS.patch(~p"/available_equipments")}>
               <.live_component
-                module={SpatoWeb.EquipmentBookingLive.FormComponent}
-                id={@equipment_booking.id || :new}
-                title={@page_title}
-                action={@live_action}
-                equipment_booking={@equipment_booking}
-                params={@params}
-                patch={~p"/available_equipments"}
-              />
+                  module={SpatoWeb.EquipmentBookingLive.FormComponent}
+                  id={@equipment_booking.id || :new}
+                  title={@page_title}
+                  action={@live_action}
+                  equipment_booking={@equipment_booking}
+                  equipment_id={@params["equipment_id"]}
+                  usage_date={@params["usage_date"]}
+                  usage_time={@params["usage_time"]}
+                  return_date={@params["return_date"]}
+                  return_time={@params["return_time"]}
+                  current_user={@current_user}
+                  patch={~p"/available_equipments"}
+                />
             </.modal>
           </section>
         </main>

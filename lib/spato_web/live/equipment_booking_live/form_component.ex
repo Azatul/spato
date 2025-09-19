@@ -2,6 +2,8 @@ defmodule SpatoWeb.EquipmentBookingLive.FormComponent do
   use SpatoWeb, :live_component
 
   alias Spato.Bookings
+  alias Spato.Assets.Equipment
+  alias Spato.Repo
 
   @impl true
   def render(assigns) do
@@ -29,7 +31,6 @@ defmodule SpatoWeb.EquipmentBookingLive.FormComponent do
           <!-- Hidden field -->
           <input type="hidden" name="equipment_booking[equipment_id]" value={@equipment.id} />
         <% end %>
-
 
         <!-- Prefilled times (readonly) -->
         <.input field={@form[:usage_date]} type="date" label="Tarikh Guna" readonly />
@@ -63,100 +64,98 @@ defmodule SpatoWeb.EquipmentBookingLive.FormComponent do
   end
 
   @impl true
-  def update(%{equipment_booking: equipment_booking, params: params} = assigns, socket) do
-    equipment =
-      case params["equipment_id"] do
-        nil -> nil
-        id -> Spato.Repo.get!(Spato.Assets.Equipment, id)
-      end
+  def update(%{
+      equipment_booking: equipment_booking,
+      equipment_id: equipment_id,
+      usage_date: usage_date,
+      usage_time: usage_time,
+      return_date: return_date,
+      return_time: return_time,
+      current_user: current_user
+    } = assigns, socket) do
+
+    equipment = if equipment_id, do: Repo.get(Equipment, equipment_id), else: nil
 
     attrs =
-      params
-      |> Map.take([
-        "equipment_id",
-        "usage_date",
-        "usage_time",
-        "return_date",
-        "return_time",
-        "quantity"
-      ])
+      %{
+        "equipment_id" => equipment_id,
+        "usage_date" => usage_date,
+        "usage_time" => usage_time,
+        "return_date" => return_date,
+        "return_time" => return_time
+      }
       |> Enum.reject(fn {_k, v} -> v in [nil, ""] end)
       |> Map.new()
-
-    attrs =
-      if equipment do
-        Map.merge(attrs, %{
-          "equipment_name" => equipment.name,
-          "serial_number" => equipment.serial_number,
-          "type" => equipment.type,
-          "quantity_available" => equipment.quantity_available,
-          "quantity" => attrs["quantity"] || 1
-        })
-      else
-        attrs
-      end
+      |> maybe_merge_equipment(equipment)
 
     changeset = Bookings.change_equipment_booking(equipment_booking, attrs)
 
     {:ok,
-     socket
-     |> assign(assigns)
-     |> assign(:equipment, equipment)
-     |> assign(:form, to_form(changeset))}
-  end
+    socket
+    |> assign(assigns)
+    |> assign(:equipment, equipment)
+    |> assign(:form, to_form(changeset))
+    |> assign(:current_user, current_user)}
+    end
 
-  @impl true
-  def update(%{equipment_booking: equipment_booking} = assigns, socket) do
-    changeset = Bookings.change_equipment_booking(equipment_booking)
+  defp maybe_merge_equipment(attrs, nil), do: attrs
 
-    {:ok,
-     socket
-     |> assign(assigns)
-     |> assign(:equipment, nil)
-     |> assign(:form, to_form(changeset))}
+  defp maybe_merge_equipment(attrs, %Equipment{} = equipment) do
+    Map.merge(attrs, %{
+      "equipment_name" => equipment.name,
+      "serial_number" => equipment.serial_number,
+      "type" => equipment.type,
+      "quantity_available" => equipment.quantity_available,
+      "quantity" => attrs["quantity"] || 1
+    })
   end
 
   @impl true
   def handle_event("validate", %{"equipment_booking" => params}, socket) do
     changeset =
-      Bookings.change_equipment_booking(socket.assigns.equipment_booking, params)
+      socket.assigns.equipment_booking
+      |> Bookings.change_equipment_booking(params)
+      |> Map.put(:action, :validate)
 
-    {:noreply, assign(socket, form: to_form(changeset, action: :validate))}
+    {:noreply, assign(socket, form: to_form(changeset))}
   end
 
   @impl true
   def handle_event("save", %{"equipment_booking" => params}, socket) do
-    save_equipment_booking(socket, socket.assigns.action, params)
-  end
+    params = Map.put_new(params, "user_id", socket.assigns.current_user.id)
 
-  defp save_equipment_booking(socket, :edit, params) do
-    case Bookings.update_equipment_booking(socket.assigns.equipment_booking, params) do
-      {:ok, equipment_booking} ->
-        notify_parent({:saved, equipment_booking})
-
-        {:noreply,
-         socket
-         |> put_flash(:info, "Tempahan peralatan berjaya dikemaskini")
-         |> push_patch(to: socket.assigns.patch)}
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, form: to_form(changeset))}
+    case socket.assigns.action do
+      :new -> save_new_booking(socket, params)
+      :edit -> save_edit_booking(socket, params)
     end
   end
 
-  defp save_equipment_booking(socket, :new, params) do
-    params = Map.put_new(params, "user_id", socket.assigns.current_user.id)
-
+  defp save_new_booking(socket, params) do
     case Bookings.create_equipment_booking(params) do
-      {:ok, equipment_booking} ->
-        notify_parent({:saved, equipment_booking})
+      {:ok, booking} ->
+        notify_parent({:saved, booking})
 
         {:noreply,
          socket
          |> put_flash(:info, "Tempahan peralatan berjaya dibuat")
          |> push_patch(to: socket.assigns.patch)}
 
-      {:error, %Ecto.Changeset{} = changeset} ->
+      {:error, changeset} ->
+        {:noreply, assign(socket, form: to_form(changeset))}
+    end
+  end
+
+  defp save_edit_booking(socket, params) do
+    case Bookings.update_equipment_booking(socket.assigns.equipment_booking, params) do
+      {:ok, booking} ->
+        notify_parent({:saved, booking})
+
+        {:noreply,
+         socket
+         |> put_flash(:info, "Tempahan peralatan berjaya dikemaskini")
+         |> push_patch(to: socket.assigns.patch)}
+
+      {:error, changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}
     end
   end
