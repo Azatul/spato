@@ -52,8 +52,10 @@ defmodule SpatoWeb.Router do
     live "/equipment_bookings/new", EquipmentBookingLive.Index, :new
     live "/equipment_bookings/:id/edit", EquipmentBookingLive.Index, :edit
 
-    live "/equipment_bookings/:id", EquipmentBookingLive.Show, :show
+    live "/equipment_bookings/:id", EquipmentBookingLive.Index, :show
     live "/equipment_bookings/:id/show/edit", EquipmentBookingLive.Show, :edit
+
+    live "/available_equipments", AvailableEquipmentLive
 
   end
 
@@ -95,6 +97,9 @@ defmodule SpatoWeb.Router do
 
       live "/vehicle_bookings", VehicleBookingLive.AdminIndex, :index
       live "/vehicle_bookings/:id", VehicleBookingLive.AdminIndex, :show
+
+      live "/equipment_bookings", EquipmentBookingLive.AdminIndex, :index
+      live "/equipment_bookings/:id", EquipmentBookingLive.AdminIndex, :show
     end
   end
 

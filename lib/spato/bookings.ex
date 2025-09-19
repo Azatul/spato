@@ -1,15 +1,19 @@
 defmodule Spato.Bookings do
   @moduledoc """
-  The Bookings context for managing vehicle bookings.
+  The Bookings context for managing vehicle and equipment bookings.
   """
 
   import Ecto.Query, warn: false
   alias Spato.Repo
+
   alias Spato.Bookings.VehicleBooking
+  alias Spato.Bookings.EquipmentBooking
 
   @per_page 10
 
-  # --- Listing ---
+  # ===================================================================
+  # --- VEHICLE BOOKINGS ---
+  # ===================================================================
 
   def list_vehicle_bookings(user \\ nil) do
     VehicleBooking
@@ -103,6 +107,7 @@ defmodule Spato.Bookings do
       |> offset(^offset)
       |> Repo.all()
       |> Repo.preload([:vehicle, user: [user_profile: [:department]]])
+
     total_pages = ceil(total / per_page)
 
     %{
@@ -179,7 +184,6 @@ defmodule Spato.Bookings do
                 b.return_time > ^pickup_time
           )
       else
-        # If no valid dates, just show all available vehicles
         base_query
       end
 
@@ -201,21 +205,6 @@ defmodule Spato.Bookings do
     }
   end
 
-  defp parse_datetime(nil), do: nil
-  defp parse_datetime(""), do: nil
-  defp parse_datetime(val) do
-    case NaiveDateTime.from_iso8601(val) do
-      {:ok, naive} -> DateTime.from_naive!(naive, "Etc/UTC")
-      _ ->
-        case NaiveDateTime.from_iso8601(val <> ":00") do
-          {:ok, naive} -> DateTime.from_naive!(naive, "Etc/UTC")
-          _ -> nil
-        end
-    end
-  end
-
-  # --- CRUD ---
-
   def get_vehicle_booking!(id) do
     Repo.get!(VehicleBooking, id)
     |> Repo.preload([
@@ -226,54 +215,23 @@ defmodule Spato.Bookings do
     ])
   end
 
-  def create_vehicle_booking(attrs) do
-    %VehicleBooking{}
-    |> VehicleBooking.changeset(attrs)
-    |> Repo.insert()
-  end
-
-  def update_vehicle_booking(%VehicleBooking{} = vb, attrs) do
-    vb
-    |> VehicleBooking.changeset(attrs)
-    |> Repo.update()
-  end
-
+  def create_vehicle_booking(attrs), do: %VehicleBooking{} |> VehicleBooking.changeset(attrs) |> Repo.insert()
+  def update_vehicle_booking(%VehicleBooking{} = vb, attrs), do: vb |> VehicleBooking.changeset(attrs) |> Repo.update()
   def delete_vehicle_booking(%VehicleBooking{} = vb), do: Repo.delete(vb)
+  def change_vehicle_booking(%VehicleBooking{} = vb, attrs \\ %{}), do: VehicleBooking.changeset(vb, attrs)
 
-  def change_vehicle_booking(%VehicleBooking{} = vb, attrs \\ %{}) do
-    VehicleBooking.changeset(vb, attrs)
-  end
-
-  # --- Actions ---
-
-  def approve_booking(%VehicleBooking{} = vb),
-    do: update_vehicle_booking(vb, %{status: "approved"})
-
-  def reject_booking(%VehicleBooking{} = vb),
-    do: update_vehicle_booking(vb, %{status: "rejected"})
+  # Actions
+  def approve_booking(%VehicleBooking{} = vb), do: update_vehicle_booking(vb, %{status: "approved"})
+  def reject_booking(%VehicleBooking{} = vb), do: update_vehicle_booking(vb, %{status: "rejected"})
 
   def cancel_booking(%VehicleBooking{} = vb, %Spato.Accounts.User{} = user) do
     case vb.status do
-      "pending" ->
-        update_vehicle_booking(vb, %{status: "cancelled", cancelled_by_user_id: user.id})
-
-      _ ->
-        {:error, :not_allowed}
+      "pending" -> update_vehicle_booking(vb, %{status: "cancelled", cancelled_by_user_id: user.id})
+      _ -> {:error, :not_allowed}
     end
   end
 
-  # --- Private Helpers ---
-
-  defp scope_by_user(query, nil), do: query
-  defp scope_by_user(query, user),
-    do: (from vb in query, where: vb.user_id == ^user.id)
-
-  defp to_int(val) when is_integer(val), do: val
-  defp to_int(val) when is_binary(val), do: String.to_integer(val)
-  defp to_int(_), do: 1
-
-  import Ecto.Query
-
+  # Stats
   def get_booking_stats do
     now = DateTime.utc_now()
 
@@ -285,32 +243,21 @@ defmodule Spato.Bookings do
     active =
       Repo.aggregate(
         from(v in VehicleBooking,
-          where: v.status == "approved" and
-                 v.pickup_time <= ^now and
-                 v.return_time >= ^now
+          where: v.status == "approved" and v.pickup_time <= ^now and v.return_time >= ^now
         ),
         :count,
         :id
       )
 
-    %{
-      total: total,
-      pending: pending,
-      approved: approved,
-      active: active
-    }
+    %{total: total, pending: pending, approved: approved, active: active}
   end
 
   def get_user_booking_stats(user_id) do
     now = Date.utc_today()
-    # Get the weekday (1 = Monday, 7 = Sunday)
     weekday = Date.day_of_week(now)
-    # Beginning of week (Monday)
     beginning_of_week = Date.add(now, -weekday + 1)
-    # End of week (Sunday)
     end_of_week = Date.add(beginning_of_week, 6)
 
-    # Convert to DateTime in UTC
     {:ok, beginning_of_week_dt} = DateTime.new(beginning_of_week, ~T[00:00:00], "Etc/UTC")
     {:ok, end_of_week_dt} = DateTime.new(end_of_week, ~T[23:59:59], "Etc/UTC")
 
@@ -327,100 +274,289 @@ defmodule Spato.Bookings do
     }
   end
 
+  # ===================================================================
+  # --- EQUIPMENT BOOKINGS ---
+  # ===================================================================
 
-  alias Spato.Bookings.EquipmentBooking
-
-  @doc """
-  Returns the list of equipment_bookings.
-
-  ## Examples
-
-      iex> list_equipment_bookings()
-      [%EquipmentBooking{}, ...]
-
-  """
-  def list_equipment_bookings do
-    Repo.all(EquipmentBooking)
+  def list_equipment_bookings(user \\ nil) do
+    EquipmentBooking
+    |> scope_by_user(user)
+    |> order_by([eb], desc: eb.inserted_at)
+    |> preload([:equipment, user: [user_profile: [:department]]])
+    |> Repo.all()
   end
 
-  @doc """
-  Gets a single equipment_booking.
+  def list_equipment_bookings_paginated(params \\ %{}, user \\ nil) do
+    page   = Map.get(params, "page", 1) |> to_int()
+    search = Map.get(params, "search", "")
+    status = Map.get(params, "status", "all")
+    date   = Map.get(params, "date", "")
+    per_page = @per_page
+    offset = (page - 1) * per_page
 
-  Raises `Ecto.NoResultsError` if the Equipment booking does not exist.
+    base_query =
+      from eb in EquipmentBooking,
+        order_by: [desc: eb.inserted_at]
 
-  ## Examples
+    scoped_query =
+      case user do
+        nil -> base_query
+        _ -> from eb in base_query, where: eb.user_id == ^user.id
+      end
 
-      iex> get_equipment_booking!(123)
-      %EquipmentBooking{}
+    status_query =
+      if status != "all" do
+        from eb in scoped_query, where: eb.status == ^status
+      else
+        scoped_query
+      end
 
-      iex> get_equipment_booking!(456)
-      ** (Ecto.NoResultsError)
+    date_query =
+      if date != "" do
+        case Date.from_iso8601(date) do
+          {:ok, parsed} ->
+            from eb in status_query,
+              where:
+                eb.usage_date == ^parsed or
+                eb.return_date == ^parsed
 
-  """
-  def get_equipment_booking!(id), do: Repo.get!(EquipmentBooking, id)
+          _ -> status_query
+        end
+      else
+        status_query
+      end
 
-  @doc """
-  Creates a equipment_booking.
+    final_query =
+      if search != "" do
+        like_search = "%#{search}%"
 
-  ## Examples
+        from eb in date_query,
+          left_join: u in assoc(eb, :user),
+          left_join: up in assoc(u, :user_profile),
+          left_join: d in assoc(up, :department),
+          left_join: e in assoc(eb, :equipment),
+          where:
+            ilike(eb.location, ^like_search) or
+            ilike(eb.status, ^like_search) or
+            ilike(u.email, ^like_search) or
+            ilike(e.name, ^like_search) or
+            ilike(e.serial_number, ^like_search) or
+            ilike(up.full_name, ^like_search) or
+            ilike(d.name, ^like_search),
+          distinct: eb.id,
+          select: eb
+      else
+        date_query
+      end
 
-      iex> create_equipment_booking(%{field: value})
-      {:ok, %EquipmentBooking{}}
+    total =
+      final_query
+      |> exclude(:order_by)
+      |> Repo.aggregate(:count, :id)
 
-      iex> create_equipment_booking(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
+    equipment_bookings_page =
+      final_query
+      |> limit(^per_page)
+      |> offset(^offset)
+      |> Repo.all()
+      |> Repo.preload([:equipment, user: [user_profile: [:department]]])
 
-  """
-  def create_equipment_booking(attrs \\ %{}) do
-    %EquipmentBooking{}
-    |> EquipmentBooking.changeset(attrs)
-    |> Repo.insert()
+    total_pages = ceil(total / per_page)
+
+    %{
+      equipment_bookings_page: equipment_bookings_page,
+      total: total,
+      total_pages: total_pages,
+      page: page
+    }
   end
 
-  @doc """
-  Updates a equipment_booking.
+  def available_equipments(filters) do
+    import Ecto.Query
 
-  ## Examples
+    query    = filters["query"]
+    type     = filters["type"]
+    quantity = filters["quantity"]
+    page     = Map.get(filters, "page", 1) |> to_int()
+    per_page = 12
+    offset   = (page - 1) * per_page
 
-      iex> update_equipment_booking(equipment_booking, %{field: new_value})
-      {:ok, %EquipmentBooking{}}
+    # Parse usage & return datetimes
+    usage_date  = filters["usage_date"]
+    return_date = filters["return_date"]
+    usage_time  = filters["usage_time"]
+    return_time = filters["return_time"]
 
-      iex> update_equipment_booking(equipment_booking, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
+    usage_dt  = parse_equipment_datetime(usage_date, usage_time)
+    return_dt = parse_equipment_datetime(return_date, return_time)
 
-  """
-  def update_equipment_booking(%EquipmentBooking{} = equipment_booking, attrs) do
-    equipment_booking
-    |> EquipmentBooking.changeset(attrs)
-    |> Repo.update()
+    base_query =
+      from e in Spato.Assets.Equipment,
+        preload: [:equipment_bookings],
+        where: e.status == "tersedia"
+
+    base_query =
+      if type && type != "all" do
+        from e in base_query, where: e.type == ^String.downcase(type)
+      else
+        base_query
+      end
+
+    base_query =
+      if quantity not in [nil, ""] do
+        case Integer.parse(quantity) do
+          {q, _} -> from e in base_query, where: e.quantity_available >= ^q
+          :error -> base_query
+        end
+      else
+        base_query
+      end
+
+    base_query =
+      if query not in [nil, ""] do
+        like_q = "%#{query}%"
+        from e in base_query,
+          where:
+            ilike(e.name, ^like_q) or
+            ilike(e.serial_number, ^like_q) or
+            ilike(e.type, ^like_q)
+      else
+        base_query
+      end
+
+    final_query =
+      if usage_dt && return_dt do
+        from e in base_query,
+          as: :equipment,
+          where: not exists(
+            from b in Spato.Bookings.EquipmentBooking,
+              where:
+                b.equipment_id == parent_as(:equipment).id and
+                b.status in ["pending", "approved"] and
+                fragment(
+                  "(?::timestamp + ?::time) < (?::timestamp + ?::time) AND (?::timestamp + ?::time) > (?::timestamp + ?::time)",
+                  b.usage_date, b.usage_time,
+                  ^return_date, ^return_time,
+                  b.return_date, b.return_time,
+                  ^usage_date, ^usage_time
+                )
+          )
+      else
+        base_query
+      end
+
+    total = final_query |> exclude(:order_by) |> Repo.aggregate(:count, :id)
+    total_pages = ceil(total / per_page)
+
+    equipments_page =
+      final_query
+      |> limit(^per_page)
+      |> offset(^offset)
+      |> Repo.all()
+
+    %{
+      equipments_page: equipments_page,
+      total: total,
+      total_pages: total_pages,
+      page: page
+    }
   end
 
-  @doc """
-  Deletes a equipment_booking.
-
-  ## Examples
-
-      iex> delete_equipment_booking(equipment_booking)
-      {:ok, %EquipmentBooking{}}
-
-      iex> delete_equipment_booking(equipment_booking)
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def delete_equipment_booking(%EquipmentBooking{} = equipment_booking) do
-    Repo.delete(equipment_booking)
+  def get_equipment_booking!(id) do
+    Repo.get!(EquipmentBooking, id)
+    |> Repo.preload([
+      :equipment,
+      [user: [user_profile: [:department]]],
+      :approved_by_user,
+      :cancelled_by_user
+    ])
   end
 
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking equipment_booking changes.
+  def create_equipment_booking(attrs), do: %EquipmentBooking{} |> EquipmentBooking.changeset(attrs) |> Repo.insert()
+  def update_equipment_booking(%EquipmentBooking{} = eb, attrs), do: eb |> EquipmentBooking.changeset(attrs) |> Repo.update()
+  def delete_equipment_booking(%EquipmentBooking{} = eb), do: Repo.delete(eb)
+  def change_equipment_booking(%EquipmentBooking{} = eb, attrs \\ %{}), do: EquipmentBooking.changeset(eb, attrs)
 
-  ## Examples
+  def approve_equipment_booking(%EquipmentBooking{} = eb), do: update_equipment_booking(eb, %{status: "approved"})
+  def reject_equipment_booking(%EquipmentBooking{} = eb), do: update_equipment_booking(eb, %{status: "rejected"})
 
-      iex> change_equipment_booking(equipment_booking)
-      %Ecto.Changeset{data: %EquipmentBooking{}}
+  def cancel_equipment_booking(%EquipmentBooking{} = eb, %Spato.Accounts.User{} = user) do
+    case eb.status do
+      "pending" -> update_equipment_booking(eb, %{status: "cancelled", cancelled_by_user_id: user.id})
+      _ -> {:error, :not_allowed}
+    end
+  end
 
-  """
-  def change_equipment_booking(%EquipmentBooking{} = equipment_booking, attrs \\ %{}) do
-    EquipmentBooking.changeset(equipment_booking, attrs)
+  def get_equipment_booking_stats do
+    today = Date.utc_today()
+
+    total = Repo.aggregate(EquipmentBooking, :count, :id)
+    pending = Repo.aggregate(from(e in EquipmentBooking, where: e.status == "pending"), :count, :id)
+    approved = Repo.aggregate(from(e in EquipmentBooking, where: e.status == "approved"), :count, :id)
+
+    active =
+      Repo.aggregate(
+        from(e in EquipmentBooking,
+          where: e.status == "approved" and e.usage_date <= ^today and e.return_date >= ^today
+        ),
+        :count,
+        :id
+      )
+
+    %{total: total, pending: pending, approved: approved, active: active}
+  end
+
+  def get_user_equipment_booking_stats(user_id) do
+    now = Date.utc_today()
+    weekday = Date.day_of_week(now)
+    beginning_of_week = Date.add(now, -weekday + 1)
+    end_of_week = Date.add(beginning_of_week, 6)
+
+    base_query =
+      from eb in EquipmentBooking,
+        where: eb.user_id == ^user_id and eb.usage_date >= ^beginning_of_week and eb.return_date <= ^end_of_week
+
+    %{
+      total: Repo.aggregate(base_query, :count, :id),
+      pending: Repo.aggregate(from(eb in base_query, where: eb.status == "pending"), :count, :id),
+      approved: Repo.aggregate(from(eb in base_query, where: eb.status == "approved"), :count, :id),
+      rejected: Repo.aggregate(from(eb in base_query, where: eb.status == "rejected"), :count, :id),
+      completed: Repo.aggregate(from(eb in base_query, where: eb.status == "completed"), :count, :id)
+    }
+  end
+
+  # ===================================================================
+  # --- PRIVATE HELPERS ---
+  # ===================================================================
+
+  defp scope_by_user(query, nil), do: query
+  defp scope_by_user(query, user), do: (from b in query, where: b.user_id == ^user.id)
+
+  defp to_int(val) when is_integer(val), do: val
+  defp to_int(val) when is_binary(val), do: String.to_integer(val)
+  defp to_int(_), do: 1
+
+  defp parse_datetime(nil), do: nil
+  defp parse_datetime(""), do: nil
+  defp parse_datetime(val) do
+    case NaiveDateTime.from_iso8601(val) do
+      {:ok, naive} -> DateTime.from_naive!(naive, "Etc/UTC")
+      _ ->
+        case NaiveDateTime.from_iso8601(val <> ":00") do
+          {:ok, naive} -> DateTime.from_naive!(naive, "Etc/UTC")
+          _ -> nil
+        end
+    end
+  end
+
+  defp parse_equipment_datetime(nil, _), do: nil
+  defp parse_equipment_datetime(_, nil), do: nil
+  defp parse_equipment_datetime(date_str, time_str) do
+    with {:ok, date} <- Date.from_iso8601(date_str),
+         {:ok, time} <- Time.from_iso8601(time_str) do
+      DateTime.new!(date, time, "Etc/UTC")
+    else
+      _ -> nil
+    end
   end
 end
