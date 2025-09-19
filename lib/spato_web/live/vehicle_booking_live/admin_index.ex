@@ -19,8 +19,8 @@ defmodule SpatoWeb.VehicleBookingLive.AdminIndex do
      |> assign(:search_query, "")
      |> assign(:page, 1)
      |> assign(:filter_date, "")
-     |> load_vehicle_bookings()
-     |> assign(:stats, Bookings.get_booking_stats())}
+     |> assign(:stats, Bookings.get_booking_stats())
+     |> load_vehicle_bookings()}
   end
 
   @impl true

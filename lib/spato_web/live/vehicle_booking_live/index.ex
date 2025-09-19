@@ -107,6 +107,7 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
     |> assign(:vehicle_bookings_page, data.vehicle_bookings_page)
     |> assign(:total_pages, data.total_pages)
     |> assign(:filtered_count, data.total)
+    |> assign(:stats, Bookings.get_user_booking_stats(socket.assigns.current_user.id))
     |> assign(:page, data.page)
   end
 
@@ -194,7 +195,7 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
                     {"Jumlah Tempahan Minggu Ini", @stats.total, "text-gray-700"},
                     {"Menunggu", @stats.pending, "text-yellow-500"},
                     {"Diluluskan", @stats.approved, "text-green-500"},
-                    {"Selesai", @stats.completed, "text-blue-500"}
+                    {"Selesai", Map.get(@stats, :completed, 0), "text-blue-500"}
                   ] do %>
 
                 <div class="bg-white p-4 rounded-xl shadow-md flex flex-col justify-between h-30 transition-transform hover:scale-105">
