@@ -261,10 +261,18 @@ defmodule SpatoWeb.EquipmentBookingLive.Index do
                 <:col :let={booking} label="ID"><%= booking.id %></:col>
                 <:col :let={booking} label="Peralatan"><%= booking.equipment && booking.equipment.name || "—" %></:col>
                 <:col :let={booking} label="Lokasi">{booking.location}</:col>
-                <:col :let={booking} label="Tarikh Guna">{booking.usage_date}</:col>
-                <:col :let={booking} label="Tarikh Pulang">{booking.return_date}</:col>
-                <:col :let={booking} label="Masa Guna">{booking.usage_time}</:col>
-                <:col :let={booking} label="Masa Pulang">{booking.return_time}</:col>
+                <:col :let={booking} label="Tarikh & Masa Guna">
+                  <div class="flex flex-col">
+                    <span class="font-medium text-gray-900"><%= booking.usage_date %></span>
+                    <span class="text-sm text-gray-500"><%= booking.usage_time %></span>
+                  </div>
+                </:col>
+                <:col :let={booking} label="Tarikh & Masa Pulang">
+                  <div class="flex flex-col">
+                    <span class="font-medium text-gray-900"><%= booking.return_date %></span>
+                    <span class="text-sm text-gray-500"><%= booking.return_time %></span>
+                  </div>
+                </:col>
                 <:col :let={booking} label="Catatan">{booking.additional_notes}</:col>
                 <:col :let={booking} label="Status">
                   <span class={"px-1.5 py-0.5 rounded-full text-white text-xs font-semibold " <>
@@ -276,7 +284,7 @@ defmodule SpatoWeb.EquipmentBookingLive.Index do
                       "cancelled" -> "bg-gray-400"
                       _ -> "bg-gray-400"
                     end}>
-                    <%= booking.status %>
+                  <%= Spato.Bookings.EquipmentBooking.human_status(booking.status) %>
                   </span>
                 </:col>
 

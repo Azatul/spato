@@ -237,19 +237,18 @@ defmodule SpatoWeb.EquipmentBookingLive.AdminIndex do
                 <:col :let={booking} label="Kuantiti"><%= booking.quantity %></:col>
                 <:col :let={booking} label="Catatan Tambahan"><%= booking.additional_notes %></:col>
                 <:col :let={booking} label="Status">
-                  <span class={"px-1.5 py-0.5 rounded-full text-white text-xs font-semibold " <>
-                    case booking.status do
-                      "pending" -> "bg-yellow-500"
-                      "approved" -> "bg-green-500"
-                      "rejected" -> "bg-red-500"
-                      "completed" -> "bg-blue-500"
-                      "cancelled" -> "bg-gray-400"
-                      _ -> "bg-gray-400"
-                    end}>
-                    <%= booking.status %>
-                  </span>
-                </:col>
-
+                <span class={"px-1.5 py-0.5 rounded-full text-white text-xs font-semibold " <>
+                  case booking.status do
+                    "pending" -> "bg-yellow-500"
+                    "approved" -> "bg-green-500"
+                    "rejected" -> "bg-red-500"
+                    "completed" -> "bg-blue-500"
+                    "cancelled" -> "bg-gray-400"
+                    _ -> "bg-gray-400"
+                  end}>
+                  <%= Spato.Bookings.EquipmentBooking.human_status(booking.status) %>
+                </span>
+              </:col>
                 <:action :let={booking}>
                   <%= if booking.status == "pending" do %>
                     <!-- Approve -->

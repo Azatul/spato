@@ -4,26 +4,41 @@ defmodule SpatoWeb.EquipmentBookingLive.ShowComponent do
   @impl true
   def render(assigns) do
     ~H"""
-    <div id={"vehicle-booking-show-#{@id}"}>
+    <div id={"booking-show-#{@id}"}>
      <.header>
-        Equipment booking {@equipment_booking.id}
-        <:subtitle>This is a equipment_booking record from your database.</:subtitle>
+        Tempahan Peralatan {@equipment_booking.id}
+        <:subtitle>Lihat tempahan peralatan dalam sistem</:subtitle>
       </.header>
 
       <.list>
-        <:item title="Quantity">{@equipment_booking.quantity}</:item>
-        <:item title="Location">{@equipment_booking.location}</:item>
-        <:item title="Usage date">{@equipment_booking.usage_date}</:item>
-        <:item title="Return date">{@equipment_booking.return_date}</:item>
-        <:item title="Usage time">{@equipment_booking.usage_time}</:item>
-        <:item title="Return time">{@equipment_booking.return_time}</:item>
-        <:item title="Additional notes">{@equipment_booking.additional_notes}</:item>
-        <:item title="Condition before">{@equipment_booking.condition_before}</:item>
-        <:item title="Condition after">{@equipment_booking.condition_after}</:item>
-        <:item title="Status">{@equipment_booking.status}</:item>
+      <:item title="Peralatan">
+        <%= @equipment_booking.equipment && @equipment_booking.equipment.name || "-" %>
+        </:item>
+        <:item title="Kuantiti">{@equipment_booking.quantity}</:item>
+        <:item title="Lokasi">{@equipment_booking.location}</:item>
+        <:item title="Tarikh & Masa Guna">
+          <%= @equipment_booking.usage_date %> ⏱ <%= @equipment_booking.usage_time %>
+        </:item>
+
+        <:item title="Tarikh & Masa Pulang">
+          <%= @equipment_booking.return_date %> ⏱ <%= @equipment_booking.return_time %>
+        </:item>
+        <:item title="Nota tambahan">{@equipment_booking.additional_notes}</:item>
+        <:item title="Status">
+          <span class={"px-2 py-1 rounded-full text-white " <>
+            case @equipment_booking.status do
+              "pending" -> "bg-yellow-500"
+              "approved" -> "bg-green-500"
+              "rejected" -> "bg-red-500"
+              "completed" -> "bg-blue-500"
+              "cancelled" -> "bg-gray-400"
+              _ -> "bg-gray-400"
+            end}>
+            <%= Spato.Bookings.EquipmentBooking.human_status(@equipment_booking.status) %>
+          </span>
+        </:item>
       </.list>
     </div>
     """
   end
-
 end
