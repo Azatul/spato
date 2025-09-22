@@ -184,7 +184,7 @@ defmodule Spato.Assets do
             ilike(v.name, ^like_search) or
             ilike(v.type, ^like_search) or
             ilike(v.serial_number, ^like_search) or
-            fragment("?::text LIKE ?", v.quantity_available, ^like_search),
+            fragment("?::text LIKE ?", v.total_quantity, ^like_search),
             distinct: v.id,
           select: v
       else

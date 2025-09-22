@@ -384,7 +384,15 @@ defmodule Spato.Bookings do
     usage_dt  = parse_datetime(filters["usage_at"])
     return_dt = parse_datetime(filters["return_at"])
 
-    # Base query – only available equipments
+    # Default requested quantity
+    requested_qty =
+      case quantity do
+        q when q in [nil, ""] -> 1
+        q when is_binary(q) -> case Integer.parse(q) do {v, _} -> v; :error -> 1 end
+        q when is_integer(q) -> q
+      end
+
+    # Base query – only equipments with status "tersedia"
     base_query =
       from e in Spato.Assets.Equipment,
         where: e.status == "tersedia"
@@ -409,16 +417,10 @@ defmodule Spato.Bookings do
         base_query
       end
 
-    # Parse requested quantity
-    requested_qty =
-      case quantity do
-        q when q in [nil, ""] -> 1
-        q when is_binary(q) -> case Integer.parse(q) do {v, _} -> v; :error -> 1 end
-      end
-
-    # Handle availability based on usage/return datetime
+    # Availability filter
     final_query =
       if usage_dt && return_dt do
+        # Subquery: sum of reserved quantity in overlapping bookings
         overlap_reserved =
           from b in EquipmentBooking,
             where: b.status in ["pending", "approved"] and
@@ -429,18 +431,22 @@ defmodule Spato.Bookings do
 
         from e in base_query,
           left_join: r in subquery(overlap_reserved), on: r.equipment_id == e.id,
-          where: (e.quantity - coalesce(r.reserved_quantity, 0)) >= ^requested_qty,
-          select_merge: %{quantity_available: e.quantity - coalesce(r.reserved_quantity, 0)}
+          # calculate available quantity
+          select_merge: %{
+            quantity_available: fragment("COALESCE(?, 0) - COALESCE(?, 0)", e.total_quantity, r.reserved_quantity)
+          },
+          where: fragment("COALESCE(?, 0) - COALESCE(?, 0) >= ?", e.total_quantity, r.reserved_quantity, ^requested_qty)
       else
-        # No dates selected – show all available equipments
+        # No dates – just show total quantity
         from e in base_query,
-          select_merge: %{quantity_available: e.quantity}
+          select_merge: %{quantity_available: e.total_quantity}
       end
 
-    # Pagination
+    # Total count
     total = final_query |> exclude(:order_by) |> Repo.aggregate(:count, :id)
     total_pages = ceil(total / per_page)
 
+    # Paginate
     equipments_page =
       final_query
       |> limit(^per_page)
@@ -499,9 +505,9 @@ defmodule Spato.Bookings do
     |> Ecto.Multi.update(:booking, EquipmentBooking.changeset(booking, %{status: "rejected"}))
     |> Ecto.Multi.run(:restore_equipment, fn repo, %{booking: booking} ->
       equipment = repo.get!(Equipment, booking.equipment_id)
-      new_qty = equipment.quantity_available + booking.quantity
+      new_qty = equipment.total_quantity + booking.quantity
       equipment
-      |> Ecto.Changeset.change(%{quantity_available: new_qty})
+      |> Ecto.Changeset.change(%{total_quantity: new_qty})
       |> repo.update()
     end)
     |> Repo.transaction()
