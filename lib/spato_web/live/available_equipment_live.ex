@@ -242,12 +242,11 @@ defmodule SpatoWeb.AvailableEquipmentLive do
                       <% end %>
                     </div>
                   </div>
-
                   <h3 class="font-bold text-lg mb-1"><%= equipment.name %></h3>
                   <p class="text-gray-600 mb-2"><%= equipment.serial_number %></p>
                   <p class="text-sm text-gray-500 mb-3">Tersedia: <%= equipment.quantity_available %></p>
 
-                  <%= if @filters["usage_at"] && @filters["return_at"] do %>
+                <%= if @filters["usage_at"] not in [nil, ""] and @filters["return_at"] not in [nil, ""] do %>
                     <.link
                       patch={
                         ~p"/available_equipments?#{%{
@@ -274,7 +273,7 @@ defmodule SpatoWeb.AvailableEquipmentLive do
 
             <%= if Enum.empty?(@equipments) do %>
               <div class="text-center py-12">
-                <%= if @filters["usage_at"] != "" and @filters["return_at"] != "" do %>
+                <%= if @filters["usage_at"] not in [nil, ""] and @filters["return_at"] not in [nil, ""] do %>
                   <p class="text-red-500 text-lg font-semibold">
                     Tiada peralatan tersedia untuk tarikh & masa yang dipilih.
                   </p>
