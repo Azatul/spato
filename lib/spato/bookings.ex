@@ -472,17 +472,86 @@ defmodule Spato.Bookings do
     ])
   end
 
-  def create_equipment_booking(attrs), do: %EquipmentBooking{} |> EquipmentBooking.changeset(attrs) |> Repo.insert()
+  def create_equipment_booking(attrs) do
+    import Ecto.Multi
+    alias Spato.Assets.Equipment
+
+    Multi.new()
+    |> Multi.insert(:booking, EquipmentBooking.changeset(%EquipmentBooking{}, attrs))
+    |> Multi.run(:update_equipment, fn repo, %{booking: booking} ->
+      equipment = repo.get!(Equipment, booking.equipment_id)
+
+      if equipment.quantity_available < booking.quantity do
+        {:error, :not_enough_stock}
+      else
+        new_qty = equipment.quantity_available - booking.quantity
+        equipment
+        |> Ecto.Changeset.change(%{quantity_available: new_qty})
+        |> repo.update()
+      end
+    end)
+    |> Repo.transaction()
+  end
+
+  def complete_equipment_booking(%EquipmentBooking{} = booking) do
+    import Ecto.Multi
+    alias Spato.Assets.Equipment
+
+    Multi.new()
+    |> Multi.update(:booking, EquipmentBooking.changeset(booking, %{status: "completed"}))
+    |> Multi.run(:restore_equipment, fn repo, %{booking: booking} ->
+      equipment = repo.get!(Equipment, booking.equipment_id)
+      new_qty = equipment.quantity_available + booking.quantity
+      equipment
+      |> Ecto.Changeset.change(%{quantity_available: new_qty})
+      |> repo.update()
+    end)
+    |> Repo.transaction()
+  end
+
   def update_equipment_booking(%EquipmentBooking{} = eb, attrs), do: eb |> EquipmentBooking.changeset(attrs) |> Repo.update()
   def delete_equipment_booking(%EquipmentBooking{} = eb), do: Repo.delete(eb)
   def change_equipment_booking(%EquipmentBooking{} = eb, attrs \\ %{}), do: EquipmentBooking.changeset(eb, attrs)
 
-  def approve_equipment_booking(%EquipmentBooking{} = eb), do: update_equipment_booking(eb, %{status: "approved"})
-  def reject_equipment_booking(%EquipmentBooking{} = eb), do: update_equipment_booking(eb, %{status: "rejected"})
+  def approve_equipment_booking(%EquipmentBooking{} = booking) do
+    update_equipment_booking(booking, %{status: "approved"})
+  end
 
-  def cancel_equipment_booking(%EquipmentBooking{} = eb, %Spato.Accounts.User{} = user) do
-    case eb.status do
-      "pending" -> update_equipment_booking(eb, %{status: "cancelled", cancelled_by_user_id: user.id})
+  def reject_equipment_booking(%EquipmentBooking{} = booking) do
+    import Ecto.Multi
+    alias Spato.Assets.Equipment
+
+    Multi.new()
+    |> Multi.update(:booking, EquipmentBooking.changeset(booking, %{status: "rejected"}))
+    |> Multi.run(:restore_equipment, fn repo, %{booking: booking} ->
+      equipment = repo.get!(Equipment, booking.equipment_id)
+      new_qty = equipment.quantity_available + booking.quantity
+      equipment
+      |> Ecto.Changeset.change(%{quantity_available: new_qty})
+      |> repo.update()
+    end)
+    |> Repo.transaction()
+  end
+
+  def cancel_equipment_booking(%EquipmentBooking{} = booking, %Spato.Accounts.User{} = user) do
+    import Ecto.Multi
+    alias Spato.Assets.Equipment
+
+    case booking.status do
+      "pending" ->
+        Multi.new()
+        |> Multi.update(:booking,
+          EquipmentBooking.changeset(booking, %{status: "cancelled", cancelled_by_user_id: user.id})
+        )
+        |> Multi.run(:restore_equipment, fn repo, %{booking: booking} ->
+          equipment = repo.get!(Equipment, booking.equipment_id)
+          new_qty = equipment.quantity_available + booking.quantity
+          equipment
+          |> Ecto.Changeset.change(%{quantity_available: new_qty})
+          |> repo.update()
+        end)
+        |> Repo.transaction()
+
       _ -> {:error, :not_allowed}
     end
   end
