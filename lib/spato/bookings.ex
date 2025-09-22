@@ -424,26 +424,22 @@ defmodule Spato.Bookings do
         base_query
       end
 
-    final_query =
-      if usage_dt && return_dt do
-        from e in base_query,
-          as: :equipment,
-          where: not exists(
-            from b in Spato.Bookings.EquipmentBooking,
-              where:
-                b.equipment_id == parent_as(:equipment).id and
-                b.status in ["pending", "approved"] and
-                fragment(
-                  "(?::timestamp + ?::time) < (?::timestamp + ?::time) AND (?::timestamp + ?::time) > (?::timestamp + ?::time)",
-                  b.usage_date, b.usage_time,
-                  ^return_date, ^return_time,
-                  b.return_date, b.return_time,
-                  ^usage_date, ^usage_time
-                )
-          )
-      else
-        base_query
-      end
+      final_query =
+        if usage_dt && return_dt do
+          from e in base_query,
+            as: :equipment,
+            where: not exists(
+              from b in Spato.Bookings.EquipmentBooking,
+                where:
+                  b.equipment_id == parent_as(:equipment).id and
+                  b.status in ["pending", "approved"] and
+                  b.usage_at < ^return_dt and
+                  b.return_at > ^usage_dt
+            )
+        else
+          base_query
+        end
+
 
     total = final_query |> exclude(:order_by) |> Repo.aggregate(:count, :id)
     total_pages = ceil(total / per_page)
@@ -577,9 +573,15 @@ defmodule Spato.Bookings do
     beginning_of_week = Date.add(now, -weekday + 1)
     end_of_week = Date.add(beginning_of_week, 6)
 
+    {:ok, beginning_of_week_dt} = DateTime.new(beginning_of_week, ~T[00:00:00], "Etc/UTC")
+    {:ok, end_of_week_dt} = DateTime.new(end_of_week, ~T[23:59:59], "Etc/UTC")
+
     base_query =
       from eb in EquipmentBooking,
-        where: eb.user_id == ^user_id and eb.usage_date >= ^beginning_of_week and eb.return_date <= ^end_of_week
+        where:
+          eb.user_id == ^user_id and
+          eb.usage_at >= ^beginning_of_week_dt and
+          eb.return_at <= ^end_of_week_dt
 
     %{
       total: Repo.aggregate(base_query, :count, :id),

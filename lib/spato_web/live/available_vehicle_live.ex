@@ -231,16 +231,14 @@ defmodule SpatoWeb.AvailableVehicleLive do
                   <p class="text-gray-600 mb-2"><%= vehicle.plate_number %></p>
                   <p class="text-sm text-gray-500 mb-3"><%= vehicle.capacity %> penumpang</p>
 
-                  <%= if @filters["pickup_time"] && @filters["return_time"] do %>
+                  <%= if @filters["pickup_time"] not in [nil, ""] and @filters["return_time"] not in [nil, ""] do %>
                     <.link
-                      patch={
-                        ~p"/available_vehicles?#{%{
-                          action: "new",
-                          vehicle_id: vehicle.id,
-                          pickup_time: @filters["pickup_time"],
-                          return_time: @filters["return_time"]
-                        }}"
-                      }
+                      patch={~p"/available_vehicles?#{%{
+                        action: "new",
+                        vehicle_id: vehicle.id,
+                        pickup_time: @filters["pickup_time"],
+                        return_time: @filters["return_time"]
+                      }}"}
                       class="block"
                     >
                       <.button class="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
@@ -258,7 +256,7 @@ defmodule SpatoWeb.AvailableVehicleLive do
 
             <%= if Enum.empty?(@vehicles) do %>
               <div class="text-center py-12">
-                <%= if @filters["pickup_time"] != "" and @filters["return_time"] != "" do %>
+                <%= if @filters["pickup_time"] not in [nil, ""] and @filters["return_time"] not in [nil, ""] do %>
                   <p class="text-red-500 text-lg font-semibold">
                     Tiada kenderaan tersedia untuk tarikh & masa yang dipilih.
                   </p>
