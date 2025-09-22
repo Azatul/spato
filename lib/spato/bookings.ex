@@ -375,7 +375,16 @@ defmodule Spato.Bookings do
         like_search = "%#{search}%"
         from b in date_query,
           left_join: u in assoc(b, :user),
-          where: ilike(b.purpose, ^like_search) or ilike(u.email, ^like_search),
+          left_join: up in assoc(u, :user_profile),
+          left_join: d in assoc(up, :department),
+          left_join: mr in assoc(b, :meeting_room),
+          where:
+            ilike(b.purpose, ^like_search) or
+            ilike(u.email, ^like_search) or
+            ilike(up.full_name, ^like_search) or
+            ilike(d.name, ^like_search) or
+            ilike(mr.name, ^like_search) or
+            ilike(mr.location, ^like_search),
           distinct: b.id,
           select: b
       else
@@ -447,7 +456,7 @@ defmodule Spato.Bookings do
           where: not exists(
             from b in MeetingRoomBooking,
               where:
-                b.meeting_room_id == parent_as(:meeting_room).id and
+                b.meeting_room_id == parent_as(:room).id and
                 b.status in ["pending", "approved"] and
                 b.start_time < ^end_time and
                 b.end_time > ^start_time
