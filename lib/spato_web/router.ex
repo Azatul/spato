@@ -53,7 +53,7 @@ defmodule SpatoWeb.Router do
 
     live "/meeting_room_bookings/:id", MeetingRoomBookingLive.Show, :show
     live "/meeting_room_bookings/:id/show/edit", MeetingRoomBookingLive.Show, :edit
-
+    live "/available_rooms", AvailableRoomLive
   end
 
   scope "/admin", SpatoWeb do
@@ -94,6 +94,9 @@ defmodule SpatoWeb.Router do
 
       live "/vehicle_bookings", VehicleBookingLive.AdminIndex, :index
       live "/vehicle_bookings/:id", VehicleBookingLive.AdminIndex, :show
+
+      live "/meeting_room_bookings", MeetingRoomBookingLive.AdminIndex, :index
+      live "/meeting_room_bookings/:id", MeetingRoomBookingLive.AdminIndex, :show
 
     end
   end

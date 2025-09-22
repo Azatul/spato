@@ -330,97 +330,270 @@ defmodule Spato.Bookings do
 
   alias Spato.Bookings.MeetingRoomBooking
 
-  @doc """
-  Returns the list of meeting_room_bookings.
 
-  ## Examples
+  def list_meeting_room_bookings_paginated(params \\ %{}, user \\ nil) do
+    page   = Map.get(params, "page", 1) |> to_int()
+    search = Map.get(params, "search", "")
+    status = Map.get(params, "status", "all")
+    date   = Map.get(params, "date", "")
+    per_page = @per_page
+    offset = (page - 1) * per_page
 
-      iex> list_meeting_room_bookings()
-      [%MeetingRoomBooking{}, ...]
+    base_query =
+      from b in MeetingRoomBooking,
+        order_by: [desc: b.inserted_at]
 
-  """
-  def list_meeting_room_bookings do
-    Repo.all(MeetingRoomBooking)
+    scoped_query =
+      case user do
+        nil -> base_query
+        _ -> from b in base_query, where: b.user_id == ^user.id
+      end
+
+    status_query =
+      if status != "all" do
+        from b in scoped_query, where: b.status == ^status
+      else
+        scoped_query
+      end
+
+    date_query =
+      if date != "" do
+        case Date.from_iso8601(date) do
+          {:ok, parsed} ->
+            from b in status_query,
+              where:
+                fragment("date(?)", b.start_time) == ^parsed or
+                fragment("date(?)", b.end_time) == ^parsed
+          _ -> status_query
+        end
+      else
+        status_query
+      end
+
+    final_query =
+      if search != "" do
+        like_search = "%#{search}%"
+        from b in date_query,
+          left_join: u in assoc(b, :user),
+          where: ilike(b.purpose, ^like_search) or ilike(u.email, ^like_search),
+          distinct: b.id,
+          select: b
+      else
+        date_query
+      end
+
+    total =
+      final_query
+      |> exclude(:order_by)
+      |> Repo.aggregate(:count, :id)
+
+    bookings_page =
+      final_query
+      |> limit(^per_page)
+      |> offset(^offset)
+      |> Repo.all()
+      |> Repo.preload([:meeting_room, user: [user_profile: [:department]]])
+    total_pages = ceil(total / per_page)
+
+    %{
+      meeting_room_bookings_page: bookings_page,
+      total: total,
+      total_pages: total_pages,
+      page: page
+    }
+  end
+  def available_rooms(filters) do
+    import Ecto.Query
+    alias Spato.Repo
+    alias Spato.Bookings.MeetingRoom
+
+
+    query = filters["query"]
+    capacity = filters["capacity"]
+    page = Map.get(filters, "page", 1) |> to_int()
+    per_page = 12
+    offset = (page - 1) * per_page
+
+    start_time = parse_datetime(filters["date_start"])
+    end_time = parse_datetime(filters["date_end"])
+
+    base_query =
+      from r in Spato.Assets.MeetingRoom,
+        preload: [:meeting_room_bookings],
+        where: r.status == "tersedia"
+
+    base_query =
+      if capacity not in [nil, ""] do
+        case Integer.parse(capacity) do
+          {cap, _} -> from r in base_query, where: r.capacity >= ^cap
+          :error -> base_query
+        end
+      else
+        base_query
+      end
+
+    base_query =
+      if query not in [nil, ""] do
+        like_q = "%#{query}%"
+        from r in base_query, where: ilike(r.name, ^like_q) or ilike(r.location, ^like_q)
+      else
+        base_query
+      end
+
+    final_query =
+      if start_time && end_time do
+        from r in base_query,
+          as: :room,
+          where: not exists(
+            from b in MeetingRoomBooking,
+              where:
+                b.meeting_room_id == parent_as(:meeting_room).id and
+                b.status in ["pending", "approved"] and
+                b.start_time < ^end_time and
+                b.end_time > ^start_time
+          )
+      else
+        base_query
+      end
+
+    total = final_query |> exclude(:order_by) |> Repo.aggregate(:count, :id)
+    total_pages = ceil(total / per_page)
+
+    rooms_page =
+      final_query
+      |> limit(^per_page)
+      |> offset(^offset)
+      |> Repo.all()
+
+    %{
+      meeting_rooms_page: rooms_page,
+      total: total,
+      total_pages: total_pages,
+      page: page
+    }
   end
 
-  @doc """
-  Gets a single meeting_room_booking.
+  defp parse_datetime(nil), do: nil
+  defp parse_datetime(""), do: nil
+  defp parse_datetime(val) do
+    case NaiveDateTime.from_iso8601(val) do
+      {:ok, naive} -> DateTime.from_naive!(naive, "Etc/UTC")
+      _ ->
+        case NaiveDateTime.from_iso8601(val <> ":00") do
+          {:ok, naive} -> DateTime.from_naive!(naive, "Etc/UTC")
+          _ -> nil
+        end
+    end
+  end
 
-  Raises `Ecto.NoResultsError` if the Meeting room booking does not exist.
+  def get_meeting_room_booking!(id) do
+    Repo.get!(MeetingRoomBooking, id)
+    |> Repo.preload([
+      :meeting_room,
+      [user: [user_profile: [:department]]],
+      :approved_by_user,
+      :cancelled_by_user
+    ])
+  end
 
-  ## Examples
-
-      iex> get_meeting_room_booking!(123)
-      %MeetingRoomBooking{}
-
-      iex> get_meeting_room_booking!(456)
-      ** (Ecto.NoResultsError)
-
-  """
-  def get_meeting_room_booking!(id), do: Repo.get!(MeetingRoomBooking, id)
-
-  @doc """
-  Creates a meeting_room_booking.
-
-  ## Examples
-
-      iex> create_meeting_room_booking(%{field: value})
-      {:ok, %MeetingRoomBooking{}}
-
-      iex> create_meeting_room_booking(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
   def create_meeting_room_booking(attrs \\ %{}) do
     %MeetingRoomBooking{}
     |> MeetingRoomBooking.changeset(attrs)
     |> Repo.insert()
   end
 
-  @doc """
-  Updates a meeting_room_booking.
-
-  ## Examples
-
-      iex> update_meeting_room_booking(meeting_room_booking, %{field: new_value})
-      {:ok, %MeetingRoomBooking{}}
-
-      iex> update_meeting_room_booking(meeting_room_booking, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
   def update_meeting_room_booking(%MeetingRoomBooking{} = meeting_room_booking, attrs) do
     meeting_room_booking
     |> MeetingRoomBooking.changeset(attrs)
     |> Repo.update()
   end
 
-  @doc """
-  Deletes a meeting_room_booking.
-
-  ## Examples
-
-      iex> delete_meeting_room_booking(meeting_room_booking)
-      {:ok, %MeetingRoomBooking{}}
-
-      iex> delete_meeting_room_booking(meeting_room_booking)
-      {:error, %Ecto.Changeset{}}
-
-  """
   def delete_meeting_room_booking(%MeetingRoomBooking{} = meeting_room_booking) do
     Repo.delete(meeting_room_booking)
   end
 
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking meeting_room_booking changes.
-
-  ## Examples
-
-      iex> change_meeting_room_booking(meeting_room_booking)
-      %Ecto.Changeset{data: %MeetingRoomBooking{}}
-
-  """
   def change_meeting_room_booking(%MeetingRoomBooking{} = meeting_room_booking, attrs \\ %{}) do
     MeetingRoomBooking.changeset(meeting_room_booking, attrs)
   end
+
+  def approve_booking(%MeetingRoomBooking{} = vb),
+    do: update_meeting_room_booking(vb, %{status: "approved"})
+
+  def reject_booking(%MeetingRoomBooking{} = vb),
+    do: update_meeting_room_booking(vb, %{status: "rejected"})
+
+  def cancel_booking(%MeetingRoomBooking{} = vb, %Spato.Accounts.User{} = user) do
+    case vb.status do
+      "pending" ->
+        update_meeting_room_booking(vb, %{status: "cancelled", cancelled_by_user_id: user.id})
+
+      _ ->
+        {:error, :not_allowed}
+    end
+  end
+
+   # --- Private Helpers ---
+
+   defp scope_by_user(query, nil), do: query
+   defp scope_by_user(query, user),
+     do: (from vb in query, where: vb.user_id == ^user.id)
+
+   defp to_int(val) when is_integer(val), do: val
+   defp to_int(val) when is_binary(val), do: String.to_integer(val)
+   defp to_int(_), do: 1
+
+   import Ecto.Query
+
+   def get_booking_stats do
+     now = DateTime.utc_now()
+
+     total = Repo.aggregate(MeetingRoomBooking, :count, :id)
+     pending = Repo.aggregate(from(v in MeetingRoomBooking, where: v.status == "pending"), :count, :id)
+     approved = Repo.aggregate(from(v in MeetingRoomBooking, where: v.status == "approved"), :count, :id)
+
+     # Active = approved and current time between pickup and return
+     active =
+       Repo.aggregate(
+         from(v in MeetingRoomBooking,
+           where: v.status == "approved" and
+                  v.start_time <= ^now and
+                  v.end_time >= ^now
+         ),
+         :count,
+         :id
+       )
+
+     %{
+       total: total,
+       pending: pending,
+       approved: approved,
+       active: active
+     }
+   end
+
+   def get_user_meeting_room_booking_stats(user_id) do
+     now = Date.utc_today()
+     # Get the weekday (1 = Monday, 7 = Sunday)
+     weekday = Date.day_of_week(now)
+     # Beginning of week (Monday)
+     beginning_of_week = Date.add(now, -weekday + 1)
+     # End of week (Sunday)
+     end_of_week = Date.add(beginning_of_week, 6)
+
+     # Convert to DateTime in UTC
+     {:ok, beginning_of_week_dt} = DateTime.new(beginning_of_week, ~T[00:00:00], "Etc/UTC")
+     {:ok, end_of_week_dt} = DateTime.new(end_of_week, ~T[23:59:59], "Etc/UTC")
+
+     base_query =
+      from vb in MeetingRoomBooking,
+        where: vb.user_id == ^user_id
+
+    %{
+      total: Repo.aggregate(base_query, :count, :id),
+      pending: Repo.aggregate(from(vb in base_query, where: vb.status == "pending"), :count, :id),
+      approved: Repo.aggregate(from(vb in base_query, where: vb.status == "approved"), :count, :id),
+      rejected: Repo.aggregate(from(vb in base_query, where: vb.status == "rejected"), :count, :id),
+      completed: Repo.aggregate(from(vb in base_query, where: vb.status == "completed"), :count, :id)
+     }
+   end
 end
