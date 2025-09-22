@@ -80,7 +80,10 @@ defmodule SpatoWeb.Components.Sidebar do
                     </.sidebar_link>
                   </li>
                   <li>
-                    <.sidebar_link patch="/catering" active={@active_tab == "catering"} open={@open}>
+                    <.sidebar_link
+                      patch={if @current_user.role == "admin", do: "/admin/catering_bookings", else: "/catering_bookings"}
+                      active={@active_tab in ["catering", "admin_catering"]}
+                      open={@open}>
                       Tempahan Katering
                     </.sidebar_link>
                   </li>
