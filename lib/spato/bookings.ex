@@ -384,10 +384,12 @@ defmodule Spato.Bookings do
     usage_dt  = parse_datetime(filters["usage_at"])
     return_dt = parse_datetime(filters["return_at"])
 
+    # Base query – only available equipments
     base_query =
       from e in Spato.Assets.Equipment,
         where: e.status == "tersedia"
 
+    # Type filter
     base_query =
       if type && type != "all" do
         from e in base_query, where: e.type == ^String.downcase(type)
@@ -395,6 +397,7 @@ defmodule Spato.Bookings do
         base_query
       end
 
+    # Search filter
     base_query =
       if query not in [nil, ""] do
         like_q = "%#{query}%"
@@ -406,32 +409,35 @@ defmodule Spato.Bookings do
         base_query
       end
 
+    # Parse requested quantity
+    requested_qty =
+      case quantity do
+        q when q in [nil, ""] -> 1
+        q when is_binary(q) -> case Integer.parse(q) do {v, _} -> v; :error -> 1 end
+      end
+
+    # Handle availability based on usage/return datetime
     final_query =
       if usage_dt && return_dt do
         overlap_reserved =
-          from b in Spato.Bookings.EquipmentBooking,
+          from b in EquipmentBooking,
             where: b.status in ["pending", "approved"] and
                    b.usage_at < ^return_dt and
                    b.return_at > ^usage_dt,
             group_by: b.equipment_id,
             select: %{equipment_id: b.equipment_id, reserved_quantity: sum(b.quantity)}
 
-        parsed_q =
-          case quantity do
-            q when q in [nil, ""] -> nil
-            q when is_binary(q) -> case Integer.parse(q) do {v, _} -> v; :error -> nil end
-          end
-
         from e in base_query,
           left_join: r in subquery(overlap_reserved), on: r.equipment_id == e.id,
-          where:
-            (e.quantity_available - coalesce(r.reserved_quantity, 0)) > 0 and
-            (is_nil(^parsed_q) or (e.quantity_available - coalesce(r.reserved_quantity, 0)) >= ^parsed_q),
-          select_merge: %{quantity_available: e.quantity_available - coalesce(r.reserved_quantity, 0)}
+          where: (e.quantity - coalesce(r.reserved_quantity, 0)) >= ^requested_qty,
+          select_merge: %{quantity_available: e.quantity - coalesce(r.reserved_quantity, 0)}
       else
-        base_query
+        # No dates selected – show all available equipments
+        from e in base_query,
+          select_merge: %{quantity_available: e.quantity}
       end
 
+    # Pagination
     total = final_query |> exclude(:order_by) |> Repo.aggregate(:count, :id)
     total_pages = ceil(total / per_page)
 
@@ -460,38 +466,22 @@ defmodule Spato.Bookings do
   end
 
   def create_equipment_booking(attrs) do
-    alias Spato.Assets.Equipment
-
-    Ecto.Multi.new()
-    |> Ecto.Multi.insert(:booking, EquipmentBooking.changeset(%EquipmentBooking{}, attrs))
-    |> Ecto.Multi.run(:update_equipment, fn repo, %{booking: booking} ->
-      equipment = repo.get!(Equipment, booking.equipment_id)
-
-      if equipment.quantity_available < booking.quantity do
-        {:error, :not_enough_stock}
-      else
-        new_qty = equipment.quantity_available - booking.quantity
-        equipment
-        |> Ecto.Changeset.change(%{quantity_available: new_qty})
-        |> repo.update()
-      end
-    end)
-    |> Repo.transaction()
+    %EquipmentBooking{}
+    |> EquipmentBooking.changeset(attrs)
+    |> Repo.insert()
   end
 
   def complete_equipment_booking(%EquipmentBooking{} = booking) do
-    alias Spato.Assets.Equipment
+    update_equipment_booking(booking, %{status: "completed"})
+  end
 
-    Ecto.Multi.new()
-    |> Ecto.Multi.update(:booking, EquipmentBooking.changeset(booking, %{status: "completed"}))
-    |> Ecto.Multi.run(:restore_equipment, fn repo, %{booking: booking} ->
-      equipment = repo.get!(Equipment, booking.equipment_id)
-      new_qty = equipment.quantity_available + booking.quantity
-      equipment
-      |> Ecto.Changeset.change(%{quantity_available: new_qty})
-      |> repo.update()
-    end)
-    |> Repo.transaction()
+  def cancel_equipment_booking(%EquipmentBooking{} = booking, %Spato.Accounts.User{} = user) do
+    case booking.status do
+      "pending" ->
+        update_equipment_booking(booking, %{status: "cancelled", cancelled_by_user_id: user.id})
+
+      _ -> {:error, :not_allowed}
+    end
   end
 
   def update_equipment_booking(%EquipmentBooking{} = eb, attrs), do: eb |> EquipmentBooking.changeset(attrs) |> Repo.update()
@@ -515,28 +505,6 @@ defmodule Spato.Bookings do
       |> repo.update()
     end)
     |> Repo.transaction()
-  end
-
-  def cancel_equipment_booking(%EquipmentBooking{} = booking, %Spato.Accounts.User{} = user) do
-    alias Spato.Assets.Equipment
-
-    case booking.status do
-      "pending" ->
-        Ecto.Multi.new()
-        |> Ecto.Multi.update(:booking,
-          EquipmentBooking.changeset(booking, %{status: "cancelled", cancelled_by_user_id: user.id})
-        )
-        |> Ecto.Multi.run(:restore_equipment, fn repo, %{booking: booking} ->
-          equipment = repo.get!(Equipment, booking.equipment_id)
-          new_qty = equipment.quantity_available + booking.quantity
-          equipment
-          |> Ecto.Changeset.change(%{quantity_available: new_qty})
-          |> repo.update()
-        end)
-        |> Repo.transaction()
-
-      _ -> {:error, :not_allowed}
-    end
   end
 
   def get_equipment_booking_stats do

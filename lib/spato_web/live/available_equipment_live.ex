@@ -244,20 +244,20 @@ defmodule SpatoWeb.AvailableEquipmentLive do
                   </div>
                   <h3 class="font-bold text-lg mb-1"><%= equipment.name %></h3>
                   <p class="text-gray-600 mb-2"><%= equipment.serial_number %></p>
-                  <p class="text-sm text-gray-500 mb-3">Tersedia: <%= equipment.quantity_available %></p>
+                  <p class="text-sm text-gray-500 mb-3">
+                    Tersedia: <%= equipment.quantity_available %>
+                  </p>
 
-                <%= if @filters["usage_at"] not in [nil, ""] and @filters["return_at"] not in [nil, ""] do %>
-                    <.link
-                      patch={
-                        ~p"/available_equipments?#{%{
-                          action: "new",
-                          equipment_id: equipment.id,
-                          usage_at: @filters["usage_at"],
-                          return_at: @filters["return_at"]
-                        }}"
-                      }
-                      class="block"
-                    >
+                  <%= if @filters["usage_at"] not in [nil, ""] and @filters["return_at"] not in [nil, ""] do %>
+                    <.link patch={
+                      ~p"/available_equipments?#{%{
+                        action: "new",
+                        equipment_id: equipment.id,
+                        usage_at: @filters["usage_at"],
+                        return_at: @filters["return_at"],
+                        quantity: @filters["quantity"] || 1
+                      }}"
+                    } class="block">
                       <.button class="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
                         Tempah Sekarang
                       </.button>
