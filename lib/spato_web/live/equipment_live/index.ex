@@ -215,7 +215,7 @@ end
               </div>
             </:col>
           <:col :let={equipment} label="Jenis">{Equipment.human_type(equipment.type)}</:col>
-          <:col :let={equipment} label="Kuantiti Tersedia">{equipment.quantity_available}</:col>
+          <:col :let={equipment} label="Kuantiti Tersedia">{equipment.total_quantity}</:col>
           <:col :let={equipment} label="Ditambah Oleh">
               <%= equipment.created_by && equipment.created_by.user_profile && equipment.created_by.user_profile.full_name || "N/A" %>
           </:col>
