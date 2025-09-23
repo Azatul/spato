@@ -308,9 +308,14 @@ defmodule SpatoWeb.CateringBookingLive.Index do
 
                 <:col :let={booking} label="Jumlah Kos">
                   <div class="font-medium text-gray-900">
-                    RM <%= :erlang.float_to_binary(Decimal.to_float(booking.total_cost), [decimals: 2]) %>
+                    <%= if booking.total_cost do %>
+                      RM <%= :erlang.float_to_binary(Decimal.to_float(booking.total_cost), [decimals: 2]) %>
+                    <% else %>
+                      RM 0.00
+                    <% end %>
                   </div>
                 </:col>
+
 
                 <:col :let={booking} label="Permintaan Khusus">{booking.special_request}</:col>
 

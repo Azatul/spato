@@ -262,9 +262,17 @@ defmodule SpatoWeb.CateringBookingLive.AdminIndex do
                     <span><%= booking.participants %></span>
                   </div>
                 </:col>
+
                 <:col :let={booking} label="Jumlah Kos">
-                  <span class="font-medium text-gray-900">RM <%= Decimal.to_string(booking.total_cost, :normal) %></span>
-                </:col>
+                    <span class="font-medium text-gray-900">
+                      <%= if booking.total_cost do %>
+                        RM <%= Decimal.to_string(booking.total_cost, :normal) %>
+                      <% else %>
+                        RM 0.00
+                      <% end %>
+                    </span>
+                  </:col>
+
                 <:col :let={booking} label="Permintaan Khas">{booking.special_request || "-"}</:col>
                 <:col :let={booking} label="Status">
                   <span class={"px-1.5 py-0.5 rounded-full text-white text-xs font-semibold " <>
