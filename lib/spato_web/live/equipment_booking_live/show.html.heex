@@ -1,0 +1,33 @@
+<.header>
+  Equipment booking {@equipment_booking.id}
+  <:subtitle>This is a equipment_booking record from your database.</:subtitle>
+  <:actions>
+    <.link patch={~p"/equipment_bookings/#{@equipment_booking}/show/edit"} phx-click={JS.push_focus()}>
+      <.button>Edit equipment_booking</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.list>
+  <:item title="Requested quantity">{@equipment_booking.requested_quantity}</:item>
+  <:item title="Location">{@equipment_booking.location}</:item>
+  <:item title="Usage at">{@equipment_booking.usage_at}</:item>
+  <:item title="Return at">{@equipment_booking.return_at}</:item>
+  <:item title="Additional notes">{@equipment_booking.additional_notes}</:item>
+  <:item title="Condition before">{@equipment_booking.condition_before}</:item>
+  <:item title="Condition after">{@equipment_booking.condition_after}</:item>
+  <:item title="Status">{@equipment_booking.status}</:item>
+</.list>
+
+<.back navigate={~p"/equipment_bookings"}>Back to equipment_bookings</.back>
+
+<.modal :if={@live_action == :edit} id="equipment_booking-modal" show on_cancel={JS.patch(~p"/equipment_bookings/#{@equipment_booking}")}>
+  <.live_component
+    module={SpatoWeb.EquipmentBookingLive.FormComponent}
+    id={@equipment_booking.id}
+    title={@page_title}
+    action={@live_action}
+    equipment_booking={@equipment_booking}
+    patch={~p"/equipment_bookings/#{@equipment_booking}"}
+  />
+</.modal>

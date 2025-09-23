@@ -15,6 +15,7 @@ defmodule Spato.Accounts.User do
     has_many :equipments, Spato.Assets.Equipment, on_delete: :delete_all
     has_many :meeting_rooms, Spato.Assets.MeetingRoom, on_delete: :delete_all
     has_many :vehicle_bookings, Spato.Bookings.VehicleBooking, on_delete: :delete_all
+    has_many :equipment_bookings, Spato.Bookings.EquipmentBooking, on_delete: :delete_all
 
     timestamps(type: :utc_datetime)
   end

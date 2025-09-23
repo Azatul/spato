@@ -1,0 +1,48 @@
+<.header>
+  Listing Equipment bookings
+  <:actions>
+    <.link patch={~p"/equipment_bookings/new"}>
+      <.button>New Equipment booking</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.table
+  id="equipment_bookings"
+  rows={@streams.equipment_bookings}
+  row_click={fn {_id, equipment_booking} -> JS.navigate(~p"/equipment_bookings/#{equipment_booking}") end}
+>
+  <:col :let={{_id, equipment_booking}} label="Requested quantity">{equipment_booking.requested_quantity}</:col>
+  <:col :let={{_id, equipment_booking}} label="Location">{equipment_booking.location}</:col>
+  <:col :let={{_id, equipment_booking}} label="Usage at">{equipment_booking.usage_at}</:col>
+  <:col :let={{_id, equipment_booking}} label="Return at">{equipment_booking.return_at}</:col>
+  <:col :let={{_id, equipment_booking}} label="Additional notes">{equipment_booking.additional_notes}</:col>
+  <:col :let={{_id, equipment_booking}} label="Condition before">{equipment_booking.condition_before}</:col>
+  <:col :let={{_id, equipment_booking}} label="Condition after">{equipment_booking.condition_after}</:col>
+  <:col :let={{_id, equipment_booking}} label="Status">{equipment_booking.status}</:col>
+  <:action :let={{_id, equipment_booking}}>
+    <div class="sr-only">
+      <.link navigate={~p"/equipment_bookings/#{equipment_booking}"}>Show</.link>
+    </div>
+    <.link patch={~p"/equipment_bookings/#{equipment_booking}/edit"}>Edit</.link>
+  </:action>
+  <:action :let={{id, equipment_booking}}>
+    <.link
+      phx-click={JS.push("delete", value: %{id: equipment_booking.id}) |> hide("##{id}")}
+      data-confirm="Are you sure?"
+    >
+      Delete
+    </.link>
+  </:action>
+</.table>
+
+<.modal :if={@live_action in [:new, :edit]} id="equipment_booking-modal" show on_cancel={JS.patch(~p"/equipment_bookings")}>
+  <.live_component
+    module={SpatoWeb.EquipmentBookingLive.FormComponent}
+    id={@equipment_booking.id || :new}
+    title={@page_title}
+    action={@live_action}
+    equipment_booking={@equipment_booking}
+    patch={~p"/equipment_bookings"}
+  />
+</.modal>
