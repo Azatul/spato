@@ -14,8 +14,8 @@ alias Spato.Accounts.User
 
 # Admin account
 admin_attrs = %{
-  email: "admin@example.com",
-  password: "supersecurepassword",  # must meet min 12 chars
+  email: "admin@gmail.com",
+  password: "admin1234567",  # must meet min 12 chars
   role: "admin"
 }
 
@@ -25,8 +25,8 @@ admin_attrs = %{
 
 # Regular user account
 user_attrs = %{
-  email: "user@example.com",
-  password: "usersecurepwd12",
+  email: "user@gmail.com",
+  password: "user12345678",
   role: "user"
 }
 
