@@ -161,13 +161,13 @@ defmodule Spato.Assets do
 
     # Base query
     base_query =
-      from v in Equipment,
-        order_by: [desc: v.inserted_at]
+      from e in Equipment,
+        order_by: [desc: e.inserted_at]
 
     # Status filter
     filtered_query =
       if status != "all" do
-        from v in base_query, where: v.status == ^status
+        from e in base_query, where: e.status == ^status
       else
         base_query
       end
@@ -177,16 +177,16 @@ defmodule Spato.Assets do
       if search != "" do
         like_search = "%#{search}%"
 
-        from v in filtered_query,
-          left_join: u in assoc(v, :user),
+        from e in filtered_query,
+          left_join: u in assoc(e, :user),
           left_join: up in assoc(u, :user_profile),
           where:
-            ilike(v.name, ^like_search) or
-            ilike(v.type, ^like_search) or
-            ilike(v.serial_number, ^like_search) or
-            fragment("?::text LIKE ?", v.quantity_available, ^like_search),
-            distinct: v.id,
-          select: v
+            ilike(e.name, ^like_search) or
+            ilike(e.type, ^like_search) or
+            ilike(e.serial_number, ^like_search) or
+            fragment("?::text LIKE ?", e.total_quantity, ^like_search),
+          distinct: e.id,
+          select: e
       else
         filtered_query
       end
