@@ -399,7 +399,7 @@ defmodule SpatoWeb.VehicleBookingLive.AdminIndex do
                       <% end %>
 
                       <% "completed" -> %>
-                        <span class="text-sm text-green-600">Selesai</span>
+                        <span class="text-sm text-blue-600">Selesai</span>
                       <% "cancelled" -> %>
                         <%= if booking.rejection_reason do %>
                           <p class="text-xs text-gray-500">Sebab: <%= booking.rejection_reason %></p>
@@ -460,11 +460,64 @@ defmodule SpatoWeb.VehicleBookingLive.AdminIndex do
               id="admin-vehicle-booking-show"
               show
               on_cancel={JS.patch(~p"/admin/vehicle_bookings?page=#{@page}&q=#{@search_query}&status=#{@filter_status}&date=#{@filter_date}")}>
-              <.live_component
-                module={SpatoWeb.VehicleBookingLive.AdminShowComponent}
-                id={@vehicle_booking.id}
-                vehicle_booking={@vehicle_booking}
-              />
+
+              <!-- Modal content -->
+              <div class="flex flex-col gap-4">
+
+                <!-- Booking Details -->
+                <.live_component
+                  module={SpatoWeb.VehicleBookingLive.AdminShowComponent}
+                  id={@vehicle_booking.id}
+                  vehicle_booking={@vehicle_booking}
+                />
+
+                <!-- Modal Footer: Action Buttons -->
+                <div class="flex justify-end gap-2 mt-4">
+                  <%= case @vehicle_booking.status do %>
+                    <% "pending" -> %>
+                      <button
+                        phx-click="approve"
+                        phx-value-id={@vehicle_booking.id}
+                        class="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+                      >
+                        Luluskan
+                      </button>
+
+                      <button
+                        phx-click="open_reject_modal"
+                        phx-value-id={@vehicle_booking.id}
+                        class="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700"
+                      >
+                        Tolak
+                      </button>
+
+                    <% "approved" -> %>
+                      <button
+                        phx-click="open_edit_modal"
+                        phx-value-id={@vehicle_booking.id}
+                        class="px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                      >
+                        Ubah Status
+                      </button>
+
+                    <% "rejected" -> %>
+                      <%= if @vehicle_booking.rejection_reason do %>
+                        <p class="text-sm text-gray-500">Sebab: <%= @vehicle_booking.rejection_reason %></p>
+                      <% end %>
+
+                    <% "completed" -> %>
+                      <span class="text-sm text-blue-600">Selesai</span>
+
+                    <% "cancelled" -> %>
+                      <%= if @vehicle_booking.rejection_reason do %>
+                        <p class="text-sm text-gray-500">Sebab: <%= @vehicle_booking.rejection_reason %></p>
+                      <% end %>
+
+                    <% _ -> %>
+                      <span class="text-gray-500">—</span>
+                  <% end %>
+                </div>
+              </div>
             </.modal>
 
             <.modal :if={@show_reject_modal} id="reject-modal" show on_cancel={JS.push("close_modal")}>
