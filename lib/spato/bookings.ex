@@ -219,7 +219,6 @@ defmodule Spato.Bookings do
 
     query    = filters["query"]
     type     = filters["type"]
-    date     = filters["date"]
     page     = Map.get(filters, "page", 1) |> to_int()
     per_page = 12
     offset   = (page - 1) * per_page
@@ -624,4 +623,20 @@ defmodule Spato.Bookings do
       completed: Repo.aggregate(from(cb in base_query, where: cb.status == "completed"), :count, :id)
     }
   end
+
+  def decimal_from_any(val) do
+    cond do
+      is_nil(val) -> Decimal.new("0.00")
+      is_integer(val) -> Decimal.new(val)
+      is_float(val) -> Decimal.from_float(val)
+      is_binary(val) ->
+        case Decimal.parse(val) do
+          {d, _rest} -> d
+          :error -> Decimal.new("0.00")
+        end
+      match?(%Decimal{}, val) -> val
+      true -> Decimal.new("0.00")
+    end
+  end
+
 end

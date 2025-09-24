@@ -65,6 +65,7 @@ defmodule SpatoWeb.CateringBookingLive.FormComponent do
     menu =
       case params["menu_id"] do
         nil -> nil
+        id when is_binary(id) -> Spato.Repo.get!(Spato.Assets.CateringMenu, String.to_integer(id))
         id -> Spato.Repo.get!(Spato.Assets.CateringMenu, id)
       end
 
@@ -81,22 +82,24 @@ defmodule SpatoWeb.CateringBookingLive.FormComponent do
     # Merge in menu details if available
     attrs =
       if menu do
-        total_cost =
+        participants =
           case attrs["participants"] do
-            nil -> Decimal.new("0.00")
-            participants ->
-              case Integer.parse(participants) do
-                {num, _} -> Decimal.mult(menu.price_per_head, Decimal.new(num))
-                _ -> Decimal.new("0.00")
+            nil -> 0
+            p ->
+              case Integer.parse(p) do
+                {num, _} -> num
+                _ -> 0
               end
           end
+
+        total_cost = Decimal.mult(menu.price_per_head, Decimal.new(participants))
 
         Map.merge(attrs, %{
           "menu_id" => menu.id,
           "menu_name" => menu.name,
           "menu_description" => menu.description,
           "menu_type" => Spato.Assets.CateringMenu.human_type(menu.type),
-          "price_per_head" => "RM #{:erlang.float_to_binary(Decimal.to_float(menu.price_per_head), [decimals: 2])}",
+          "price_per_head" => menu.price_per_head,
           "total_cost" => total_cost,
           "status" => "pending"
         })
@@ -162,6 +165,54 @@ defmodule SpatoWeb.CateringBookingLive.FormComponent do
     params =
       catering_booking_params
       |> Map.put_new("user_id", socket.assigns.current_user.id)
+      |> Map.put_new("status", "pending")
+      |> Map.update("time", nil, fn
+        "" -> nil
+        <<_::binary-size(5)>> = t -> t <> ":00"
+        t -> t
+      end)
+      |> Map.update("menu_id", nil, fn
+        nil -> nil
+        id when is_binary(id) ->
+          case Integer.parse(id) do
+            {int, _} -> int
+            :error -> id
+          end
+        id -> id
+      end)
+
+    # Ensure total_cost is set (compute if missing)
+    params =
+      case Map.get(params, "total_cost") do
+        nil ->
+          menu =
+            case Map.get(params, "menu_id") do
+              nil -> nil
+              id when is_binary(id) -> Spato.Repo.get(Spato.Assets.CateringMenu, String.to_integer(id))
+              id -> Spato.Repo.get(Spato.Assets.CateringMenu, id)
+            end
+
+          participants =
+            case Map.get(params, "participants") do
+              nil -> 0
+              p when is_integer(p) -> p
+              p when is_binary(p) ->
+                case Integer.parse(p) do
+                  {num, _} -> num
+                  _ -> 0
+                end
+              _ -> 0
+            end
+
+          if menu do
+            Map.put(params, "total_cost", Decimal.mult(menu.price_per_head, Decimal.new(participants)))
+          else
+            Map.put(params, "total_cost", Decimal.new("0.00"))
+          end
+
+        _val ->
+          Map.update(params, "total_cost", Decimal.new("0.00"), &Spato.Bookings.decimal_from_any/1)
+      end
 
     case Bookings.create_catering_booking(params) do
       {:ok, catering_booking} ->
@@ -173,6 +224,7 @@ defmodule SpatoWeb.CateringBookingLive.FormComponent do
          |> push_patch(to: socket.assigns.patch)}
 
       {:error, %Ecto.Changeset{} = changeset} ->
+        IO.inspect(changeset.errors, label: "CateringBooking errors")
         {:noreply, assign(socket, form: to_form(changeset))}
     end
   end
