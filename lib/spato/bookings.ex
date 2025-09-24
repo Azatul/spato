@@ -605,4 +605,46 @@ defmodule Spato.Bookings do
       completed: Repo.aggregate(from(vb in base_query, where: vb.status == "completed"), :count, :id)
      }
    end
+
+   def get_meeting_room_booking_stats do
+    now = DateTime.utc_now()
+
+    total =
+      Repo.aggregate(MeetingRoomBooking, :count, :id)
+
+    pending =
+      Repo.aggregate(
+        from(b in MeetingRoomBooking, where: b.status == "pending"),
+        :count,
+        :id
+      )
+
+    approved =
+      Repo.aggregate(
+        from(b in MeetingRoomBooking, where: b.status == "approved"),
+        :count,
+        :id
+      )
+
+    # Active = approved dan masa sekarang berada antara start_time dan end_time
+    active =
+      Repo.aggregate(
+        from(b in MeetingRoomBooking,
+          where:
+            b.status == "approved" and
+              b.start_time <= ^now and
+              b.end_time >= ^now
+        ),
+        :count,
+        :id
+      )
+
+    %{
+      total: total,
+      pending: pending,
+      approved: approved,
+      active: active
+    }
+  end
+
 end

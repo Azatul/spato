@@ -12,7 +12,7 @@ defmodule SpatoWeb.MeetingRoomBookingLive.Index do
   def mount(_params, _session, socket) do
     {:ok,
      socket
-     |> assign(:active_tab, "meeting_rooms")
+     |> assign(:active_tab, "meeting_room_bookings")
      |> assign(:sidebar_open, true)
      |> assign(:current_user, socket.assigns.current_user)
      |> assign(:filter_status, "all")
