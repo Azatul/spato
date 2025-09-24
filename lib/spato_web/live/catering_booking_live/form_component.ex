@@ -143,14 +143,19 @@ defmodule SpatoWeb.CateringBookingLive.FormComponent do
     save_catering_booking(socket, socket.assigns.action, catering_booking_params)
   end
 
-  defp save_catering_booking(socket, :edit, catering_booking_params) do
-    case Bookings.update_catering_booking(socket.assigns.catering_booking, catering_booking_params) do
+  defp save_catering_booking(socket, :new, catering_booking_params) do
+    params =
+      catering_booking_params
+      |> Map.put_new("user_id", socket.assigns.current_user.id)
+      |> Map.put_new("status", "pending")
+
+    case Bookings.create_catering_booking(params) do
       {:ok, catering_booking} ->
         notify_parent({:saved, catering_booking})
 
         {:noreply,
          socket
-         |> put_flash(:info, "Tempahan katering berjaya dikemaskini")
+         |> put_flash(:info, "Tempahan katering berjaya dibuat")
          |> push_patch(to: socket.assigns.patch)}
 
       {:error, %Ecto.Changeset{} = changeset} ->
