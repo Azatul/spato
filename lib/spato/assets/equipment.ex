@@ -10,6 +10,9 @@ defmodule Spato.Assets.Equipment do
     field :serial_number, :string
     field :total_quantity, :integer
 
+    # Virtual field (not stored in DB)
+    field :available_quantity, :integer, virtual: true
+
     belongs_to :user, Spato.Accounts.User
     belongs_to :created_by, Spato.Accounts.User, foreign_key: :created_by_id
     has_many :equipment_bookings, Spato.Bookings.EquipmentBooking, on_delete: :delete_all
