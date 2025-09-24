@@ -132,7 +132,7 @@ defmodule SpatoWeb.VehicleBookingLive.AdminIndex do
         <main class="flex-1 overflow-y-auto pt-20 p-6 transition-all duration-300 bg-gray-100">
           <section class="mb-4">
             <!-- Page Title -->
-            <h1 class="text-xl font-bold mb-1">Urus Tempahan Kenderaan</h1>
+            <h1 class="text-xl font-bold mb-1">Tempahan Kenderaan</h1>
             <p class="text-md text-gray-500 mb-4">Semak dan urus semua tempahan kenderaan dalam sistem</p>
 
             <!-- Stats Cards -->

@@ -68,7 +68,7 @@ defmodule SpatoWeb.Components.Sidebar do
                 <ul class="ml-8 mt-2 space-y-1">
                   <li>
                     <.sidebar_link patch="/meeting_rooms" active={@active_tab == "meeting_rooms"} open={@open}>
-                      Tempahan Bilik Mesyuarat
+                      Bilik Mesyuarat
                     </.sidebar_link>
                   </li>
                   <li>
@@ -76,12 +76,12 @@ defmodule SpatoWeb.Components.Sidebar do
                       patch={if @current_user.role == "admin", do: "/admin/vehicle_bookings", else: "/vehicle_bookings"}
                       active={@active_tab in ["vehicles", "admin_vehicles"]}
                       open={@open}>
-                      Tempahan Kenderaan
+                      Kenderaan
                     </.sidebar_link>
                   </li>
                   <li>
                     <.sidebar_link patch="/catering" active={@active_tab == "catering"} open={@open}>
-                      Tempahan Katering
+                      Katering
                     </.sidebar_link>
                   </li>
                   <li>
@@ -89,7 +89,7 @@ defmodule SpatoWeb.Components.Sidebar do
                       patch={if @current_user.role == "admin", do: "/admin/equipment_bookings", else: "/equipment_bookings"}
                       active={@active_tab in ["equipments", "admin_equipments"]}
                       open={@open}>
-                      Tempahan Peralatan
+                      Peralatan
                     </.sidebar_link>
                   </li>
                 </ul>

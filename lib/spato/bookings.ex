@@ -600,4 +600,39 @@ defmodule Spato.Bookings do
         completed: Repo.aggregate(from(eb in base_query, where: eb.status == "completed"), :count, :id)
       }
     end
+
+    # == LIST APPROVED BOOKINGS IN RANGE ==
+      def list_approved_bookings_in_range(start_date, end_date) do
+        import Ecto.Query
+
+        # Vehicles
+        vehicle_query =
+          from v in Spato.Bookings.VehicleBooking,
+            where: v.status == "approved" and v.pickup_time >= ^start_date and v.return_time <= ^end_date,
+            join: veh in assoc(v, :vehicle),
+            select: %{
+              id: v.id,
+              type: "vehicle",
+              title: veh.name,
+              usage_at: v.pickup_time,
+              return_at: v.return_time
+            }
+
+        # Equipments
+        equipment_query =
+          from e in Spato.Bookings.EquipmentBooking,
+            where: e.status == "approved" and e.usage_at >= ^start_date and e.return_at <= ^end_date,
+            join: eq in assoc(e, :equipment),
+            select: %{
+              id: e.id,
+              type: "equipment",
+              title: eq.name,
+              usage_at: e.usage_at,
+              return_at: e.return_at
+            }
+
+        # Merge both
+        Repo.all(union_all(vehicle_query, ^equipment_query))
+      end
+
 end
