@@ -264,12 +264,22 @@ defmodule SpatoWeb.EquipmentBookingLive.Index do
                 <:col :let={booking} label="Lokasi">{booking.location}</:col>
                 <:col :let={booking} label="Tarikh & Masa Guna">
                   <div class="flex flex-col">
-                    <span class="font-medium text-gray-900"><%= booking.usage_at %></span>
+                    <span class="font-medium text-gray-900">
+                      <%= Calendar.strftime(booking.usage_at, "%d-%m-%Y") %>
+                    </span>
+                    <span class="text-sm text-gray-500">
+                      <%= Calendar.strftime(booking.usage_at, "%H:%M") %>
+                    </span>
                   </div>
                 </:col>
                 <:col :let={booking} label="Tarikh & Masa Pulang">
                   <div class="flex flex-col">
-                    <span class="font-medium text-gray-900"><%= booking.return_at %></span>
+                    <span class="font-medium text-gray-900">
+                      <%= Calendar.strftime(booking.return_at, "%d-%m-%Y") %>
+                    </span>
+                    <span class="text-sm text-gray-500">
+                      <%= Calendar.strftime(booking.return_at, "%H:%M") %>
+                    </span>
                   </div>
                 </:col>
                 <:col :let={booking} label="Catatan">{booking.additional_notes}</:col>

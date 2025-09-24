@@ -442,7 +442,6 @@ defmodule Spato.Bookings do
       # Base query – only equipment with status "tersedia"
       base_query =
         from e in Spato.Assets.Equipment,
-          preload: [:equipment_bookings],
           where: e.status == "tersedia"
 
       # Type filter

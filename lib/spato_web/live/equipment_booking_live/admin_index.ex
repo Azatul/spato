@@ -225,15 +225,25 @@ defmodule SpatoWeb.EquipmentBookingLive.AdminIndex do
                 <:col :let={booking} label="Lokasi"><%= booking.location %></:col>
                 <:col :let={booking} label="Tarikh & Masa Guna">
                   <div class="flex flex-col">
-                    <span class="font-medium text-gray-900"><%= booking.usage_at %></span>
+                    <span class="font-medium text-gray-900">
+                      <%= Calendar.strftime(booking.usage_at, "%d-%m-%Y") %>
+                    </span>
+                    <span class="text-sm text-gray-500">
+                      <%= Calendar.strftime(booking.usage_at, "%H:%M") %>
+                    </span>
                   </div>
                 </:col>
                 <:col :let={booking} label="Tarikh & Masa Pulang">
                   <div class="flex flex-col">
-                    <span class="font-medium text-gray-900"><%= booking.return_at %></span>
+                    <span class="font-medium text-gray-900">
+                      <%= Calendar.strftime(booking.return_at, "%d-%m-%Y") %>
+                    </span>
+                    <span class="text-sm text-gray-500">
+                      <%= Calendar.strftime(booking.return_at, "%H:%M") %>
+                    </span>
                   </div>
                 </:col>
-                <:col :let={booking} label="Kuantiti"><%= booking.quantity %></:col>
+                <:col :let={booking} label="Kuantiti"><%= booking.requested_quantity %></:col>
                 <:col :let={booking} label="Catatan Tambahan"><%= booking.additional_notes %></:col>
                 <:col :let={booking} label="Status">
                 <span class={"px-1.5 py-0.5 rounded-full text-white text-xs font-semibold " <>

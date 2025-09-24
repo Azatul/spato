@@ -14,14 +14,28 @@ defmodule SpatoWeb.EquipmentBookingLive.ShowComponent do
       <:item title="Peralatan">
         <%= @equipment_booking.equipment && @equipment_booking.equipment.name || "-" %>
         </:item>
-        <:item title="Kuantiti">{@equipment_booking.quantity}</:item>
+        <:item title="Kuantiti">{@equipment_booking.requested_quantity}</:item>
         <:item title="Lokasi">{@equipment_booking.location}</:item>
         <:item title="Tarikh & Masa Guna">
-          <%= @equipment_booking.usage_at %>
+          <div class="flex flex-col">
+            <span class="font-medium text-gray-900">
+              <%= Calendar.strftime(@equipment_booking.usage_at, "%d-%m-%Y") %>
+            </span>
+            <span class="text-sm text-gray-500">
+              <%= Calendar.strftime(@equipment_booking.usage_at, "%H:%M") %>
+            </span>
+          </div>
         </:item>
 
         <:item title="Tarikh & Masa Pulang">
-          <%= @equipment_booking.return_at %>
+          <div class="flex flex-col">
+            <span class="font-medium text-gray-900">
+              <%= Calendar.strftime(@equipment_booking.return_at, "%d-%m-%Y") %>
+            </span>
+            <span class="text-sm text-gray-500">
+              <%= Calendar.strftime(@equipment_booking.return_at, "%H:%M") %>
+            </span>
+          </div>
         </:item>
         <:item title="Nota tambahan">{@equipment_booking.additional_notes}</:item>
         <:item title="Status">

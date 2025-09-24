@@ -26,7 +26,6 @@ defmodule SpatoWeb.EquipmentBookingLive.FormComponent do
           <.input field={@form[:equipment_name]} label="Nama Peralatan" readonly />
           <.input field={@form[:serial_number]} label="No. Siri" readonly />
           <.input field={@form[:type]} label="Jenis" readonly />
-          <.input field={@form[:available_quantity]} label="Kuantiti Tersedia" readonly />
 
           <!-- Hidden field -->
           <input type="hidden" name="equipment_booking[equipment_id]" value={@equipment.id} />
@@ -39,7 +38,7 @@ defmodule SpatoWeb.EquipmentBookingLive.FormComponent do
         <!-- User inputs -->
         <.input field={@form[:location]} type="text" label="Lokasi" />
         <.input
-          field={@form[:quantity]}
+          field={@form[:requested_quantity]}
           type="number"
           label="Kuantiti Diminta"
           min="1"
@@ -100,7 +99,7 @@ defmodule SpatoWeb.EquipmentBookingLive.FormComponent do
       "serial_number" => equipment.serial_number,
       "type" => equipment.type,
       "available_quantity" => equipment.available_quantity,
-      "quantity" => attrs["quantity"] || 1
+      "requested_quantity" => attrs["requested_quantity"] || 1
     })
   end
 
@@ -116,7 +115,10 @@ defmodule SpatoWeb.EquipmentBookingLive.FormComponent do
 
   @impl true
   def handle_event("save", %{"equipment_booking" => params}, socket) do
-    params = Map.put_new(params, "user_id", socket.assigns.current_user.id)
+    params =
+      params
+      |> Map.put_new("user_id", socket.assigns.current_user.id)
+      |> Map.put_new("status", "pending")
 
     case socket.assigns.action do
       :new -> save_new_booking(socket, params)
