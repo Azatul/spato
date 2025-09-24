@@ -22,6 +22,8 @@ defmodule SpatoWeb.VehicleBookingLive.AdminIndex do
      |> assign(:show_reject_modal, false)
      |> assign(:reject_booking, nil)
      |> assign(:show_edit_modal, false)
+     |> assign(:selected_status, nil)
+     |> assign(:reason, nil)
      |> assign(:edit_booking, nil)
      |> load_vehicle_bookings()
      |> assign(:stats, Bookings.get_booking_stats())}
@@ -114,18 +116,34 @@ defmodule SpatoWeb.VehicleBookingLive.AdminIndex do
   end
 
   @impl true
+  def handle_event("status_changed", %{"status" => status}, socket) do
+    {:noreply, socket |> assign(:selected_status, status)}
+  end
+
+  @impl true
   def handle_event("open_edit_modal", %{"id" => id}, socket) do
     booking = Bookings.get_vehicle_booking!(id)
     {:noreply, socket |> assign(:edit_booking, booking) |> assign(:show_edit_modal, true)}
   end
 
   @impl true
-  def handle_event("update_status", %{"status" => status, "reason" => reason}, socket) do
-    {:ok, _} = Bookings.update_booking_status(socket.assigns.edit_booking, status, reason)
+  def handle_event("update_status", %{"status" => status} = params, socket) do
+    reason = Map.get(params, "reason")
+
+    # Build params for update
+    update_params =
+      case status do
+        "rejected" -> %{status: status, rejection_reason: reason}
+        _ -> %{status: status, rejection_reason: nil}
+      end
+
+    {:ok, _booking} = Bookings.update_vehicle_booking(socket.assigns.edit_booking, update_params)
+
     {:noreply,
     socket
     |> assign(:show_edit_modal, false)
-    |> load_vehicle_bookings()}
+    |> load_vehicle_bookings()
+    |> assign(:selected_status, nil)}
   end
 
   @impl true
@@ -462,17 +480,19 @@ defmodule SpatoWeb.VehicleBookingLive.AdminIndex do
 
             <.modal :if={@show_edit_modal} id="edit-modal" show on_cancel={JS.push("close_modal")}>
               <h2 class="text-lg font-semibold mb-2">Ubah Status Tempahan</h2>
+
               <form phx-submit="update_status" class="space-y-3">
-                <select name="status" class="w-full border rounded-md p-2 text-sm">
+                <select name="status" phx-change="status_changed" class="w-full border rounded-md p-2 text-sm">
                   <option value="pending" selected={@edit_booking.status == "pending"}>Menunggu</option>
                   <option value="approved" selected={@edit_booking.status == "approved"}>Diluluskan</option>
                   <option value="rejected" selected={@edit_booking.status == "rejected"}>Ditolak</option>
                   <option value="completed" selected={@edit_booking.status == "completed"}>Selesai</option>
-                  <option value="cancelled" selected={@edit_booking.status == "cancelled"}>Dibatalkan</option>
                 </select>
 
-                <%= if @edit_booking.status == "rejected" do %>
-                  <textarea name="reason" rows="3" class="w-full border rounded-md p-2 text-sm" placeholder="Nyatakan sebab penolakan..."></textarea>
+                <!-- Show reason only if selected status is rejected -->
+                <%= if @selected_status == "rejected" or @edit_booking.status == "rejected" do %>
+                  <textarea name="reason" rows="3" class="w-full border rounded-md p-2 text-sm"
+                    placeholder="Nyatakan sebab penolakan..."><%= @edit_booking.rejection_reason || "" %></textarea>
                 <% end %>
 
                 <div class="flex justify-end gap-2">
@@ -485,7 +505,6 @@ defmodule SpatoWeb.VehicleBookingLive.AdminIndex do
                 </div>
               </form>
             </.modal>
-
           </section>
         </main>
       </div>
