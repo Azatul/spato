@@ -273,6 +273,7 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
                       <option value="approved" selected={@filter_status == "approved"}>Diluluskan</option>
                       <option value="rejected" selected={@filter_status == "rejected"}>Ditolak</option>
                       <option value="completed" selected={@filter_status == "completed"}>Selesai</option>
+                      <option value="cancelled" selected={@filter_status == "cancelled"}>Dibatalkan</option>
                     </select>
                   </form>
 
@@ -470,17 +471,47 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
                 </div>
               <% end %>
 
-              <!-- Modal for show -->
+              <!-- Modal -->
               <.modal
                 :if={@live_action == :show}
                 id="vehicle-booking-show-modal"
                 show
                 on_cancel={JS.patch(~p"/vehicle_bookings?page=#{@page}&q=#{@search_query}&status=#{@filter_status}&date=#{@filter_date}")}>
+
                 <.live_component
                   module={SpatoWeb.VehicleBookingLive.ShowComponent}
                   id={@vehicle_booking.id}
                   vehicle_booking={@vehicle_booking}
+                  current_user={@current_user}
+                  page={@page}
+                  search_query={@search_query}
+                  filter_status={@filter_status}
+                  filter_date={@filter_date}
                 />
+
+                <!-- Modal Footer: Action Buttons -->
+                <div class="flex justify-end gap-2 mt-4">
+                  <%= if @vehicle_booking.user_id == @current_user.id and @vehicle_booking.status in ["pending"] do %>
+                    <!-- Edit button -->
+                    <.link
+                      patch={~p"/vehicle_bookings/#{@vehicle_booking.id}/edit?page=#{@page}&q=#{@search_query}&status=#{@filter_status}&date=#{@filter_date}"}
+                      class="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                      title="Kemaskini Tempahan">
+                      <.icon name="hero-pencil-square" class="w-4 h-4" />
+                    </.link>
+                  <% end %>
+
+                  <%= if @vehicle_booking.status in ["pending", "approved"] do %>
+                    <!-- Cancel button -->
+                    <button
+                      phx-click="open_cancel_modal"
+                      phx-value-id={@vehicle_booking.id}
+                      class="flex items-center justify-center w-8 h-8 rounded-full bg-red-600 hover:bg-red-700 text-white transition-colors"
+                      title="Batalkan Tempahan">
+                      <.icon name="hero-x-mark" class="w-4 h-4" />
+                    </button>
+                  <% end %>
+                </div>
               </.modal>
 
               <.modal :if={@show_cancel_modal} id="cancel-modal" show on_cancel={JS.push("close_modal")}>

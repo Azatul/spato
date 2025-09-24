@@ -359,6 +359,16 @@ defmodule SpatoWeb.VehicleBookingLive.AdminIndex do
                   }>
                     <%= Spato.Bookings.VehicleBooking.human_status(booking.status) %>
                   </span>
+                   <%= if booking.status == "rejected" do %>
+                    <%= if booking.rejection_reason do %>
+                      <p class="text-xs text-gray-500">Sebab: <%= booking.rejection_reason %></p>
+                    <% end %>
+                  <% end %>
+                  <%= if booking.status == "cancelled" do %>
+                    <%= if booking.rejection_reason do %>
+                      <p class="text-xs text-gray-500">Sebab: <%= booking.rejection_reason %></p>
+                    <% end %>
+                  <% end %>
                 </:col>
 
                 <:col :let={booking} label="Tindakan">
