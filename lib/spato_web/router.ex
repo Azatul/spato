@@ -51,7 +51,7 @@ defmodule SpatoWeb.Router do
     live "/meeting_room_bookings/new", MeetingRoomBookingLive.Index, :new
     live "/meeting_room_bookings/:id/edit", MeetingRoomBookingLive.Index, :edit
 
-    live "/meeting_room_bookings/:id", MeetingRoomBookingLive.Show, :show
+    live "/meeting_room_bookings/:id", MeetingRoomBookingLive.Index, :show
     live "/meeting_room_bookings/:id/show/edit", MeetingRoomBookingLive.Show, :edit
     live "/available_rooms", AvailableRoomLive
   end

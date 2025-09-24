@@ -482,18 +482,7 @@ defmodule Spato.Bookings do
     }
   end
 
-  defp parse_datetime(nil), do: nil
-  defp parse_datetime(""), do: nil
-  defp parse_datetime(val) do
-    case NaiveDateTime.from_iso8601(val) do
-      {:ok, naive} -> DateTime.from_naive!(naive, "Etc/UTC")
-      _ ->
-        case NaiveDateTime.from_iso8601(val <> ":00") do
-          {:ok, naive} -> DateTime.from_naive!(naive, "Etc/UTC")
-          _ -> nil
-        end
-    end
-  end
+
 
   def get_meeting_room_booking!(id) do
     Repo.get!(MeetingRoomBooking, id)
@@ -525,13 +514,13 @@ defmodule Spato.Bookings do
     MeetingRoomBooking.changeset(meeting_room_booking, attrs)
   end
 
-  def approve_booking(%MeetingRoomBooking{} = vb),
+  def approve_meeting_room_booking(%MeetingRoomBooking{} = vb),
     do: update_meeting_room_booking(vb, %{status: "approved"})
 
-  def reject_booking(%MeetingRoomBooking{} = vb),
+  def reject_meeting_room_booking(%MeetingRoomBooking{} = vb),
     do: update_meeting_room_booking(vb, %{status: "rejected"})
 
-  def cancel_booking(%MeetingRoomBooking{} = vb, %Spato.Accounts.User{} = user) do
+  def cancel_meeting_room_booking(%MeetingRoomBooking{} = vb, %Spato.Accounts.User{} = user) do
     case vb.status do
       "pending" ->
         update_meeting_room_booking(vb, %{status: "cancelled", cancelled_by_user_id: user.id})
@@ -543,8 +532,8 @@ defmodule Spato.Bookings do
 
    # --- Private Helpers ---
 
-   defp scope_by_user(query, nil), do: query
-   defp scope_by_user(query, user),
+   defp scope_meeting_room_by_user(query, nil), do: query
+   defp scope_meeting_room_by_user(query, user),
      do: (from vb in query, where: vb.user_id == ^user.id)
 
    defp to_int(val) when is_integer(val), do: val
@@ -553,7 +542,7 @@ defmodule Spato.Bookings do
 
    import Ecto.Query
 
-   def get_booking_stats do
+   def get_meeting_room_booking_stats do
      now = DateTime.utc_now()
 
      total = Repo.aggregate(MeetingRoomBooking, :count, :id)
@@ -580,7 +569,7 @@ defmodule Spato.Bookings do
      }
    end
 
-   def get_user_meeting_room_booking_stats(user_id) do
+   def get_user_meeting_room_booking_stats_meeting_room(user_id) do
      now = Date.utc_today()
      # Get the weekday (1 = Monday, 7 = Sunday)
      weekday = Date.day_of_week(now)
@@ -594,7 +583,7 @@ defmodule Spato.Bookings do
      {:ok, end_of_week_dt} = DateTime.new(end_of_week, ~T[23:59:59], "Etc/UTC")
 
      base_query =
-      from vb in MeetingRoomBooking,
+      from vb in MeetingRoomBooking_meeting_room,
         where: vb.user_id == ^user_id
 
     %{
@@ -606,7 +595,7 @@ defmodule Spato.Bookings do
      }
    end
 
-   def get_meeting_room_booking_stats do
+   def get_meeting_room_booking_stats_meeting_room do
     now = DateTime.utc_now()
 
     total =
