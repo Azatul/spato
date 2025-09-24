@@ -223,13 +223,9 @@ defmodule Spato.Bookings do
     per_page = 12
     offset   = (page - 1) * per_page
 
-    # Parse date using helper
-    booking_date = parse_date(filters["date"])
-
     # Base query – only menus with status "tersedia"
     base_query =
       from m in Spato.Assets.CateringMenu,
-        preload: [:catering_bookings],
         where: m.status == "tersedia"
 
     # Type filter
@@ -252,29 +248,12 @@ defmodule Spato.Bookings do
         base_query
       end
 
-    # Availability filter – hide menus with conflicting bookings
-    final_query =
-      if booking_date do
-        from m in base_query,
-          as: :menu,
-          where: not exists(
-            from b in Spato.Bookings.CateringBooking,
-              where:
-                b.menu_id == parent_as(:menu).id and
-                b.status in ["pending", "approved"] and
-                b.date == ^booking_date
-          )
-      else
-        # If no valid date, just show all available menus
-        base_query
-      end
-
     # Total count & pagination
-    total = final_query |> exclude(:order_by) |> Repo.aggregate(:count, :id)
+    total = base_query |> exclude(:order_by) |> Repo.aggregate(:count, :id)
     total_pages = ceil(total / per_page)
 
     menus_page =
-      final_query
+      base_query
       |> limit(^per_page)
       |> offset(^offset)
       |> Repo.all()
@@ -285,15 +264,6 @@ defmodule Spato.Bookings do
       total_pages: total_pages,
       page: page
     }
-  end
-
-  defp parse_date(nil), do: nil
-  defp parse_date(""), do: nil
-  defp parse_date(val) do
-    case Date.from_iso8601(val) do
-      {:ok, date} -> date
-      _ -> nil
-    end
   end
 
   def available_vehicles(filters) do
@@ -638,7 +608,6 @@ defmodule Spato.Bookings do
       true -> Decimal.new("0.00")
     end
   end
-
 
   def format_money(nil), do: "RM 0.00"
   def format_money(%Decimal{} = dec),
