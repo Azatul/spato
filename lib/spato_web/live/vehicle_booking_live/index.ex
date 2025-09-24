@@ -399,7 +399,7 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
                   <% end %>
                 </:col>
 
-                  <:col :let={booking} label="Tindakan">
+                <:col :let={booking} label="Tindakan">
                   <div class="flex gap-2">
                     <%= if booking.status in ["pending"] do %>
                       <!-- Edit button -->
