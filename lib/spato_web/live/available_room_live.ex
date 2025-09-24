@@ -20,7 +20,7 @@ defmodule SpatoWeb.AvailableRoomLive do
     {:ok,
      socket
      |> assign(:page_title, "Bilik Mesyuarat Tersedia")
-     |> assign(:active_tab, "rooms")
+     |> assign(:active_tab, "meeting_rooms")
      |> assign(:sidebar_open, true)
      |> assign(:current_user, socket.assigns.current_user)
      |> assign(:rooms, [])

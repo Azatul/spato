@@ -107,6 +107,7 @@ defmodule SpatoWeb.MeetingRoomBookingLive.Index do
     |> assign(:meeting_room_bookings_page, data.meeting_room_bookings_page)
     |> assign(:total_pages, data.total_pages)
     |> assign(:filtered_count, data.total)
+    |> assign(:stats, Bookings.get_user_meeting_room_booking_stats(socket.assigns.current_user.id))
     |> assign(:page, data.page)
   end
 
@@ -288,7 +289,7 @@ defmodule SpatoWeb.MeetingRoomBookingLive.Index do
                 <:col :let={booking} label="Peserta">
                   <div class="flex items-center gap-1">
                     <.icon name="hero-user" class="w-4 h-4 text-gray-500" />
-                    <span><%= booking.participants %></span>
+                    <span><%= booking.participants %> / <%= booking.meeting_room.capacity %></span>
                   </div>
                 </:col>
 

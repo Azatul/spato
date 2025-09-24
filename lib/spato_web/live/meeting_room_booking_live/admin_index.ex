@@ -118,6 +118,7 @@ defmodule SpatoWeb.MeetingRoomBookingLive.AdminIndex do
     |> assign(:meeting_room_bookings_page, data.meeting_room_bookings_page)
     |> assign(:total_pages, data.total_pages)
     |> assign(:filtered_count, data.total)
+    |> assign(:stats, Bookings.get_meeting_room_booking_stats())
     |> assign(:page, data.page)
   end
 
@@ -215,7 +216,7 @@ defmodule SpatoWeb.MeetingRoomBookingLive.AdminIndex do
                       <!-- Capacity -->
                       <div class="mt-1">
                         <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-blue-500">
-                          Kapasiti: <%= booking.meeting_room.capacity %>
+                          Kapasiti: <%= booking.participants %> / <%= booking.meeting_room.capacity %>
                         </span>
                       </div>
                     </div>
@@ -248,7 +249,7 @@ defmodule SpatoWeb.MeetingRoomBookingLive.AdminIndex do
                 <:col :let={booking} label="Peserta">
                   <div class="flex items-center gap-1">
                     <.icon name="hero-user" class="w-4 h-4 text-gray-500" />
-                    <span><%= booking.participants %></span>
+                    <span><%= booking.participants %> / <%= booking.meeting_room.capacity %></span>
                   </div>
                 </:col>
                 <:col :let={booking} label="Masa Mula">
