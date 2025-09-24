@@ -44,14 +44,14 @@ defmodule SpatoWeb.MeetingRoomBookingLive.AdminIndex do
   @impl true
   def handle_event("approve", %{"id" => id}, socket) do
     booking = Bookings.get_meeting_room_booking!(id)
-    {:ok, _} = Bookings.approve_booking(booking)
+    {:ok, _} = Bookings.approve_meeting_room_booking(booking)
     {:noreply, load_meeting_room_bookings(socket)}
   end
 
   @impl true
   def handle_event("reject", %{"id" => id}, socket) do
     booking = Bookings.get_meeting_room_booking!(id)
-    {:ok, _} = Bookings.reject_booking(booking)
+    {:ok, _} = Bookings.reject_meeting_room_booking(booking)
     {:noreply, load_meeting_room_bookings(socket)}
   end
 
@@ -63,10 +63,9 @@ defmodule SpatoWeb.MeetingRoomBookingLive.AdminIndex do
   @impl true
   def handle_event("search", %{"q" => query}, socket) do
     {:noreply,
-     socket
-     |> assign(:search_query, query)
-     |> assign(:page, 1)
-     |> load_meeting_room_bookings()}
+     push_patch(socket,
+       to: ~p"/admin/meeting_room_bookings?page=1&q=#{query}&status=#{socket.assigns.filter_status}&date=#{socket.assigns.filter_date}"
+     )}
   end
 
   @impl true
@@ -86,9 +85,9 @@ defmodule SpatoWeb.MeetingRoomBookingLive.AdminIndex do
   @impl true
   def handle_event("paginate", %{"page" => page}, socket) do
     {:noreply,
-     socket
-     |> assign(:page, String.to_integer(page))
-     |> load_meeting_room_bookings()}
+     push_patch(socket,
+       to: ~p"/admin/meeting_room_bookings?page=#{page}&q=#{socket.assigns.search_query}&status=#{socket.assigns.filter_status}&date=#{socket.assigns.filter_date}"
+     )}
   end
 
   defp apply_action(socket, :show, %{"id" => id}) do
@@ -216,7 +215,7 @@ defmodule SpatoWeb.MeetingRoomBookingLive.AdminIndex do
                       <!-- Capacity -->
                       <div class="mt-1">
                         <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-blue-500">
-                          Kapasiti: <%= booking.participants %> / <%= booking.meeting_room.capacity %>
+                          Kapasiti: <%= booking.meeting_room.capacity %>
                         </span>
                       </div>
                     </div>

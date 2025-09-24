@@ -88,12 +88,12 @@ defmodule SpatoWeb.MeetingRoomLive.Index do
   @impl true
   def handle_event("toggle_sidebar", _, socket), do: {:noreply, update(socket, :sidebar_open, &(!&1))}
 
+  @impl true
   def handle_event("search", %{"q" => query}, socket) do
     {:noreply,
-     socket
-     |> assign(:search_query, query)
-     |> assign(:page, 1)
-     |> load_meeting_rooms()}
+     push_patch(socket,
+       to: ~p"/admin/meeting_rooms?page=1&q=#{query}&status=#{socket.assigns.filter_status}&date=#{socket.assigns.filter_date}"
+     )}
   end
 
   @impl true
@@ -105,13 +105,12 @@ defmodule SpatoWeb.MeetingRoomLive.Index do
      )}
   end
 
-
   @impl true
   def handle_event("paginate", %{"page" => page}, socket) do
     {:noreply,
-     socket
-     |> assign(:page, String.to_integer(page))
-     |> load_meeting_rooms()}
+     push_patch(socket,
+       to: ~p"/admin/meeting_rooms?page=#{page}&q=#{socket.assigns.search_query}&status=#{socket.assigns.filter_status}&date=#{socket.assigns.filter_date}"
+     )}
   end
 
   @impl true
