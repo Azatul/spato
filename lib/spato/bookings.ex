@@ -238,6 +238,19 @@ defmodule Spato.Bookings do
     |> Repo.update()
   end
 
+  def update_booking_status(%VehicleBooking{} = booking, status, reason \\ nil) do
+    attrs =
+      if status == "rejected" and reason do
+        %{status: "rejected", rejection_reason: reason}
+      else
+        %{status: status}
+      end
+
+    booking
+    |> VehicleBooking.changeset(attrs)
+    |> Repo.update()
+  end
+
   def delete_vehicle_booking(%VehicleBooking{} = vb), do: Repo.delete(vb)
 
   def change_vehicle_booking(%VehicleBooking{} = vb, attrs \\ %{}) do
@@ -249,13 +262,17 @@ defmodule Spato.Bookings do
   def approve_booking(%VehicleBooking{} = vb),
     do: update_vehicle_booking(vb, %{status: "approved"})
 
-  def reject_booking(%VehicleBooking{} = vb),
-    do: update_vehicle_booking(vb, %{status: "rejected"})
+  def reject_booking(%VehicleBooking{} = vb, reason \\ nil) do
+    update_vehicle_booking(vb, %{status: "rejected", rejection_reason: reason})
+  end
 
-  def cancel_booking(%VehicleBooking{} = vb, %Spato.Accounts.User{} = user) do
+  def cancel_booking(%VehicleBooking{} = vb, %Spato.Accounts.User{} = user, reason \\ nil) do
     case vb.status do
       "pending" ->
-        update_vehicle_booking(vb, %{status: "cancelled", cancelled_by_user_id: user.id})
+        update_vehicle_booking(vb, %{status: "cancelled", cancelled_by_user_id: user.id, rejection_reason: reason})
+
+      "approved" ->
+        update_vehicle_booking(vb, %{status: "cancelled", cancelled_by_user_id: user.id, rejection_reason: reason})
 
       _ ->
         {:error, :not_allowed}
@@ -542,14 +559,16 @@ defmodule Spato.Bookings do
       update_equipment_booking(booking, %{status: "approved"})
     end
 
-    def reject_equipment_booking(%EquipmentBooking{} = booking) do
+    def reject_equipment_booking(%EquipmentBooking{} = booking, reason \\ nil) do
       alias Spato.Assets.Equipment
 
       Ecto.Multi.new()
-      |> Ecto.Multi.update(:booking, EquipmentBooking.changeset(booking, %{status: "rejected"}))
+      |> Ecto.Multi.update(:booking,
+           EquipmentBooking.changeset(booking, %{status: "rejected", rejection_reason: reason})
+         )
       |> Ecto.Multi.run(:restore_equipment, fn repo, %{booking: booking} ->
         equipment = repo.get!(Equipment, booking.equipment_id)
-        new_qty = equipment.total_quantity + booking.quantity
+        new_qty = equipment.total_quantity + booking.requested_quantity
         equipment
         |> Ecto.Changeset.change(%{total_quantity: new_qty})
         |> repo.update()

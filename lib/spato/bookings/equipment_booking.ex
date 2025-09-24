@@ -11,6 +11,7 @@ defmodule Spato.Bookings.EquipmentBooking do
     field :additional_notes, :string
     field :condition_before, :string
     field :condition_after, :string
+    field :rejection_reason, :string
 
     belongs_to :user, Spato.Accounts.User
     belongs_to :equipment, Spato.Assets.Equipment
