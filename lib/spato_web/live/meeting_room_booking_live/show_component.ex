@@ -58,7 +58,7 @@ defmodule SpatoWeb.MeetingRoomBookingLive.ShowComponent do
           <:item title="Nama Bilik"><%= @meeting_room_booking.meeting_room.name %></:item>
           <:item title="Lokasi"><%= @meeting_room_booking.meeting_room.location %></:item>
           <:item title="Kapasiti">
-            <%= @meeting_room_booking.participants %> / <%= @meeting_room_booking.meeting_room.capacity %> peserta
+            <%= @meeting_room_booking.participants %> / <%= @meeting_room_booking.meeting_room.capacity %> Orang
           </:item>
           <:item title="Kemudahan">
             <%= case @meeting_room_booking.meeting_room.available_facility do %>

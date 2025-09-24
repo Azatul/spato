@@ -203,9 +203,9 @@ defmodule SpatoWeb.AvailableRoomLive do
 
                   <h3 class="font-bold text-lg mb-1"><%= room.name %></h3>
                   <p class="text-gray-600 mb-2"><%= room.location %></p>
-                  <p class="text-sm text-gray-500 mb-3"><%= room.capacity %> peserta</p>
+                  <p class="text-sm text-gray-500 mb-3">Kapasiti: <%= room.capacity %> Orang</p>
 
-                  <%= if @filters["start_time"] && @filters["end_time"] do %>
+                <%= if @filters["start_time"] not in [nil, ""] and @filters["end_time"] not in [nil, ""] do %>
                     <.link
                       patch={
                         ~p"/available_rooms?#{%{
@@ -232,7 +232,7 @@ defmodule SpatoWeb.AvailableRoomLive do
 
             <%= if Enum.empty?(@rooms) do %>
               <div class="text-center py-12">
-                <%= if @filters["start_time"] != "" and @filters["end_time"] != "" do %>
+                <%= if @filters["start_time"] not in [nil, ""] and @filters["end_time"] not in [nil, ""] do %>
                   <p class="text-red-500 text-lg font-semibold">
                     Tiada bilik mesyuarat tersedia untuk tarikh & masa yang dipilih.
                   </p>

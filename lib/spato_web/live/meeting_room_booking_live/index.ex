@@ -12,7 +12,7 @@ defmodule SpatoWeb.MeetingRoomBookingLive.Index do
   def mount(_params, _session, socket) do
     {:ok,
      socket
-     |> assign(:active_tab, "meeting_room_bookings")
+     |> assign(:active_tab, "meeting_rooms")
      |> assign(:sidebar_open, true)
      |> assign(:current_user, socket.assigns.current_user)
      |> assign(:filter_status, "all")
@@ -160,13 +160,11 @@ defmodule SpatoWeb.MeetingRoomBookingLive.Index do
   def handle_event("cancel", %{"id" => id}, socket) do
     booking = Bookings.get_meeting_room_booking!(id)
 
-    case Bookings.cancel_booking(booking, socket.assigns.current_user) do
+    case Bookings.cancel_meeting_room_booking(booking, socket.assigns.current_user) do
       {:ok, _} ->
-        # reload both bookings and stats
         {:noreply,
          socket
-         |> reload_data()
-         |> assign(:stats, Bookings.get_user_meeting_room_booking_stats(socket.assigns.current_user.id))}
+         |> reload_data()}
 
       {:error, :not_allowed} ->
         {:noreply, socket |> put_flash(:error, "Tidak boleh batal selepas tindakan admin.")}

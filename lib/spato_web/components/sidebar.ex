@@ -56,7 +56,7 @@ defmodule SpatoWeb.Components.Sidebar do
             <%= if @open do %>
               <details
                 class="group"
-                open={@active_tab in ["meeting_rooms", "vehicles", "admin_vehicles", "catering", "equipments"]}>
+                open={@active_tab in ["admin_meeting_rooms", "meeting_rooms", "vehicles", "admin_vehicles", "catering", "equipments"]}>
                 <summary class="flex items-center justify-between px-4 py-2 rounded-md hover:bg-gray-200 cursor-pointer">
                   <div class="flex items-center gap-2">
                     <.icon name="hero-calendar" class="w-5 h-5" />
@@ -69,7 +69,7 @@ defmodule SpatoWeb.Components.Sidebar do
                   <li>
                     <.sidebar_link
                       patch={if @current_user.role == "admin", do: "/admin/meeting_room_bookings", else: "/meeting_room_bookings"}
-                      active={@active_tab in ["meeting_room_bookings", "admin_meeting_room_bookings"]}
+                      active={@active_tab in ["meeting_rooms", "admin_meeting_rooms"]}
                       open={@open}>
                       Tempahan Bilik Mesyuarat
                     </.sidebar_link>

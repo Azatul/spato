@@ -411,26 +411,31 @@ defmodule Spato.Bookings do
       page: page
     }
   end
+
+  # --- Available Rooms ---
   def available_rooms(filters) do
     import Ecto.Query
     alias Spato.Repo
-    alias Spato.Bookings.MeetingRoom
+    alias Spato.Assets.MeetingRoom
+    alias Spato.Bookings.MeetingRoomBooking
 
-
-    query = filters["query"]
+    query    = filters["query"]
     capacity = filters["capacity"]
-    page = Map.get(filters, "page", 1) |> to_int()
+    page     = Map.get(filters, "page", 1) |> to_int()
     per_page = 12
-    offset = (page - 1) * per_page
+    offset   = (page - 1) * per_page
 
-    start_time = parse_datetime(filters["date_start"])
-    end_time = parse_datetime(filters["date_end"])
+    # Parse filter times
+    start_time = parse_datetime(filters["start_time"])
+    end_time   = parse_datetime(filters["end_time"])
 
+    # Base query – only rooms with status "tersedia"
     base_query =
-      from r in Spato.Assets.MeetingRoom,
+      from r in MeetingRoom,
         preload: [:meeting_room_bookings],
         where: r.status == "tersedia"
 
+    # Capacity filter
     base_query =
       if capacity not in [nil, ""] do
         case Integer.parse(capacity) do
@@ -441,14 +446,17 @@ defmodule Spato.Bookings do
         base_query
       end
 
+    # Search filter
     base_query =
       if query not in [nil, ""] do
         like_q = "%#{query}%"
-        from r in base_query, where: ilike(r.name, ^like_q) or ilike(r.location, ^like_q)
+        from r in base_query,
+          where: ilike(r.name, ^like_q) or ilike(r.location, ^like_q)
       else
         base_query
       end
 
+    # Availability filter – exclude rooms with conflicting bookings
     final_query =
       if start_time && end_time do
         from r in base_query,
@@ -465,9 +473,11 @@ defmodule Spato.Bookings do
         base_query
       end
 
+    # Total count for pagination
     total = final_query |> exclude(:order_by) |> Repo.aggregate(:count, :id)
     total_pages = ceil(total / per_page)
 
+    # Paginated results
     rooms_page =
       final_query
       |> limit(^per_page)
@@ -481,8 +491,6 @@ defmodule Spato.Bookings do
       page: page
     }
   end
-
-
 
   def get_meeting_room_booking!(id) do
     Repo.get!(MeetingRoomBooking, id)
@@ -530,72 +538,9 @@ defmodule Spato.Bookings do
     end
   end
 
-   # --- Private Helpers ---
-
-   defp scope_meeting_room_by_user(query, nil), do: query
-   defp scope_meeting_room_by_user(query, user),
-     do: (from vb in query, where: vb.user_id == ^user.id)
-
-   defp to_int(val) when is_integer(val), do: val
-   defp to_int(val) when is_binary(val), do: String.to_integer(val)
-   defp to_int(_), do: 1
-
    import Ecto.Query
 
    def get_meeting_room_booking_stats do
-     now = DateTime.utc_now()
-
-     total = Repo.aggregate(MeetingRoomBooking, :count, :id)
-     pending = Repo.aggregate(from(v in MeetingRoomBooking, where: v.status == "pending"), :count, :id)
-     approved = Repo.aggregate(from(v in MeetingRoomBooking, where: v.status == "approved"), :count, :id)
-
-     # Active = approved and current time between pickup and return
-     active =
-       Repo.aggregate(
-         from(v in MeetingRoomBooking,
-           where: v.status == "approved" and
-                  v.start_time <= ^now and
-                  v.end_time >= ^now
-         ),
-         :count,
-         :id
-       )
-
-     %{
-       total: total,
-       pending: pending,
-       approved: approved,
-       active: active
-     }
-   end
-
-   def get_user_meeting_room_booking_stats_meeting_room(user_id) do
-     now = Date.utc_today()
-     # Get the weekday (1 = Monday, 7 = Sunday)
-     weekday = Date.day_of_week(now)
-     # Beginning of week (Monday)
-     beginning_of_week = Date.add(now, -weekday + 1)
-     # End of week (Sunday)
-     end_of_week = Date.add(beginning_of_week, 6)
-
-     # Convert to DateTime in UTC
-     {:ok, beginning_of_week_dt} = DateTime.new(beginning_of_week, ~T[00:00:00], "Etc/UTC")
-     {:ok, end_of_week_dt} = DateTime.new(end_of_week, ~T[23:59:59], "Etc/UTC")
-
-     base_query =
-      from vb in MeetingRoomBooking_meeting_room,
-        where: vb.user_id == ^user_id
-
-    %{
-      total: Repo.aggregate(base_query, :count, :id),
-      pending: Repo.aggregate(from(vb in base_query, where: vb.status == "pending"), :count, :id),
-      approved: Repo.aggregate(from(vb in base_query, where: vb.status == "approved"), :count, :id),
-      rejected: Repo.aggregate(from(vb in base_query, where: vb.status == "rejected"), :count, :id),
-      completed: Repo.aggregate(from(vb in base_query, where: vb.status == "completed"), :count, :id)
-     }
-   end
-
-   def get_meeting_room_booking_stats_meeting_room do
     now = DateTime.utc_now()
 
     total =
@@ -633,6 +578,48 @@ defmodule Spato.Bookings do
       pending: pending,
       approved: approved,
       active: active
+    }
+  end
+
+  def get_user_meeting_room_booking_stats(user_id) do
+    now = DateTime.utc_now()
+
+    base_query =
+      from b in MeetingRoomBooking,
+        where: b.user_id == ^user_id
+
+    total =
+      Repo.aggregate(base_query, :count, :id)
+
+    pending =
+      Repo.aggregate(
+        from(b in base_query, where: b.status == "pending"),
+        :count,
+        :id
+      )
+
+    approved =
+      Repo.aggregate(
+        from(b in base_query, where: b.status == "approved"),
+        :count,
+        :id
+      )
+
+    # Completed = approved and end_time has passed
+    completed =
+      Repo.aggregate(
+        from(b in base_query,
+          where: b.status == "approved" and b.end_time <= ^now
+        ),
+        :count,
+        :id
+      )
+
+    %{
+      total: total,
+      pending: pending,
+      approved: approved,
+      completed: completed
     }
   end
 
