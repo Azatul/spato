@@ -99,6 +99,7 @@ defmodule SpatoWeb.EquipmentBookingLive.FormComponent do
       "serial_number" => equipment.serial_number,
       "type" => equipment.type,
       "available_quantity" => equipment.available_quantity,
+      "total_quantity" => equipment.total_quantity,
       "requested_quantity" => attrs["requested_quantity"] || 1
     })
   end
