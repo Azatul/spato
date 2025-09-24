@@ -25,7 +25,7 @@ defmodule SpatoWeb.CateringBookingLive.ShowComponent do
           </div>
         </:item>
         <:item title="Jumlah Kos">
-          RM <%= :erlang.float_to_binary(Decimal.to_float(@catering_booking.total_cost), [decimals: 2]) %>
+            <%= Spato.Bookings.format_money(@catering_booking.total_cost) %>
         </:item>
         <:item title="Status">
           <span class={
@@ -50,7 +50,7 @@ defmodule SpatoWeb.CateringBookingLive.ShowComponent do
         <.list>
           <:item title="Nama Menu"><%= @catering_booking.menu.name %></:item>
           <:item title="Penerangan"><%= @catering_booking.menu.description %></:item>
-          <:item title="Harga Per Kepala">RM <%= :erlang.float_to_binary(Decimal.to_float(@catering_booking.menu.price_per_head), [decimals: 2]) %></:item>
+          <:item title="Harga Per Kepala"><%= Spato.Bookings.format_money(@catering_booking.menu.price_per_head) %></:item>
           <:item title="Jenis">
             <%= case @catering_booking.menu.type do %>
               <% "sarapan" -> %>

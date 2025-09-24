@@ -36,7 +36,9 @@ defmodule SpatoWeb.CateringBookingLive.AdminShowComponent do
         </:item>
 
         <:item title="Jumlah Kos">
-          <span class="font-medium text-gray-900">RM <%= Decimal.to_string(@catering_booking.total_cost, :normal) %></span>
+          <span class="font-medium text-gray-900">
+            <%= Spato.Bookings.format_money(@catering_booking.total_cost) %>
+          </span>
         </:item>
 
         <:item title="Status">
@@ -119,7 +121,7 @@ defmodule SpatoWeb.CateringBookingLive.AdminShowComponent do
                 <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-gray-400">Lain</span>
             <% end %>
           </:item>
-          <:item title="Harga Seunit">RM <%= Decimal.to_string(@catering_booking.menu.price, :normal) %></:item>
+          <:item title="Harga Seunit"><%= Spato.Bookings.format_money(@catering_booking.menu.price_per_head) %></:item>
           <:item title="Penerangan"><%= @catering_booking.menu.description || "-" %></:item>
         </.list>
       <% else %>

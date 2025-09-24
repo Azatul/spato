@@ -53,6 +53,8 @@ defmodule SpatoWeb.Router do
 
     live "/catering_bookings/:id", CateringBookingLive.Index, :show
     live "/catering_bookings/:id/show/edit", CateringBookingLive.Index, :edit
+    live "/catering_bookings/:id", CateringBookingLive.Index, :show
+    live "/catering_bookings/:id/show/edit", CateringBookingLive.Show, :edit
     live "/available_catering", AvailableCateringLive
   end
 

@@ -21,11 +21,11 @@ defmodule SpatoWeb.CateringBookingLive.FormComponent do
       >
         <!-- Menu info (readonly, prefilled if chosen) -->
         <%= if @menu do %>
-            <.input field={@form[:menu_name]} label="Nama Menu" readonly />
-            <.input field={@form[:menu_description]} label="Penerangan Menu" readonly />
-            <.input field={@form[:menu_type]} label="Jenis Menu" readonly />
-            <.input field={@form[:price_per_head]} label="Harga Per Kepala" readonly />
-            <input type="hidden" name="catering_booking[menu_id]" value={@menu.id} />
+          <.input field={@form[:menu_name]} label="Nama Menu" readonly />
+          <.input field={@form[:menu_description]} label="Penerangan Menu" readonly />
+          <.input field={@form[:menu_type]} label="Jenis Menu" readonly />
+          <.input field={@form[:price_per_head]} label="Harga Per Kepala" readonly />
+          <input type="hidden" name="catering_booking[menu_id]" value={@menu.id} />
         <% end %>
 
         <!-- Prefilled date and time -->
@@ -122,13 +122,25 @@ defmodule SpatoWeb.CateringBookingLive.FormComponent do
   def handle_event("validate", %{"catering_booking" => catering_booking_params}, socket) do
     # Recalculate total cost if participants changed
     params =
-      if socket.assigns.menu && catering_booking_params["participants"] do
-        case Integer.parse(catering_booking_params["participants"]) do
-          {num, _} ->
-            total_cost = Decimal.mult(socket.assigns.menu.price_per_head, Decimal.new(num))
-            Map.put(catering_booking_params, "total_cost", total_cost)
-          _ ->
-            catering_booking_params
+      if socket.assigns.menu do
+        case catering_booking_params["participants"] do
+          nil ->
+            Map.put(catering_booking_params, "total_cost", Decimal.new("0.00"))
+
+          "" ->
+            Map.put(catering_booking_params, "total_cost", Decimal.new("0.00"))
+
+          val ->
+            case Integer.parse(val) do
+              {num, _} ->
+                total_cost =
+                  Decimal.mult(socket.assigns.menu.price_per_head, Decimal.new(num))
+
+                Map.put(catering_booking_params, "total_cost", total_cost)
+
+              _ ->
+                Map.put(catering_booking_params, "total_cost", Decimal.new("0.00"))
+            end
         end
       else
         catering_booking_params
@@ -144,21 +156,6 @@ defmodule SpatoWeb.CateringBookingLive.FormComponent do
   @impl true
   def handle_event("save", %{"catering_booking" => catering_booking_params}, socket) do
     save_catering_booking(socket, socket.assigns.action, catering_booking_params)
-  end
-
-  defp save_catering_booking(socket, :edit, catering_booking_params) do
-    case Bookings.update_catering_booking(socket.assigns.catering_booking, catering_booking_params) do
-      {:ok, catering_booking} ->
-        notify_parent({:saved, catering_booking})
-
-        {:noreply,
-         socket
-         |> put_flash(:info, "Tempahan katering berjaya dikemaskini")
-         |> push_patch(to: socket.assigns.patch)}
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, form: to_form(changeset))}
-    end
   end
 
   defp save_catering_booking(socket, :new, catering_booking_params) do

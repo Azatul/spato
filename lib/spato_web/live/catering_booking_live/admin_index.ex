@@ -265,11 +265,7 @@ defmodule SpatoWeb.CateringBookingLive.AdminIndex do
 
                 <:col :let={booking} label="Jumlah Kos">
                     <span class="font-medium text-gray-900">
-                      <%= if booking.total_cost do %>
-                        RM <%= Decimal.to_string(booking.total_cost, :normal) %>
-                      <% else %>
-                        RM 0.00
-                      <% end %>
+                      <%= Spato.Bookings.format_money(booking.total_cost) %>
                     </span>
                   </:col>
 
