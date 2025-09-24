@@ -44,9 +44,15 @@ defmodule SpatoWeb.AdminDashboardLive do
                         <p class="text-3xl font-bold mt-1">12</p>
                     </div>
                     <div class="w-full flex justify-end">
-                        <button class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-1 px-4 rounded-md shadow-lg transition-colors mt-4 text-sm">
-                            Ambil tindakan →
-                        </button>
+                    <.link
+                        patch={if @current_user.role == "admin", do: "/admin/meeting_rooms_bookings", else: "/meeting_rooms_bookings"}
+                        class="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 font-medium rounded-full transition-colors text-sm"
+                        >
+                       Ambil tindakan
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                        </svg>
+                    </.link>
                     </div>
                 </div>
 
@@ -57,9 +63,15 @@ defmodule SpatoWeb.AdminDashboardLive do
                         <p class="text-3xl font-bold mt-1">8</p>
                     </div>
                     <div class="w-full flex justify-end">
-                        <button class="bg-green-600 hover:bg-green-700 text-white font-semibold py-1 px-4 rounded-md shadow-lg transition-colors mt-4 text-sm">
-                            Ambil tindakan →
-                        </button>
+                        <.link
+                        patch={if @current_user.role == "admin", do: "/admin/vehicle_bookings", else: "/vehicle_bookings"}
+                        class="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 font-medium rounded-full transition-colors text-sm"
+                        >
+                        Ambil tindakan
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                        </svg>
+                        </.link>
                     </div>
                 </div>
 
@@ -70,9 +82,15 @@ defmodule SpatoWeb.AdminDashboardLive do
                         <p class="text-3xl font-bold mt-1">4</p>
                     </div>
                     <div class="w-full flex justify-end">
-                        <button class="bg-yellow-500 hover:bg-yellow-700 text-white font-semibold py-1 px-4 rounded-md shadow-lg transition-colors mt-4 text-sm">
-                            Ambil tindakan →
-                        </button>
+                    <.link
+                        patch={if @current_user.role == "admin", do: "/admin/catering_bookings", else: "/catering_bookings"}
+                        class="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 font-medium rounded-full transition-colors text-sm"
+                        >
+                       Ambil tindakan
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                        </svg>
+                    </.link>
                     </div>
                 </div>
 
@@ -83,9 +101,15 @@ defmodule SpatoWeb.AdminDashboardLive do
                         <p class="text-3xl font-bold mt-1">12</p>
                     </div>
                     <div class="w-full flex justify-end">
-                        <button class="bg-red-600 hover:bg-red-700 text-white font-semibold py-1 px-4 rounded-md shadow-lg transition-colors mt-4 text-sm">
-                            Ambil tindakan →
-                        </button>
+                    <.link
+                        patch={if @current_user.role == "admin", do: "/admin/equipment_bookings", else: "/equipment_bookings"}
+                        class="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 font-medium rounded-full transition-colors text-sm"
+                        >
+                       Ambil tindakan
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                        </svg>
+                    </.link>
                     </div>
                 </div>
             </div>
