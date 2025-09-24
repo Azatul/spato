@@ -118,6 +118,7 @@ defmodule SpatoWeb.CateringBookingLive.AdminIndex do
     |> assign(:catering_bookings_page, data.catering_bookings_page)
     |> assign(:total_pages, data.total_pages)
     |> assign(:filtered_count, data.total)
+    |> assign(:stats, Bookings.get_catering_booking_stats())
     |> assign(:page, data.page)
   end
 

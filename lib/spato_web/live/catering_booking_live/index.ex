@@ -107,6 +107,7 @@ defmodule SpatoWeb.CateringBookingLive.Index do
     |> assign(:catering_bookings_page, data.catering_bookings_page)
     |> assign(:total_pages, data.total_pages)
     |> assign(:filtered_count, data.total)
+    |> assign(:stats, Bookings.get_user_catering_booking_stats(socket.assigns.current_user.id))
     |> assign(:page, data.page)
   end
 
@@ -309,7 +310,7 @@ defmodule SpatoWeb.CateringBookingLive.Index do
                 <:col :let={booking} label="Jumlah Kos">
                   <div class="font-medium text-gray-900">
                     <%= if booking.total_cost do %>
-                      RM <%= :erlang.float_to_binary(Decimal.to_float(booking.total_cost), [decimals: 2]) %>
+                      <%= Spato.Bookings.format_money(booking.total_cost) %>
                     <% else %>
                       RM 0.00
                     <% end %>
