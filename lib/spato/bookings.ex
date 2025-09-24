@@ -624,4 +624,9 @@ defmodule Spato.Bookings do
       completed: Repo.aggregate(from(cb in base_query, where: cb.status == "completed"), :count, :id)
     }
   end
+
+  def format_money(nil), do: "RM 0.00"
+  def format_money(%Decimal{} = dec),
+  do: "RM #{:erlang.float_to_binary(Decimal.to_float(dec), [decimals: 2])}"
+
 end

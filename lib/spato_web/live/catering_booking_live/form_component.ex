@@ -21,11 +21,11 @@ defmodule SpatoWeb.CateringBookingLive.FormComponent do
       >
         <!-- Menu info (readonly, prefilled if chosen) -->
         <%= if @menu do %>
-            <.input field={@form[:menu_name]} label="Nama Menu" readonly />
-            <.input field={@form[:menu_description]} label="Penerangan Menu" readonly />
-            <.input field={@form[:menu_type]} label="Jenis Menu" readonly />
-            <.input field={@form[:price_per_head]} label="Harga Per Kepala" readonly />
-            <input type="hidden" name="catering_booking[menu_id]" value={@menu.id} />
+          <.input field={@form[:menu_name]} label="Nama Menu" readonly />
+          <.input field={@form[:menu_description]} label="Penerangan Menu" readonly />
+          <.input field={@form[:menu_type]} label="Jenis Menu" readonly />
+          <.input field={@form[:price_per_head]} label="Harga Per Kepala" readonly />
+          <input type="hidden" name="catering_booking[menu_id]" value={@menu.id} />
         <% end %>
 
         <!-- Prefilled date and time -->
@@ -84,6 +84,7 @@ defmodule SpatoWeb.CateringBookingLive.FormComponent do
         total_cost =
           case attrs["participants"] do
             nil -> Decimal.new("0.00")
+            "" -> Decimal.new("0.00")
             participants ->
               case Integer.parse(participants) do
                 {num, _} -> Decimal.mult(menu.price_per_head, Decimal.new(num))
@@ -96,7 +97,8 @@ defmodule SpatoWeb.CateringBookingLive.FormComponent do
           "menu_name" => menu.name,
           "menu_description" => menu.description,
           "menu_type" => Spato.Assets.CateringMenu.human_type(menu.type),
-          "price_per_head" => "RM #{:erlang.float_to_binary(Decimal.to_float(menu.price_per_head), [decimals: 2])}",
+          "price_per_head" =>
+            "RM #{:erlang.float_to_binary(Decimal.to_float(menu.price_per_head), [decimals: 2])}",
           "total_cost" => total_cost,
           "status" => "pending"
         })
@@ -119,13 +121,25 @@ defmodule SpatoWeb.CateringBookingLive.FormComponent do
   def handle_event("validate", %{"catering_booking" => catering_booking_params}, socket) do
     # Recalculate total cost if participants changed
     params =
-      if socket.assigns.menu && catering_booking_params["participants"] do
-        case Integer.parse(catering_booking_params["participants"]) do
-          {num, _} ->
-            total_cost = Decimal.mult(socket.assigns.menu.price_per_head, Decimal.new(num))
-            Map.put(catering_booking_params, "total_cost", total_cost)
-          _ ->
-            catering_booking_params
+      if socket.assigns.menu do
+        case catering_booking_params["participants"] do
+          nil ->
+            Map.put(catering_booking_params, "total_cost", Decimal.new("0.00"))
+
+          "" ->
+            Map.put(catering_booking_params, "total_cost", Decimal.new("0.00"))
+
+          val ->
+            case Integer.parse(val) do
+              {num, _} ->
+                total_cost =
+                  Decimal.mult(socket.assigns.menu.price_per_head, Decimal.new(num))
+
+                Map.put(catering_booking_params, "total_cost", total_cost)
+
+              _ ->
+                Map.put(catering_booking_params, "total_cost", Decimal.new("0.00"))
+            end
         end
       else
         catering_booking_params
@@ -148,25 +162,11 @@ defmodule SpatoWeb.CateringBookingLive.FormComponent do
       catering_booking_params
       |> Map.put_new("user_id", socket.assigns.current_user.id)
       |> Map.put_new("status", "pending")
-
-    case Bookings.create_catering_booking(params) do
-      {:ok, catering_booking} ->
-        notify_parent({:saved, catering_booking})
-
-        {:noreply,
-         socket
-         |> put_flash(:info, "Tempahan katering berjaya dibuat")
-         |> push_patch(to: socket.assigns.patch)}
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, form: to_form(changeset))}
-    end
-  end
-
-  defp save_catering_booking(socket, :new, catering_booking_params) do
-    params =
-      catering_booking_params
-      |> Map.put_new("user_id", socket.assigns.current_user.id)
+      |> Map.update("total_cost", Decimal.new("0.00"), fn
+        nil -> Decimal.new("0.00")
+        "" -> Decimal.new("0.00")
+        val -> val
+      end)
 
     case Bookings.create_catering_booking(params) do
       {:ok, catering_booking} ->
