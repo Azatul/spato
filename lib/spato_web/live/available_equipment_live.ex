@@ -26,6 +26,7 @@ defmodule SpatoWeb.AvailableEquipmentLive do
      |> assign(:equipments, [])
      |> assign(:filters, filters)
      |> assign(:form, to_form(filters))
+     |> assign(:invalid_dates, false)
      |> assign(:page, 1)
      |> assign(:total_pages, 1)
      |> assign(:total, 0)
@@ -62,17 +63,28 @@ defmodule SpatoWeb.AvailableEquipmentLive do
       "return_at" => Map.get(filters, "return_at", "")
     }
 
-    {:noreply,
-     push_patch(socket,
-       to:
-         ~p"/available_equipments?#{%{
-           query: new_filters["query"],
-           type: new_filters["type"],
-           usage_at: new_filters["usage_at"],
-           return_at: new_filters["return_at"],
-           page: 1
-         }}"
-     )}
+    case validate_dates(new_filters) do
+      true ->
+        {:noreply,
+         socket
+         |> assign(:invalid_dates, false)
+         |> push_patch(to:
+           ~p"/available_equipments?#{%{
+             query: new_filters["query"],
+             type: new_filters["type"],
+             usage_at: new_filters["usage_at"],
+             return_at: new_filters["return_at"],
+             page: 1
+           }}"
+         )}
+
+      false ->
+        {:noreply,
+         socket
+         |> assign(:filters, new_filters)
+         |> assign(:form, to_form(new_filters))
+         |> assign(:invalid_dates, true)}
+    end
   end
 
   @impl true
@@ -172,6 +184,19 @@ defmodule SpatoWeb.AvailableEquipmentLive do
     {:noreply, load_equipments(socket)}
   end
 
+  defp validate_dates(%{"usage_at" => usage_at, "return_at" => return_at}) do
+    with {:ok, usage, _} <- DateTime.from_iso8601(usage_at <> ":00Z"),
+         {:ok, return, _} <- DateTime.from_iso8601(return_at <> ":00Z"),
+         true <- DateTime.compare(usage, DateTime.utc_now()) != :lt,
+         true <- DateTime.compare(return, usage) == :gt do
+      true
+    else
+      _ -> false
+    end
+  end
+
+  defp validate_dates(_), do: false
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -220,8 +245,25 @@ defmodule SpatoWeb.AvailableEquipmentLive do
                     class="w-40"
                   />
 
-                  <.input field={@form[:usage_at]} type="datetime-local" label="Tarikh & Masa Guna" class="w-44" />
-                  <.input field={@form[:return_at]} type="datetime-local" label="Tarikh & Masa Pulang" class="w-44" />
+                 <.input
+                    field={@form[:usage_at]}
+                    type="datetime-local"
+                    label="Tarikh & Masa Guna"
+                    class={
+                      ["w-44",
+                      if(@invalid_dates, do: "border-red-500 focus:ring-red-500", else: "border-gray-300")]
+                    }
+                  />
+
+                  <.input
+                    field={@form[:return_at]}
+                    type="datetime-local"
+                    label="Tarikh & Masa Pulang"
+                    class={
+                      ["w-44",
+                      if(@invalid_dates, do: "border-red-500 focus:ring-red-500", else: "border-gray-300")]
+                    }
+                  />
 
                   <.button type="submit" class="bg-gray-900 text-white px-5 py-2 rounded-lg shadow-md hover:bg-gray-700 transition flex-shrink-0">
                     Cari
@@ -248,37 +290,39 @@ defmodule SpatoWeb.AvailableEquipmentLive do
                     <% end %>
                   </p>
 
-                <%= if @filters["usage_at"] not in [nil, ""] and @filters["return_at"] not in [nil, ""] do %>
-                    <.link
-                      patch={
-                        ~p"/available_equipments?#{%{
-                          action: "new",
-                          equipment_id: equipment.id,
-                          query: @filters["query"],
-                          type: @filters["type"],
-                          usage_at: @filters["usage_at"],
-                          return_at: @filters["return_at"],
-                          page: @page
-                        }}"
-                      }
-                      class="block"
-                    >
-                      <.button class="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
-                        Tempah Sekarang
-                      </.button>
-                    </.link>
-                  <% else %>
-                    <button class="w-full bg-gray-300 text-gray-500 px-4 py-2 rounded-md cursor-not-allowed" disabled>
-                      Pilih Tarikh & Masa Dahulu
-                    </button>
-                  <% end %>
+                <%= if @filters["usage_at"] not in [nil, ""] and
+                        @filters["return_at"] not in [nil, ""] and
+                        validate_dates(@filters) do %>
+                  <.link
+                    patch={
+                      ~p"/available_equipments?#{%{
+                        action: "new",
+                        equipment_id: equipment.id,
+                        query: @filters["query"],
+                        type: @filters["type"],
+                        usage_at: @filters["usage_at"],
+                        return_at: @filters["return_at"],
+                        page: @page
+                      }}"
+                    }
+                    class="block"
+                  >
+                    <.button class="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                      Tempah Sekarang
+                    </.button>
+                  </.link>
+                <% else %>
+                  <button class="w-full bg-gray-300 text-gray-500 px-4 py-2 rounded-md cursor-not-allowed" disabled>
+                    Pilih Tarikh & Masa Dahulu
+                  </button>
+                <% end %>
                 </div>
               <% end %>
             </div>
 
             <%= if Enum.empty?(@equipments) do %>
               <div class="text-center py-12">
-                <%= if @filters["usage_at"] not in [nil, ""] and @filters["return_at"] not in [nil, ""] do %>
+                <%= if @filters["usage_at"] not in [nil, ""] and @filters["return_at"] not in [nil, ""] and validate_dates(@filters) == {:ok, @filters} do %>
                   <p class="text-red-500 text-lg font-semibold">
                     Tiada peralatan tersedia untuk tarikh & masa yang dipilih.
                   </p>
