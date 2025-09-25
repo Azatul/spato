@@ -63,17 +63,34 @@ defmodule SpatoWeb.AvailableEquipmentLive do
     }
 
     {:noreply,
-     socket
-     |> assign(:filters, new_filters)
-     |> assign(:form, to_form(filters))
-     |> assign(:page, 1)
-     |> load_equipments()}
+     push_patch(socket,
+       to:
+         ~p"/available_equipments?#{%{
+           query: new_filters["query"],
+           type: new_filters["type"],
+           usage_at: new_filters["usage_at"],
+           return_at: new_filters["return_at"],
+           page: 1
+         }}"
+     )}
   end
 
   @impl true
   def handle_event("next_page", _, socket) do
     if socket.assigns.page < socket.assigns.total_pages do
-      {:noreply, assign(socket, :page, socket.assigns.page + 1) |> load_equipments()}
+      new_page = socket.assigns.page + 1
+
+      {:noreply,
+       push_patch(socket,
+         to:
+           ~p"/available_equipments?#{%{
+             query: socket.assigns.filters["query"],
+             type: socket.assigns.filters["type"],
+             usage_at: socket.assigns.filters["usage_at"],
+             return_at: socket.assigns.filters["return_at"],
+             page: new_page
+           }}"
+       )}
     else
       {:noreply, socket}
     end
@@ -82,7 +99,19 @@ defmodule SpatoWeb.AvailableEquipmentLive do
   @impl true
   def handle_event("prev_page", _, socket) do
     if socket.assigns.page > 1 do
-      {:noreply, assign(socket, :page, socket.assigns.page - 1) |> load_equipments()}
+      new_page = socket.assigns.page - 1
+
+      {:noreply,
+       push_patch(socket,
+         to:
+           ~p"/available_equipments?#{%{
+             query: socket.assigns.filters["query"],
+             type: socket.assigns.filters["type"],
+             usage_at: socket.assigns.filters["usage_at"],
+             return_at: socket.assigns.filters["return_at"],
+             page: new_page
+           }}"
+       )}
     else
       {:noreply, socket}
     end
@@ -94,6 +123,31 @@ defmodule SpatoWeb.AvailableEquipmentLive do
 
   @impl true
   def handle_params(params, _url, socket) do
+    page =
+      case Map.get(params, "page") do
+        p when is_integer(p) -> p
+        p when is_binary(p) ->
+          case Integer.parse(p) do
+            {v, _} -> v
+            :error -> 1
+          end
+        _ -> 1
+      end
+
+    filters = %{
+      "query" => Map.get(params, "query", ""),
+      "type" => Map.get(params, "type", "all"),
+      "usage_at" => Map.get(params, "usage_at", ""),
+      "return_at" => Map.get(params, "return_at", "")
+    }
+
+    socket =
+      socket
+      |> assign(:filters, filters)
+      |> assign(:form, to_form(filters))
+      |> assign(:page, if(page < 1, do: 1, else: page))
+      |> assign(:params, params)
+
     socket =
       case params["action"] do
         "new" ->
@@ -103,7 +157,6 @@ defmodule SpatoWeb.AvailableEquipmentLive do
           |> assign(:live_action, :new)
           |> assign(:page_title, "Tambah Tempahan Peralatan")
           |> assign(:equipment_booking, equipment_booking)
-          |> assign(:params, params)
 
         _ ->
           socket
@@ -111,7 +164,7 @@ defmodule SpatoWeb.AvailableEquipmentLive do
           |> assign(:equipment_booking, nil)
       end
 
-    {:noreply, load_equipments(socket)}
+    {:noreply, socket |> load_equipments()}
   end
 
   @impl true
@@ -133,7 +186,7 @@ defmodule SpatoWeb.AvailableEquipmentLive do
             <p class="text-md text-gray-500 mb-4">Cari dan tempah peralatan yang tersedia</p>
 
             <section class="mb-4 flex justify-end">
-              <.link patch={~p"/equipment_bookings"}>
+                <.link patch={~p"/equipment_bookings"}>
                 <.button class="bg-gray-900 text-white px-4 py-2 rounded-md hover:bg-gray-700">
                   Lihat Senarai Tempahan
                 </.button>
@@ -201,8 +254,11 @@ defmodule SpatoWeb.AvailableEquipmentLive do
                         ~p"/available_equipments?#{%{
                           action: "new",
                           equipment_id: equipment.id,
+                          query: @filters["query"],
+                          type: @filters["type"],
                           usage_at: @filters["usage_at"],
-                          return_at: @filters["return_at"]
+                          return_at: @filters["return_at"],
+                          page: @page
                         }}"
                       }
                       class="block"
@@ -254,7 +310,7 @@ defmodule SpatoWeb.AvailableEquipmentLive do
             </div>
 
             <!-- Modal -->
-            <.modal :if={@live_action in [:new, :edit]} id="equipment_booking-modal" show on_cancel={JS.patch(~p"/available_equipments")}>
+            <.modal :if={@live_action in [:new, :edit]} id="equipment_booking-modal" show on_cancel={JS.patch(~p"/available_equipments?#{%{query: @filters["query"], type: @filters["type"], usage_at: @filters["usage_at"], return_at: @filters["return_at"], page: @page}}") }>
               <.live_component
                 module={SpatoWeb.EquipmentBookingLive.FormComponent}
                 id={@equipment_booking && @equipment_booking.id || :new}
@@ -262,7 +318,7 @@ defmodule SpatoWeb.AvailableEquipmentLive do
                 action={@live_action}
                 equipment_booking={@equipment_booking}
                 current_user={@current_user}
-                patch={~p"/available_equipments"}
+                patch={~p"/available_equipments?#{%{query: @filters["query"], type: @filters["type"], usage_at: @filters["usage_at"], return_at: @filters["return_at"], page: @page}}"}
                 params={@params}
                 equipment_id={@params["equipment_id"]}
                 usage_at={@params["usage_at"]}

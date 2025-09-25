@@ -58,26 +58,45 @@ defmodule SpatoWeb.AvailableVehicleLive do
         filters when is_map(filters) -> filters
       end
 
-      new_filters = %{
-        "query" => Map.get(filters, "query", ""),
-        "type" => Map.get(filters, "type", "all"),
-        "capacity" => Map.get(filters, "capacity", ""),
-        "pickup_time" => Map.get(filters, "pickup_time", ""),
-        "return_time" => Map.get(filters, "return_time", "")
-      }
+    new_filters = %{
+      "query" => Map.get(filters, "query", ""),
+      "type" => Map.get(filters, "type", "all"),
+      "capacity" => Map.get(filters, "capacity", ""),
+      "pickup_time" => Map.get(filters, "pickup_time", ""),
+      "return_time" => Map.get(filters, "return_time", "")
+    }
 
     {:noreply,
-     socket
-     |> assign(:filters, new_filters)
-     |> assign(:form, to_form(filters)) # keep form fields as raw strings
-     |> assign(:page, 1)
-     |> load_vehicles()}
+     push_patch(socket,
+       to:
+         ~p"/available_vehicles?#{%{
+           query: new_filters["query"],
+           type: new_filters["type"],
+           capacity: new_filters["capacity"],
+           pickup_time: new_filters["pickup_time"],
+           return_time: new_filters["return_time"],
+           page: 1
+         }}"
+     )}
   end
 
   @impl true
   def handle_event("next_page", _, socket) do
     if socket.assigns.page < socket.assigns.total_pages do
-      {:noreply, socket |> assign(:page, socket.assigns.page + 1) |> load_vehicles()}
+      new_page = socket.assigns.page + 1
+
+      {:noreply,
+       push_patch(socket,
+         to:
+           ~p"/available_vehicles?#{%{
+             query: socket.assigns.filters["query"],
+             type: socket.assigns.filters["type"],
+             capacity: socket.assigns.filters["capacity"],
+             pickup_time: socket.assigns.filters["pickup_time"],
+             return_time: socket.assigns.filters["return_time"],
+             page: new_page
+           }}"
+       )}
     else
       {:noreply, socket}
     end
@@ -86,7 +105,20 @@ defmodule SpatoWeb.AvailableVehicleLive do
   @impl true
   def handle_event("prev_page", _, socket) do
     if socket.assigns.page > 1 do
-      {:noreply, socket |> assign(:page, socket.assigns.page - 1) |> load_vehicles()}
+      new_page = socket.assigns.page - 1
+
+      {:noreply,
+       push_patch(socket,
+         to:
+           ~p"/available_vehicles?#{%{
+             query: socket.assigns.filters["query"],
+             type: socket.assigns.filters["type"],
+             capacity: socket.assigns.filters["capacity"],
+             pickup_time: socket.assigns.filters["pickup_time"],
+             return_time: socket.assigns.filters["return_time"],
+             page: new_page
+           }}"
+       )}
     else
       {:noreply, socket}
     end
@@ -98,6 +130,32 @@ defmodule SpatoWeb.AvailableVehicleLive do
 
   @impl true
   def handle_params(params, _url, socket) do
+    page =
+      case Map.get(params, "page") do
+        p when is_integer(p) -> p
+        p when is_binary(p) ->
+          case Integer.parse(p) do
+            {v, _} -> v
+            :error -> 1
+          end
+        _ -> 1
+      end
+
+    filters = %{
+      "query" => Map.get(params, "query", ""),
+      "type" => Map.get(params, "type", "all"),
+      "capacity" => Map.get(params, "capacity", ""),
+      "pickup_time" => Map.get(params, "pickup_time", ""),
+      "return_time" => Map.get(params, "return_time", "")
+    }
+
+    socket =
+      socket
+      |> assign(:filters, filters)
+      |> assign(:form, to_form(filters))
+      |> assign(:page, if(page < 1, do: 1, else: page))
+      |> assign(:params, params)
+
     socket =
       case params["action"] do
         "new" ->
@@ -107,7 +165,6 @@ defmodule SpatoWeb.AvailableVehicleLive do
           |> assign(:live_action, :new)
           |> assign(:page_title, "Tambah Tempahan Kenderaan")
           |> assign(:vehicle_booking, vehicle_booking)
-          |> assign(:params, params)
 
         _ ->
           socket
@@ -237,8 +294,12 @@ defmodule SpatoWeb.AvailableVehicleLive do
                         ~p"/available_vehicles?#{%{
                           action: "new",
                           vehicle_id: vehicle.id,
+                          query: @filters["query"],
+                          type: @filters["type"],
+                          capacity: @filters["capacity"],
                           pickup_time: @filters["pickup_time"],
-                          return_time: @filters["return_time"]
+                          return_time: @filters["return_time"],
+                          page: @page
                         }}"
                       }
                       class="block"
@@ -290,7 +351,7 @@ defmodule SpatoWeb.AvailableVehicleLive do
             </div>
 
             <!-- Modal -->
-            <.modal :if={@live_action in [:new, :edit]} id="vehicle_booking-modal" show on_cancel={JS.patch(~p"/available_vehicles")}>
+            <.modal :if={@live_action in [:new, :edit]} id="vehicle_booking-modal" show on_cancel={JS.patch(~p"/available_vehicles?#{%{query: @filters["query"], type: @filters["type"], capacity: @filters["capacity"], pickup_time: @filters["pickup_time"], return_time: @filters["return_time"], page: @page}}") }>
               <.live_component
                 module={SpatoWeb.VehicleBookingLive.FormComponent}
                 id={@vehicle_booking && @vehicle_booking.id || :new}
@@ -298,7 +359,7 @@ defmodule SpatoWeb.AvailableVehicleLive do
                 action={@live_action}
                 vehicle_booking={@vehicle_booking}
                 current_user={@current_user}
-                patch={~p"/available_vehicles"}
+                patch={~p"/available_vehicles?#{%{query: @filters["query"], type: @filters["type"], capacity: @filters["capacity"], pickup_time: @filters["pickup_time"], return_time: @filters["return_time"], page: @page}}"}
                 params={@params}
               />
             </.modal>
