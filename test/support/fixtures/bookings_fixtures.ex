@@ -22,4 +22,24 @@ defmodule Spato.BookingsFixtures do
 
     vehicle_booking
   end
+
+  @doc """
+  Generate a catering_booking.
+  """
+  def catering_booking_fixture(attrs \\ %{}) do
+    {:ok, catering_booking} =
+      attrs
+      |> Enum.into(%{
+        date: ~D[2025-09-21],
+        location: "some location",
+        participants: 42,
+        special_request: "some special_request",
+        status: "some status",
+        time: ~T[14:00:00],
+        total_cost: "120.5"
+      })
+      |> Spato.Bookings.create_catering_booking()
+
+    catering_booking
+  end
 end

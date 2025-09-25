@@ -133,14 +133,14 @@ defmodule SpatoWeb.CateringMenuLive.Index do
 
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
             <%= for {label, value} <- [{"Jumlah Menu", @stats.total},
-                                      {"Aktif", @stats.active},
-                                      {"Tidak Aktif", @stats.inactive}] do %>
+                                      {"Tersedia", @stats.active},
+                                      {"Tidak Tersedia", @stats.inactive}] do %>
 
               <% number_color =
                 case label do
                   "Jumlah Menu" -> "text-gray-700"
-                  "Aktif" -> "text-green-500"
-                  "Tidak Aktif" -> "text-red-500"
+                  "Tersedia" -> "text-green-500"
+                  "Tidak Tersedia" -> "text-red-500"
                 end %>
 
               <div class="bg-white p-4 rounded-xl shadow-md flex flex-col justify-between h-30 transition-transform hover:scale-105">
@@ -175,6 +175,9 @@ defmodule SpatoWeb.CateringMenuLive.Index do
                 <option value="sarapan" selected={@filter_type == "sarapan"}>Sarapan</option>
                 <option value="makan_tengahari" selected={@filter_type == "makan_tengahari"}>Makan Tengahari</option>
                 <option value="minum_petang" selected={@filter_type == "minum_petang"}>Minum Petang</option>
+                <option value="minum_malam" selected={@filter_type == "minum_malam"}>Minum Malam</option>
+                <option value="makan_malam" selected={@filter_type == "makan_malam"}>Makan Malam</option>
+                <option value="minum_pagi" selected={@filter_type == "minum_pagi"}>Minum Pagi</option>
               </select>
             </form>
 
@@ -191,12 +194,12 @@ defmodule SpatoWeb.CateringMenuLive.Index do
 
         <.table id="catering_menus" rows={@catering_menus_page} row_click={fn menu ->
             JS.patch(
-              ~p"/admin/catering_menus/#{menu.id}?action=show&page=#{@page}&q=#{@search_query}&status=#{@filter_status}"
+              ~p"/admin/catering_menus/#{menu.id}?action=show&page=#{@page}&q=#{@search_query}&status=#{@filter_status}&type=#{@filter_type}"
             )
           end}>
           <:col :let={menu} label="ID"><%= menu.id %></:col>
           <:col :let={menu} label="Nama"><%= menu.name %></:col>
-          <:col :let={menu} label="Harga/Seorang"><%= menu.price_per_head %></:col>
+          <:col :let={menu} label="Harga/Seorang">RM <%= menu.price_per_head %></:col>
           <:col :let={menu} label="Jenis">
           <span class="px-1.5 py-0.5 rounded-md text-gray-700 text-xs font-medium bg-gray-100">
             <%= Spato.Assets.CateringMenu.human_type(menu.type) %>
@@ -217,7 +220,7 @@ defmodule SpatoWeb.CateringMenuLive.Index do
             <% end %>
           </:col>
           <:action :let={menu}>
-              <.link patch={~p"/admin/catering_menus/#{menu.id}/edit"}>Kemaskini</.link>
+              <.link patch={~p"/admin/catering_menus/#{menu.id}/edit?page=#{@page}&q=#{@search_query}&status=#{@filter_status}&type=#{@filter_type}"}>Kemaskini</.link>
             </:action>
             <:action :let={menu}>
               <.link phx-click={JS.push("delete", value: %{id: menu.id}) |> hide("##{menu.id}")} data-confirm="Padam menu?">Padam</.link>
@@ -229,7 +232,7 @@ defmodule SpatoWeb.CateringMenuLive.Index do
           <div class="relative flex items-center mt-4">
             <div class="flex-1">
               <.link
-                patch={~p"/admin/catering_menus?page=#{max(@page - 1, 1)}&q=#{@search_query}&status=#{@filter_status}"}
+                patch={~p"/admin/catering_menus?page=#{max(@page - 1, 1)}&q=#{@search_query}&status=#{@filter_status}&type=#{@filter_type}"}
                 class={"px-3 py-1 border rounded #{if @page == 1, do: "bg-gray-200 text-gray-500 cursor-not-allowed", else: "bg-white text-gray-700 hover:bg-gray-100"}"}
               >
                 Sebelumnya
@@ -239,7 +242,7 @@ defmodule SpatoWeb.CateringMenuLive.Index do
             <div class="absolute left-1/2 transform -translate-x-1/2 flex space-x-1">
               <%= for p <- 1..@total_pages do %>
                 <.link
-                  patch={~p"/admin/catering_menus?page=#{p}&q=#{@search_query}&status=#{@filter_status}"}
+                  patch={~p"/admin/catering_menus?page=#{p}&q=#{@search_query}&status=#{@filter_status}&type=#{@filter_type}"}
                   class={"px-3 py-1 border rounded #{if p == @page, do: "bg-gray-700 text-white", else: "bg-white text-gray-700 hover:bg-gray-100"}"}
                 >
                   <%= p %>
@@ -249,7 +252,7 @@ defmodule SpatoWeb.CateringMenuLive.Index do
 
             <div class="flex-1 text-right">
               <.link
-                patch={~p"/admin/catering_menus?page=#{min(@page + 1, @total_pages)}&q=#{@search_query}&status=#{@filter_status}"}
+                patch={~p"/admin/catering_menus?page=#{min(@page + 1, @total_pages)}&q=#{@search_query}&status=#{@filter_status}&type=#{@filter_type}"}
                 class={"px-3 py-1 border rounded #{if @page == @total_pages, do: "bg-gray-200 text-gray-500 cursor-not-allowed", else: "bg-white text-gray-700 hover:bg-gray-100"}"}
               >
                 Seterusnya
@@ -258,20 +261,20 @@ defmodule SpatoWeb.CateringMenuLive.Index do
           </div>
           <% end %>
 
-          <.modal :if={@live_action in [:new, :edit]} id="catering-menu-modal" show on_cancel={JS.patch(~p"/admin/catering_menus")}>
+          <.modal :if={@live_action in [:new, :edit]} id="catering-menu-modal" show on_cancel={JS.patch(~p"/admin/catering_menus?page=#{@page}&q=#{@search_query}&status=#{@filter_status}&type=#{@filter_type}")}>
           <.live_component
             module={SpatoWeb.CateringMenuLive.FormComponent}
             id={@catering_menu.id || :new}
             title={@page_title}
             action={@live_action}
             catering_menu={@catering_menu}
-            patch={~p"/admin/catering_menus"}
+            patch={~p"/admin/catering_menus?page=#{@page}&q=#{@search_query}&status=#{@filter_status}&type=#{@filter_type}"}
             current_user={@current_user}
             current_user_id={@current_user.id}
           />
         </.modal>
 
-        <.modal :if={@live_action == :show} id="catering-menu-show-modal" show on_cancel={JS.patch(~p"/admin/catering_menus?page=#{@page}&q=#{@search_query}&status=#{@filter_status}")}>
+        <.modal :if={@live_action == :show} id="catering-menu-show-modal" show on_cancel={JS.patch(~p"/admin/catering_menus?page=#{@page}&q=#{@search_query}&status=#{@filter_status}&type=#{@filter_type}")}>
           <.live_component module={SpatoWeb.CateringMenuLive.ShowComponent} id={@catering_menu.id} catering_menu={@catering_menu} />
         </.modal>
         </section>
