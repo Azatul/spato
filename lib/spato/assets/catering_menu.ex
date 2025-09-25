@@ -33,17 +33,20 @@ defmodule Spato.Assets.CateringMenu do
             },
           :invalid | %{optional(:__struct__) => none(), optional(atom() | binary()) => any()}
         ) :: Ecto.Changeset.t()
+  @types ["sarapan", "makan_tengahari", "minum_petang", "minum_malam", "makan_malam", "minum_pagi"]
   @doc false
   def changeset(catering_menu, attrs) do
     catering_menu
     |> cast(attrs, [:name, :type, :description, :price_per_head, :status, :photo_url])
     |> validate_required([:name, :description, :price_per_head, :status])
+    |> validate_inclusion(:type, @types)
   end
 
   def human_type("sarapan"), do: "Sarapan"
   def human_type("makan_tengahari"), do: "Makan Tengahari"
   def human_type("minum_petang"), do: "Minum Petang"
+  def human_type("minum_malam"), do: "Minum Malam"
+  def human_type("makan_malam"), do: "Makan Malam"
+  def human_type("minum_pagi"), do: "Minum Pagi"
   def human_type(other), do: other
-
-
 end

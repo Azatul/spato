@@ -109,16 +109,20 @@ defmodule SpatoWeb.CateringBookingLive.AdminShowComponent do
             <%= case @catering_booking.menu.type do %>
               <% "sarapan" -> %>
                 <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-orange-500">Sarapan</span>
-              <% "makan_tengah_hari" -> %>
-                <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-yellow-500">Makan Tengah Hari</span>
+              <% "makan_tengahari" -> %>
+                <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-yellow-500">Makan Tengahari</span>
               <% "makan_malam" -> %>
                 <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-purple-500">Makan Malam</span>
-              <% "minuman" -> %>
-                <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-blue-500">Minuman</span>
-              <% "snek" -> %>
-                <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-green-500">Snek</span>
+              <% "minum_petang" -> %>
+                <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-blue-500">Minum Petang</span>
+              <% "minum_malam" -> %>
+                <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-green-500">Minum Malam</span>
+              <% "minum_pagi" -> %>
+                <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-blue-500">Minum Pagi</span>
+              <% "all" -> %>
+                <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-gray-400">Semua</span>
               <% _ -> %>
-                <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-gray-400">Lain</span>
+                <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-gray-400">Semua</span>
             <% end %>
           </:item>
           <:item title="Harga Seunit"><%= Spato.Bookings.format_money(@catering_booking.menu.price_per_head) %></:item>

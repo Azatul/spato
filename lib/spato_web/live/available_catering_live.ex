@@ -161,10 +161,12 @@ defmodule SpatoWeb.AvailableCateringLive do
                   label="Jenis"
                   options={[
                     {"Sarapan", "sarapan"},
-                    {"Makan Tengah Hari", "makan_tengah_hari"},
+                    {"Makan Tengah Hari", "makan_tengahari"},
                     {"Makan Malam", "makan_malam"},
-                    {"Minuman", "minuman"},
-                    {"Snek", "snek"}
+                    {"Minum Petang", "minum_petang"},
+                    {"Minum Malam", "minum_malam"},
+                    {"Minum Pagi", "minum_pagi"},
+                    {"Semua", "all"}
                   ]}
                   class="w-40"
                 />
@@ -196,11 +198,12 @@ defmodule SpatoWeb.AvailableCateringLive do
                     <div class="absolute top-2 right-2">
                       <%= case menu.type do %>
                         <% "sarapan" -> %><span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-orange-500">Sarapan</span>
-                        <% "makan_tengah_hari" -> %><span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-yellow-500">Makan Tengah Hari</span>
+                        <% "makan_tengahari" -> %><span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-yellow-500">Makan Tengahari</span>
                         <% "makan_malam" -> %><span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-purple-500">Makan Malam</span>
-                        <% "minuman" -> %><span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-blue-500">Minuman</span>
-                        <% "snek" -> %><span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-green-500">Snek</span>
-                        <% _ -> %><span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-gray-400">Lain</span>
+                        <% "minum_petang" -> %><span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-blue-500">Minum Petang</span>
+                        <% "minum_malam" -> %><span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-green-500">Minum Malam</span>
+                        <% "minum_pagi" -> %><span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-blue-500">Minum Pagi</span>
+                        <% "all" -> %><span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-gray-400">Semua</span>
                       <% end %>
                     </div>
                   </div>
@@ -209,7 +212,7 @@ defmodule SpatoWeb.AvailableCateringLive do
                   <p class="text-gray-600 mb-2">RM <%= Decimal.to_string(menu.price_per_head, :normal) %></p>
                   <p class="text-sm text-gray-500 mb-3"><%= menu.description || "Tiada penerangan" %></p>
 
-                  <%= if @filters["date"] do %>
+                <%= if @filters["date"] not in [nil, ""] do %>
                     <.link
                       patch={
                         ~p"/available_catering?#{%{
@@ -235,7 +238,7 @@ defmodule SpatoWeb.AvailableCateringLive do
 
             <%= if Enum.empty?(@menus) do %>
               <div class="text-center py-12">
-                <%= if @filters["date"] != "" do %>
+                <%= if @filters["date"] not in [nil, ""] do %>
                   <p class="text-red-500 text-lg font-semibold">
                     Tiada menu katering tersedia untuk tarikh yang dipilih.
                   </p>

@@ -36,12 +36,10 @@ defmodule Spato.Bookings.CateringBooking do
     |> update_change(:status, &String.downcase/1)
   end
 
-
   def human_status("pending"), do: "Menunggu Kelulusan"
   def human_status("approved"), do: "Diluluskan"
   def human_status("rejected"), do: "Ditolak"
   def human_status("cancelled"), do: "Dibatalkan"
   def human_status("completed"), do: "Selesai"
   def human_status(other), do: other
-
 end

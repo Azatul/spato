@@ -273,14 +273,20 @@ defmodule SpatoWeb.CateringBookingLive.Index do
                       </div>
                       <div class="mt-1">
                         <%= case booking.menu.type do %>
+                          <% "all" -> %>
+                            <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-gray-400">Semua</span>
                           <% "sarapan" -> %>
                             <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-blue-500">Sarapan</span>
                           <% "makan_tengahari" -> %>
                             <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-indigo-500">Makan Tengahari</span>
                           <% "minum_petang" -> %>
                             <span class="px-1.5 py-0.5 rounded-full text-black text-xs font-semibold bg-yellow-400">Minum Petang</span>
-                          <% _ -> %>
-                            <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-gray-400">Lain</span>
+                          <% "minum_malam" -> %>
+                            <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-red-500">Minum Malam</span>
+                          <% "makan_malam" -> %>
+                            <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-green-500">Makan Malam</span>
+                          <% "minum_pagi" -> %>
+                            <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-blue-500">Minum Pagi</span>
                         <% end %>
                       </div>
                     </div>
