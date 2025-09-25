@@ -837,26 +837,14 @@ defmodule Spato.Bookings do
     end
 
     def get_user_equipment_booking_stats(user_id) do
-      now = Date.utc_today()
-      weekday = Date.day_of_week(now)
-      beginning_of_week = Date.add(now, -weekday + 1)
-      end_of_week = Date.add(beginning_of_week, 6)
-
-      {:ok, beginning_of_week_dt} = DateTime.new(beginning_of_week, ~T[00:00:00], "Etc/UTC")
-      {:ok, end_of_week_dt} = DateTime.new(end_of_week, ~T[23:59:59], "Etc/UTC")
-
       base_query =
         from eb in EquipmentBooking,
-          where:
-            eb.user_id == ^user_id and
-            eb.usage_at >= ^beginning_of_week_dt and
-            eb.return_at <= ^end_of_week_dt
+          where: eb.user_id == ^user_id
 
       %{
         total: Repo.aggregate(base_query, :count, :id),
         pending: Repo.aggregate(from(eb in base_query, where: eb.status == "pending"), :count, :id),
         approved: Repo.aggregate(from(eb in base_query, where: eb.status == "approved"), :count, :id),
-        rejected: Repo.aggregate(from(eb in base_query, where: eb.status == "rejected"), :count, :id),
         completed: Repo.aggregate(from(eb in base_query, where: eb.status == "completed"), :count, :id)
       }
     end
