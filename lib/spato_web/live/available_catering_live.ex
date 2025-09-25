@@ -56,24 +56,39 @@ defmodule SpatoWeb.AvailableCateringLive do
         filters when is_map(filters) -> filters
       end
 
-      new_filters = %{
-        "query" => Map.get(filters, "query", ""),
-        "type" => Map.get(filters, "type", "all"),
-        "date" => Map.get(filters, "date", "")
-      }
+    new_filters = %{
+      "query" => Map.get(filters, "query", ""),
+      "type" => Map.get(filters, "type", "all"),
+      "date" => Map.get(filters, "date", "")
+    }
 
     {:noreply,
-     socket
-     |> assign(:filters, new_filters)
-     |> assign(:form, to_form(filters)) # keep form fields as raw strings
-     |> assign(:page, 1)
-     |> load_menus()}
+     push_patch(socket,
+       to:
+         ~p"/available_catering?#{%{
+           query: new_filters["query"],
+           type: new_filters["type"],
+           date: new_filters["date"],
+           page: 1
+         }}"
+     )}
   end
 
   @impl true
   def handle_event("next_page", _, socket) do
     if socket.assigns.page < socket.assigns.total_pages do
-      {:noreply, socket |> assign(:page, socket.assigns.page + 1) |> load_menus()}
+      new_page = socket.assigns.page + 1
+
+      {:noreply,
+       push_patch(socket,
+         to:
+           ~p"/available_catering?#{%{
+             query: socket.assigns.filters["query"],
+             type: socket.assigns.filters["type"],
+             date: socket.assigns.filters["date"],
+             page: new_page
+           }}"
+       )}
     else
       {:noreply, socket}
     end
@@ -82,7 +97,18 @@ defmodule SpatoWeb.AvailableCateringLive do
   @impl true
   def handle_event("prev_page", _, socket) do
     if socket.assigns.page > 1 do
-      {:noreply, socket |> assign(:page, socket.assigns.page - 1) |> load_menus()}
+      new_page = socket.assigns.page - 1
+
+      {:noreply,
+       push_patch(socket,
+         to:
+           ~p"/available_catering?#{%{
+             query: socket.assigns.filters["query"],
+             type: socket.assigns.filters["type"],
+             date: socket.assigns.filters["date"],
+             page: new_page
+           }}"
+       )}
     else
       {:noreply, socket}
     end
@@ -94,6 +120,30 @@ defmodule SpatoWeb.AvailableCateringLive do
 
   @impl true
   def handle_params(params, _url, socket) do
+    page =
+      case Map.get(params, "page") do
+        p when is_integer(p) -> p
+        p when is_binary(p) ->
+          case Integer.parse(p) do
+            {v, _} -> v
+            :error -> 1
+          end
+        _ -> 1
+      end
+
+    filters = %{
+      "query" => Map.get(params, "query", ""),
+      "type" => Map.get(params, "type", "all"),
+      "date" => Map.get(params, "date", "")
+    }
+
+    socket =
+      socket
+      |> assign(:filters, filters)
+      |> assign(:form, to_form(filters))
+      |> assign(:page, if(page < 1, do: 1, else: page))
+      |> assign(:params, params)
+
     socket =
       case params["action"] do
         "new" ->
@@ -103,7 +153,6 @@ defmodule SpatoWeb.AvailableCateringLive do
           |> assign(:live_action, :new)
           |> assign(:page_title, "Tambah Tempahan Katering")
           |> assign(:catering_booking, catering_booking)
-          |> assign(:params, params)
 
         _ ->
           socket
@@ -218,7 +267,10 @@ defmodule SpatoWeb.AvailableCateringLive do
                         ~p"/available_catering?#{%{
                           action: "new",
                           menu_id: menu.id,
-                          date: @filters["date"]
+                          query: @filters["query"],
+                          type: @filters["type"],
+                          date: @filters["date"],
+                          page: @page
                         }}"
                       }
                       class="block"
@@ -270,7 +322,7 @@ defmodule SpatoWeb.AvailableCateringLive do
             </div>
 
             <!-- Modal -->
-            <.modal :if={@live_action in [:new, :edit]} id="catering_booking-modal" show on_cancel={JS.patch(~p"/available_catering")}>
+            <.modal :if={@live_action in [:new, :edit]} id="catering_booking-modal" show on_cancel={JS.patch(~p"/available_catering?#{%{query: @filters["query"], type: @filters["type"], date: @filters["date"], page: @page}}") }>
               <.live_component
                 module={SpatoWeb.CateringBookingLive.FormComponent}
                 id={@catering_booking && @catering_booking.id || :new}
@@ -278,7 +330,7 @@ defmodule SpatoWeb.AvailableCateringLive do
                 action={@live_action}
                 catering_booking={@catering_booking}
                 current_user={@current_user}
-                patch={~p"/available_catering"}
+                patch={~p"/available_catering?#{%{query: @filters["query"], type: @filters["type"], date: @filters["date"], page: @page}}"}
                 params={@params}
               />
             </.modal>
