@@ -235,7 +235,7 @@ end
           </span>
           </:col>
           <:action :let={equipment}>
-              <.link patch={~p"/admin/equipments/#{equipment.id}/edit"}>Kemaskini</.link>
+              <.link patch={~p"/admin/equipments/#{equipment.id}/edit?page=#{@page}&q=#{@search_query}&status=#{@filter_status}"}>Kemaskini</.link>
             </:action>
             <:action :let={equipment}>
               <.link phx-click={JS.push("delete", value: %{id: equipment.id}) |> hide("##{equipment.id}")} data-confirm="Padam peralatan?">Padam</.link>
@@ -281,14 +281,14 @@ end
           <% end %>
 
           <!-- Modals -->
-          <.modal :if={@live_action in [:new, :edit]} id="equipment-modal" show on_cancel={JS.patch(~p"/admin/equipments")}>
+          <.modal :if={@live_action in [:new, :edit]} id="equipment-modal" show on_cancel={JS.patch(~p"/admin/equipments?page=#{@page}&q=#{@search_query}&status=#{@filter_status}")}>
           <.live_component
             module={SpatoWeb.EquipmentLive.FormComponent}
             id={@equipment.id || :new}
             title={@page_title}
             action={@live_action}
             equipment={@equipment}
-            patch={~p"/admin/equipments"}
+            patch={~p"/admin/equipments?page=#{@page}&q=#{@search_query}&status=#{@filter_status}"}
             current_user={@current_user}
             current_user_id={@current_user.id}
           />

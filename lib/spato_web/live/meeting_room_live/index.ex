@@ -224,7 +224,7 @@ defmodule SpatoWeb.MeetingRoomLive.Index do
                   <div class="sr-only">
                     <.link navigate={~p"/admin/meeting_rooms/#{meeting_room.id}"}>Show</.link>
                   </div>
-                  <.link patch={~p"/admin/meeting_rooms/#{meeting_room.id}/edit"}>Kemaskini</.link>
+                  <.link patch={~p"/admin/meeting_rooms/#{meeting_room.id}/edit?page=#{@page}&q=#{@search_query}&status=#{@filter_status}"}>Kemaskini</.link>
                 </:action>
                 <:action :let={meeting_room}>
                   <.link
@@ -275,7 +275,7 @@ defmodule SpatoWeb.MeetingRoomLive.Index do
           <% end %>
 
           <!-- Modals -->
-          <.modal :if={@live_action in [:new, :edit]} id="meeting_room-modal" show on_cancel={JS.patch(~p"/admin/meeting_rooms")}>
+          <.modal :if={@live_action in [:new, :edit]} id="meeting_room-modal" show on_cancel={JS.patch(~p"/admin/meeting_rooms?page=#{@page}&q=#{@search_query}&status=#{@filter_status}")}>
             <.live_component
               module={SpatoWeb.MeetingRoomLive.FormComponent}
               id={@meeting_room.id || :new}
@@ -284,7 +284,7 @@ defmodule SpatoWeb.MeetingRoomLive.Index do
               meeting_room={@meeting_room}
               current_user={@current_user}
               current_user_id={@current_user.id}
-              patch={~p"/admin/meeting_rooms"}
+              patch={~p"/admin/meeting_rooms?page=#{@page}&q=#{@search_query}&status=#{@filter_status}"}
             />
           </.modal>
 
