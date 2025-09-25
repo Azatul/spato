@@ -1236,4 +1236,44 @@ defmodule Spato.Bookings do
     }
   end
 
+   # Shared validator for all bookings
+   def validate_datetime_order(changeset, start_field, end_field) do
+    start_dt = Ecto.Changeset.get_field(changeset, start_field)
+    end_dt   = Ecto.Changeset.get_field(changeset, end_field)
+
+    cond do
+      is_nil(start_dt) or is_nil(end_dt) ->
+        changeset
+
+      DateTime.compare(start_dt, end_dt) != :lt ->
+        Ecto.Changeset.add_error(
+          changeset,
+          end_field,
+          "#{humanize(start_field)} mesti sebelum #{humanize(end_field)}"
+        )
+
+      true ->
+        changeset
+    end
+  end
+
+  defp humanize(field) do
+    field
+    |> Atom.to_string()
+    |> String.replace("_", " ")
+    |> String.capitalize()
+  end
+
+  def valid_datetime_range?(pickup_time, return_time) when is_binary(pickup_time) and is_binary(return_time) do
+    with {:ok, pickup, _} <- DateTime.from_iso8601(pickup_time),
+         {:ok, return, _} <- DateTime.from_iso8601(return_time) do
+      DateTime.compare(pickup, return) == :lt
+    else
+      _ -> false
+    end
+  end
+
+  def valid_datetime_range?(_, _), do: false
+
+
 end

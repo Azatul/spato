@@ -45,6 +45,7 @@ defmodule Spato.Bookings.VehicleBooking do
     |> unique_constraint(:vehicle_id, name: :no_overlapping_bookings)
     |> update_change(:status, &String.downcase/1)
     |> validate_vehicle_capacity()
+    |> Spato.Bookings.validate_datetime_order(:pickup_time, :return_time)
   end
 
   # Ensure passengers do not exceed vehicle capacity

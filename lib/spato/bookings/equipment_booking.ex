@@ -32,6 +32,7 @@ defmodule Spato.Bookings.EquipmentBooking do
     |> unique_constraint(:equipment_id, name: :no_overlapping_bookings)
     |> update_change(:status, &String.downcase/1)
     |> validate_equipment_quantity()
+    |> Spato.Bookings.validate_datetime_order(:usage_at, :return_at)
   end
 
   defp validate_equipment_quantity(changeset) do

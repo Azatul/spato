@@ -26,6 +26,7 @@ defmodule Spato.Bookings.MeetingRoomBooking do
     |> validate_inclusion(:status, ["pending", "approved", "rejected", "cancelled", "completed"])
     |> unique_constraint(:meeting_room_id, name: :no_overlapping_meeting_room_bookings)
     |> update_change(:status, &String.downcase/1)
+    |> Spato.Bookings.validate_datetime_order(:start_time, :end_time)
   end
 
   def human_status("pending"), do: "Menunggu Kelulusan"
