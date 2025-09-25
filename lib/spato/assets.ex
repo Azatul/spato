@@ -58,6 +58,7 @@ defmodule Spato.Assets do
     page = Map.get(params, "page", 1) |> to_int()
     search = Map.get(params, "search", "")
     status = Map.get(params, "status", "all")
+    type = Map.get(params, "type", "all")
     per_page = @per_page
     offset = (page - 1) * per_page
 
@@ -72,6 +73,14 @@ defmodule Spato.Assets do
         from v in base_query, where: v.status == ^status
       else
         base_query
+      end
+
+    # Type filter
+    filtered_query =
+      if type != "all" do
+        from v in filtered_query, where: v.type == ^type
+      else
+        filtered_query
       end
 
     # Search filter — use proper joins!
@@ -91,6 +100,14 @@ defmodule Spato.Assets do
           select: v
       else
         filtered_query
+      end
+
+    # Type filter
+    final_query =
+      if type != "all" do
+        from v in final_query, where: v.type == ^type
+      else
+        final_query
       end
 
     # Total count
