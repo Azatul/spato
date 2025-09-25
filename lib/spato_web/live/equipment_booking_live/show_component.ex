@@ -14,7 +14,7 @@ defmodule SpatoWeb.EquipmentBookingLive.ShowComponent do
       <:item title="Peralatan">
         <%= @equipment_booking.equipment && @equipment_booking.equipment.name || "-" %>
         </:item>
-        <:item title="Kuantiti">{@equipment_booking.requested_quantity}</:item>
+        <:item title="Kuantiti">{@equipment_booking.requested_quantity} unit</:item>
         <:item title="Lokasi">{@equipment_booking.location}</:item>
         <:item title="Tarikh & Masa Guna">
           <div class="flex flex-col">

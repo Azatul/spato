@@ -12,12 +12,12 @@ defmodule SpatoWeb.EquipmentBookingLive.AdminShowComponent do
 
       <.list>
       <:item title="Peralatan">
-        <%= @equipment_booking.equipment && @equipment_booking.equipment.name || "-" %>
+        <%= @equipment_booking.equipment && @equipment_booking.equipment.name || "N/A" %>
         </:item>
         <:item title="Dibuat Oleh">
-          <%= @equipment_booking.user && Spato.Accounts.User.display_name(@equipment_booking.user) || "-" %>
+          <%= @equipment_booking.user && Spato.Accounts.User.display_name(@equipment_booking.user) || "N/A" %>
         </:item>
-        <:item title="Kuantiti">{@equipment_booking.requested_quantity}</:item>
+        <:item title="Kuantiti">{@equipment_booking.requested_quantity} unit</:item>
         <:item title="Lokasi">{@equipment_booking.location}</:item>
         <:item title="Tarikh & Masa Guna">
           <div class="flex flex-col">

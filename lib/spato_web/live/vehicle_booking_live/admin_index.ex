@@ -51,14 +51,24 @@ defmodule SpatoWeb.VehicleBookingLive.AdminIndex do
   def handle_event("approve", %{"id" => id}, socket) do
     booking = Bookings.get_vehicle_booking!(id)
     {:ok, _} = Bookings.approve_booking(booking)
-    {:noreply, load_vehicle_bookings(socket)}
+
+    {:noreply,
+     socket
+     |> assign(:live_action, nil)
+     |> load_vehicle_bookings()
+     |> put_flash(:info, "Tempahan telah diluluskan")}
   end
 
   @impl true
   def handle_event("reject", %{"id" => id}, socket) do
     booking = Bookings.get_vehicle_booking!(id)
     {:ok, _} = Bookings.reject_booking(booking)
-    {:noreply, load_vehicle_bookings(socket)}
+
+    {:noreply,
+     socket
+     |> assign(:live_action, nil)
+     |> load_vehicle_bookings()
+     |> put_flash(:info, "Tempahan telah ditolak")}
   end
 
   @impl true
@@ -113,17 +123,18 @@ defmodule SpatoWeb.VehicleBookingLive.AdminIndex do
     socket
     |> assign(:show_reject_modal, false)
     |> load_vehicle_bookings()}
+    |> assign(:live_action, nil)
   end
 
   @impl true
   def handle_event("status_changed", %{"status" => status}, socket) do
-    {:noreply, socket |> assign(:selected_status, status)}
+    {:noreply, socket |> assign(:selected_status, status) |> assign(:live_action, nil)}
   end
 
   @impl true
   def handle_event("open_edit_modal", %{"id" => id}, socket) do
     booking = Bookings.get_vehicle_booking!(id)
-    {:noreply, socket |> assign(:edit_booking, booking) |> assign(:show_edit_modal, true)}
+    {:noreply, socket |> assign(:edit_booking, booking) |> assign(:show_edit_modal, true) |> assign(:live_action, nil)}
   end
 
   @impl true
@@ -143,7 +154,8 @@ defmodule SpatoWeb.VehicleBookingLive.AdminIndex do
     socket
     |> assign(:show_edit_modal, false)
     |> load_vehicle_bookings()
-    |> assign(:selected_status, nil)}
+    |> assign(:selected_status, nil)
+    |> assign(:live_action, nil)}
   end
 
   @impl true
@@ -151,7 +163,8 @@ defmodule SpatoWeb.VehicleBookingLive.AdminIndex do
     {:noreply,
     socket
     |> assign(:show_reject_modal, false)
-    |> assign(:show_edit_modal, false)}
+    |> assign(:show_edit_modal, false)
+    |> assign(:live_action, nil)}
   end
 
   defp apply_action(socket, :show, %{"id" => id}) do
@@ -405,17 +418,17 @@ defmodule SpatoWeb.VehicleBookingLive.AdminIndex do
 
                     <% "rejected" -> %>
                       <%= if booking.rejection_reason do %>
-                        <p class="text-xs text-gray-500">Sebab: <%= booking.rejection_reason %></p>
+                        <p class="text-xs text-red-500">Ditolak</p>
                       <% end %>
 
                       <% "completed" -> %>
                         <span class="text-sm text-blue-600">Selesai</span>
                       <% "cancelled" -> %>
                         <%= if booking.rejection_reason do %>
-                          <p class="text-xs text-gray-500">Sebab: <%= booking.rejection_reason %></p>
+                          <p class="text-xs text-gray-500">Dibatalkan</p>
                         <% end %>
                     <% _ -> %>
-                      <span class="text-gray-500">—</span>
+                      <span class="text-gray-500"></span>
                   <% end %>
                 </:col>
               </.table>

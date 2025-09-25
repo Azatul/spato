@@ -29,6 +29,26 @@ defmodule Spato.Bookings.EquipmentBooking do
     |> validate_inclusion(:status, ["pending", "approved", "rejected", "cancelled", "completed"])
     |> unique_constraint(:equipment_id, name: :no_overlapping_bookings)
     |> update_change(:status, &String.downcase/1)
+    |> validate_equipment_quantity()
+  end
+
+  defp validate_equipment_quantity(changeset) do
+    case {get_field(changeset, :equipment_id), get_field(changeset, :requested_quantity)} do
+      {nil, _} -> changeset
+      {_, nil} -> changeset
+      {equipment_id, requested_quantity} ->
+        case Spato.Repo.get(Spato.Assets.Equipment, equipment_id) do
+          nil -> changeset
+          equipment ->
+            if requested_quantity > equipment.available_quantity do
+              add_error(changeset, :requested_quantity,
+                "Jumlah peralatan melebihi stok tersedia (#{equipment.available_quantity})"
+              )
+            else
+              changeset
+            end
+        end
+    end
   end
 
   def human_status("pending"), do: "Menunggu Kelulusan"

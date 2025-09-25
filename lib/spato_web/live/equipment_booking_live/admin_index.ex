@@ -204,10 +204,10 @@ defmodule SpatoWeb.EquipmentBookingLive.AdminIndex do
                   <%= if booking.equipment do %>
                     <div class="flex flex-col">
                       <div class="font-semibold text-gray-900"><%= booking.equipment.name %></div>
-                      <div class="text-sm text-gray-500">SN: <%= booking.equipment.serial_number %></div>
+                      <div class="text-sm text-gray-500">No. Siri: <%= booking.equipment.serial_number %></div>
                     </div>
                   <% else %>
-                    <span class="text-gray-400">—</span>
+                    <span class="text-gray-400"></span>
                   <% end %>
                 </:col>
                 <:col :let={booking} label="Dibuat Oleh">
@@ -219,7 +219,7 @@ defmodule SpatoWeb.EquipmentBookingLive.AdminIndex do
                       <% end %>
                     </div>
                   <% else %>
-                    -
+                    <span class="text-gray-400"></span>
                   <% end %>
                 </:col>
                 <:col :let={booking} label="Lokasi"><%= booking.location %></:col>
@@ -243,7 +243,7 @@ defmodule SpatoWeb.EquipmentBookingLive.AdminIndex do
                     </span>
                   </div>
                 </:col>
-                <:col :let={booking} label="Kuantiti"><%= booking.requested_quantity %></:col>
+                <:col :let={booking} label="Kuantiti diminta"><%= booking.requested_quantity %> unit</:col>
                 <:col :let={booking} label="Catatan Tambahan"><%= booking.additional_notes %></:col>
                 <:col :let={booking} label="Status">
                 <span class={"px-1.5 py-0.5 rounded-full text-white text-xs font-semibold " <>

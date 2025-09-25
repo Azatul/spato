@@ -282,6 +282,7 @@ defmodule SpatoWeb.EquipmentBookingLive.Index do
                     </span>
                   </div>
                 </:col>
+                <:col :let={booking} label="Kuantiti diminta"><%= booking.requested_quantity %> unit</:col>
                 <:col :let={booking} label="Catatan">{booking.additional_notes}</:col>
                 <:col :let={booking} label="Status">
                   <span class={"px-1.5 py-0.5 rounded-full text-white text-xs font-semibold " <>
