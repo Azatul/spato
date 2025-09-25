@@ -1245,23 +1245,25 @@ defmodule Spato.Bookings do
       is_nil(start_dt) or is_nil(end_dt) ->
         changeset
 
-      DateTime.compare(start_dt, end_dt) != :lt ->
+      # Same exact datetime
+      DateTime.compare(start_dt, end_dt) == :eq ->
         Ecto.Changeset.add_error(
           changeset,
           end_field,
-          "#{humanize(start_field)} mesti sebelum #{humanize(end_field)}"
+          "Tarikh dan masa guna tidak boleh sama dengan tarikh dan masa pulang"
+        )
+
+      # End is before start
+      DateTime.compare(start_dt, end_dt) == :gt ->
+        Ecto.Changeset.add_error(
+          changeset,
+          end_field,
+          "Tarikh pulang mesti selepas tarikh guna"
         )
 
       true ->
         changeset
     end
-  end
-
-  defp humanize(field) do
-    field
-    |> Atom.to_string()
-    |> String.replace("_", " ")
-    |> String.capitalize()
   end
 
   def valid_datetime_range?(pickup_time, return_time) when is_binary(pickup_time) and is_binary(return_time) do
@@ -1274,6 +1276,5 @@ defmodule Spato.Bookings do
   end
 
   def valid_datetime_range?(_, _), do: false
-
 
 end
