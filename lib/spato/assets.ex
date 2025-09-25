@@ -156,6 +156,7 @@ defmodule Spato.Assets do
     page = Map.get(params, "page", 1) |> to_int()
     search = Map.get(params, "search", "")
     status = Map.get(params, "status", "all")
+    type = Map.get(params, "type", "all")
     per_page = @per_page
     offset = (page - 1) * per_page
 
@@ -182,13 +183,20 @@ defmodule Spato.Assets do
           left_join: up in assoc(u, :user_profile),
           where:
             ilike(e.name, ^like_search) or
-            ilike(e.type, ^like_search) or
             ilike(e.serial_number, ^like_search) or
             fragment("?::text LIKE ?", e.total_quantity, ^like_search),
           distinct: e.id,
           select: e
       else
         filtered_query
+      end
+
+    # Type filter
+    final_query =
+      if type != "all" do
+        from e in final_query, where: e.type == ^type
+      else
+        final_query
       end
 
     # Total count

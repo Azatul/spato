@@ -236,7 +236,12 @@ defmodule SpatoWeb.VehicleLive.Index do
                 </div>
               </div>
             </:col>
-            <:col :let={vehicle} label="Kapasiti">{vehicle.capacity}</:col>
+            <:col :let={vehicle} label="Kapasiti">
+              <div class="flex items-center gap-1">
+                <.icon name="hero-user" class="w-4 h-4 text-gray-500" />
+                <span><%= vehicle.capacity %></span>
+              </div>
+            </:col>
             <:col :let={vehicle} label="Tarikh Servis Terakhir">
               <%= Calendar.strftime(vehicle.last_services_at, "%d/%m/%Y") %>
             </:col>

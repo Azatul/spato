@@ -196,7 +196,7 @@ defmodule SpatoWeb.CateringMenuLive.Index do
           end}>
           <:col :let={menu} label="ID"><%= menu.id %></:col>
           <:col :let={menu} label="Nama"><%= menu.name %></:col>
-          <:col :let={menu} label="Harga/Seorang"><%= menu.price_per_head %></:col>
+          <:col :let={menu} label="Harga/Seorang">RM <%= menu.price_per_head %></:col>
           <:col :let={menu} label="Jenis">
           <span class="px-1.5 py-0.5 rounded-md text-gray-700 text-xs font-medium bg-gray-100">
             <%= Spato.Assets.CateringMenu.human_type(menu.type) %>
