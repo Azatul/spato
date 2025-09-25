@@ -134,6 +134,9 @@ defmodule SpatoWeb.UserDashboardLive do
               <span class="text-gray-600">Jenis tempahan</span>
               <select class="border rounded-md p-2 w-64">
                 <option>Tempahan Bilik Mesyuarat</option>
+                <option>Tempahan Kenderaan</option>
+                <option>Tempahan Katering</option>
+                <option>Tempahan Peralatan</option>
               </select>
             </div>
             <div class="flex space-x-2">
@@ -154,7 +157,7 @@ defmodule SpatoWeb.UserDashboardLive do
               <thead>
                 <tr class="bg-gray-100">
                   <th class="px-4 py-2 border-r border-gray-200 text-left text-sm font-semibold text-gray-700 w-48">
-                    Tempahan Bilik Mesyuarat hari ini
+                    Tempahan hari ini
                   </th>
                   <th class="px-4 py-2 border-r border-gray-200 text-sm font-semibold text-gray-700 w-32">08:00-09:00</th>
                   <th class="px-4 py-2 border-r border-gray-200 text-sm font-semibold text-gray-700 w-32">09:00-10:00</th>
@@ -166,7 +169,7 @@ defmodule SpatoWeb.UserDashboardLive do
                 <tr>
                   <td class="px-4 py-2 border-r border-gray-200 border-t text-sm text-gray-600">18/09/2024</td>
                   <td colspan="2" class="px-4 py-2 border-r border-t bg-blue-200 text-blue-800 text-sm">
-                    <div class="font-semibold">Bilik Mesyuarat A</div>
+                    <div class="font-semibold">Tempahan Bilik Mesyuarat A</div>
                     <div class="text-xs">Tingkat 2, Sayap Timur</div>
                   </td>
                   <td class="px-4 py-2 border-r border-t"></td>
