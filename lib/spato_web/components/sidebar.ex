@@ -56,9 +56,7 @@ defmodule SpatoWeb.Components.Sidebar do
             <%= if @open do %>
               <details
                 class="group"
-                open={@active_tab in ["meeting_rooms", "vehicles", "admin_vehicles", "catering", "admin_catering", "equipments"]}>
-                open={@active_tab in ["admin_meeting_rooms", "meeting_rooms", "vehicles", "admin_vehicles", "catering", "equipments"]}>
-                open={@active_tab in ["meeting_rooms", "vehicles", "admin_vehicles", "catering", "equipments", "admin_equipments"]}>
+                open={@active_tab in ["admin_meeting_rooms", "meeting_rooms", "vehicles", "admin_vehicles", "catering", "admin_catering", "equipments", "admin_equipments"]}>
                 <summary class="flex items-center justify-between px-4 py-2 rounded-md hover:bg-gray-200 cursor-pointer">
                   <div class="flex items-center gap-2">
                     <.icon name="hero-calendar" class="w-5 h-5" />
@@ -74,8 +72,6 @@ defmodule SpatoWeb.Components.Sidebar do
                       active={@active_tab in ["meeting_rooms", "admin_meeting_rooms"]}
                       open={@open}>
                       Tempahan Bilik Mesyuarat
-                    <.sidebar_link patch="/meeting_rooms" active={@active_tab == "meeting_rooms"} open={@open}>
-                      Bilik Mesyuarat
                     </.sidebar_link>
                   </li>
                   <li>
@@ -83,7 +79,7 @@ defmodule SpatoWeb.Components.Sidebar do
                       patch={if @current_user.role == "admin", do: "/admin/vehicle_bookings", else: "/vehicle_bookings"}
                       active={@active_tab in ["vehicles", "admin_vehicles"]}
                       open={@open}>
-                      Kenderaan
+                      Tempahan Kenderaan
                     </.sidebar_link>
                   </li>
                   <li>
@@ -92,8 +88,6 @@ defmodule SpatoWeb.Components.Sidebar do
                       active={@active_tab in ["catering", "admin_catering"]}
                       open={@open}>
                       Tempahan Katering
-                    <.sidebar_link patch="/catering" active={@active_tab == "catering"} open={@open}>
-                      Katering
                     </.sidebar_link>
                   </li>
                   <li>
@@ -101,7 +95,7 @@ defmodule SpatoWeb.Components.Sidebar do
                       patch={if @current_user.role == "admin", do: "/admin/equipment_bookings", else: "/equipment_bookings"}
                       active={@active_tab in ["equipments", "admin_equipments"]}
                       open={@open}>
-                      Peralatan
+                      Tempahan Peralatan
                     </.sidebar_link>
                   </li>
                 </ul>
