@@ -258,7 +258,13 @@ defmodule SpatoWeb.VehicleLive.Index do
               </span>
             </:col>
             <:action :let={vehicle}>
-              <.link patch={~p"/admin/vehicles/#{vehicle.id}/edit"}>Kemaskini</.link>
+              <.link
+                patch={
+                  ~p"/admin/vehicles/#{vehicle.id}/edit?page=#{@page}&q=#{@search_query}&status=#{@filter_status}"
+                }
+              >
+                Kemaskini
+              </.link>
             </:action>
             <:action :let={vehicle}>
               <.link phx-click={JS.push("delete", value: %{id: vehicle.id}) |> hide("##{vehicle.id}")} data-confirm="Padam vehicle?">Padam</.link>
@@ -304,14 +310,19 @@ defmodule SpatoWeb.VehicleLive.Index do
           <% end %>
 
           <!-- Modals -->
-          <.modal :if={@live_action in [:new, :edit]} id="vehicle-modal" show on_cancel={JS.patch(~p"/admin/vehicles")}>
+          <.modal
+              :if={@live_action in [:new, :edit]}
+              id="vehicle-modal"
+              show
+              on_cancel={JS.patch(~p"/admin/vehicles?page=#{@page}&q=#{@search_query}&status=#{@filter_status}")}
+            >
             <.live_component
               module={SpatoWeb.VehicleLive.FormComponent}
               id={@vehicle.id || :new}
               title={@page_title}
               action={@live_action}
               vehicle={@vehicle}
-              patch={~p"/admin/vehicles"}
+              patch={~p"/admin/vehicles?page=#{@page}&q=#{@search_query}&status=#{@filter_status}"}
               current_user={@current_user}
               current_user_id={@current_user.id}
             />
