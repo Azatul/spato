@@ -102,9 +102,9 @@ defmodule SpatoWeb.VehicleBookingLive.AdminIndex do
   @impl true
   def handle_event("paginate", %{"page" => page}, socket) do
     {:noreply,
-     socket
-     |> assign(:page, String.to_integer(page))
-     |> load_vehicle_bookings()}
+     push_patch(socket,
+       to: ~p"/admin/vehicle_bookings?page=#{page}&q=#{socket.assigns.search_query}&status=#{socket.assigns.filter_status}&date=#{socket.assigns.filter_date}"
+     )}
   end
 
   @impl true

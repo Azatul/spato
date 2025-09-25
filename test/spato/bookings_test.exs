@@ -67,6 +67,136 @@ defmodule Spato.BookingsTest do
     end
   end
 
+  describe "catering_bookings" do
+    alias Spato.Bookings.CateringBooking
+
+    import Spato.BookingsFixtures
+
+    @invalid_attrs %{status: nil, date: nil, time: nil, location: nil, participants: nil, total_cost: nil, special_request: nil}
+
+    test "list_catering_bookings/0 returns all catering_bookings" do
+      catering_booking = catering_booking_fixture()
+      assert Bookings.list_catering_bookings() == [catering_booking]
+    end
+
+    test "get_catering_booking!/1 returns the catering_booking with given id" do
+      catering_booking = catering_booking_fixture()
+      assert Bookings.get_catering_booking!(catering_booking.id) == catering_booking
+    end
+
+    test "create_catering_booking/1 with valid data creates a catering_booking" do
+      valid_attrs = %{status: "some status", date: ~D[2025-09-21], time: ~T[14:00:00], location: "some location", participants: 42, total_cost: "120.5", special_request: "some special_request"}
+
+      assert {:ok, %CateringBooking{} = catering_booking} = Bookings.create_catering_booking(valid_attrs)
+      assert catering_booking.status == "some status"
+      assert catering_booking.date == ~D[2025-09-21]
+      assert catering_booking.time == ~T[14:00:00]
+      assert catering_booking.location == "some location"
+      assert catering_booking.participants == 42
+      assert catering_booking.total_cost == Decimal.new("120.5")
+      assert catering_booking.special_request == "some special_request"
+    end
+
+    test "create_catering_booking/1 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} = Bookings.create_catering_booking(@invalid_attrs)
+    end
+
+    test "update_catering_booking/2 with valid data updates the catering_booking" do
+      catering_booking = catering_booking_fixture()
+      update_attrs = %{status: "some updated status", date: ~D[2025-09-22], time: ~T[15:01:01], location: "some updated location", participants: 43, total_cost: "456.7", special_request: "some updated special_request"}
+
+      assert {:ok, %CateringBooking{} = catering_booking} = Bookings.update_catering_booking(catering_booking, update_attrs)
+      assert catering_booking.status == "some updated status"
+      assert catering_booking.date == ~D[2025-09-22]
+      assert catering_booking.time == ~T[15:01:01]
+      assert catering_booking.location == "some updated location"
+      assert catering_booking.participants == 43
+      assert catering_booking.total_cost == Decimal.new("456.7")
+      assert catering_booking.special_request == "some updated special_request"
+    end
+
+    test "update_catering_booking/2 with invalid data returns error changeset" do
+      catering_booking = catering_booking_fixture()
+      assert {:error, %Ecto.Changeset{}} = Bookings.update_catering_booking(catering_booking, @invalid_attrs)
+      assert catering_booking == Bookings.get_catering_booking!(catering_booking.id)
+    end
+
+    test "delete_catering_booking/1 deletes the catering_booking" do
+      catering_booking = catering_booking_fixture()
+      assert {:ok, %CateringBooking{}} = Bookings.delete_catering_booking(catering_booking)
+      assert_raise Ecto.NoResultsError, fn -> Bookings.get_catering_booking!(catering_booking.id) end
+    end
+
+    test "change_catering_booking/1 returns a catering_booking changeset" do
+      catering_booking = catering_booking_fixture()
+      assert %Ecto.Changeset{} = Bookings.change_catering_booking(catering_booking)
+    end
+  end
+
+  describe "meeting_room_bookings" do
+    alias Spato.Bookings.MeetingRoomBooking
+
+    import Spato.BookingsFixtures
+
+    @invalid_attrs %{status: nil, purpose: nil, participants: nil, start_time: nil, end_time: nil, notes: nil}
+
+    test "list_meeting_room_bookings/0 returns all meeting_room_bookings" do
+      meeting_room_booking = meeting_room_booking_fixture()
+      assert Bookings.list_meeting_room_bookings() == [meeting_room_booking]
+    end
+
+    test "get_meeting_room_booking!/1 returns the meeting_room_booking with given id" do
+      meeting_room_booking = meeting_room_booking_fixture()
+      assert Bookings.get_meeting_room_booking!(meeting_room_booking.id) == meeting_room_booking
+    end
+
+    test "create_meeting_room_booking/1 with valid data creates a meeting_room_booking" do
+      valid_attrs = %{status: "some status", purpose: "some purpose", participants: 42, start_time: ~U[2025-09-16 12:54:00Z], end_time: ~U[2025-09-16 12:54:00Z], notes: "some notes"}
+
+      assert {:ok, %MeetingRoomBooking{} = meeting_room_booking} = Bookings.create_meeting_room_booking(valid_attrs)
+      assert meeting_room_booking.status == "some status"
+      assert meeting_room_booking.purpose == "some purpose"
+      assert meeting_room_booking.participants == 42
+      assert meeting_room_booking.start_time == ~U[2025-09-16 12:54:00Z]
+      assert meeting_room_booking.end_time == ~U[2025-09-16 12:54:00Z]
+      assert meeting_room_booking.notes == "some notes"
+    end
+
+    test "create_meeting_room_booking/1 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} = Bookings.create_meeting_room_booking(@invalid_attrs)
+    end
+
+    test "update_meeting_room_booking/2 with valid data updates the meeting_room_booking" do
+      meeting_room_booking = meeting_room_booking_fixture()
+      update_attrs = %{status: "some updated status", purpose: "some updated purpose", participants: 43, start_time: ~U[2025-09-17 12:54:00Z], end_time: ~U[2025-09-17 12:54:00Z], notes: "some updated notes"}
+
+      assert {:ok, %MeetingRoomBooking{} = meeting_room_booking} = Bookings.update_meeting_room_booking(meeting_room_booking, update_attrs)
+      assert meeting_room_booking.status == "some updated status"
+      assert meeting_room_booking.purpose == "some updated purpose"
+      assert meeting_room_booking.participants == 43
+      assert meeting_room_booking.start_time == ~U[2025-09-17 12:54:00Z]
+      assert meeting_room_booking.end_time == ~U[2025-09-17 12:54:00Z]
+      assert meeting_room_booking.notes == "some updated notes"
+    end
+
+    test "update_meeting_room_booking/2 with invalid data returns error changeset" do
+      meeting_room_booking = meeting_room_booking_fixture()
+      assert {:error, %Ecto.Changeset{}} = Bookings.update_meeting_room_booking(meeting_room_booking, @invalid_attrs)
+      assert meeting_room_booking == Bookings.get_meeting_room_booking!(meeting_room_booking.id)
+    end
+
+    test "delete_meeting_room_booking/1 deletes the meeting_room_booking" do
+      meeting_room_booking = meeting_room_booking_fixture()
+      assert {:ok, %MeetingRoomBooking{}} = Bookings.delete_meeting_room_booking(meeting_room_booking)
+      assert_raise Ecto.NoResultsError, fn -> Bookings.get_meeting_room_booking!(meeting_room_booking.id) end
+    end
+
+    test "change_meeting_room_booking/1 returns a meeting_room_booking changeset" do
+      meeting_room_booking = meeting_room_booking_fixture()
+      assert %Ecto.Changeset{} = Bookings.change_meeting_room_booking(meeting_room_booking)
+    end
+  end
+
   describe "equipment_bookings" do
     alias Spato.Bookings.EquipmentBooking
 
