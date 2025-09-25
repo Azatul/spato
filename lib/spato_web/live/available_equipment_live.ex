@@ -27,6 +27,8 @@ defmodule SpatoWeb.AvailableEquipmentLive do
      |> assign(:filters, filters)
      |> assign(:form, to_form(filters))
      |> assign(:invalid_dates, false)
+     |> assign(:invalid_usage, false)
+     |> assign(:invalid_return, false)
      |> assign(:page, 1)
      |> assign(:total_pages, 1)
      |> assign(:total, 0)
@@ -63,11 +65,13 @@ defmodule SpatoWeb.AvailableEquipmentLive do
       "return_at" => Map.get(filters, "return_at", "")
     }
 
-    case validate_dates(new_filters) do
-      true ->
+    case validate_dates_with_flags(new_filters) do
+      {:ok, _parsed} ->
         {:noreply,
          socket
          |> assign(:invalid_dates, false)
+         |> assign(:invalid_usage, false)
+         |> assign(:invalid_return, false)
          |> push_patch(to:
            ~p"/available_equipments?#{%{
              query: new_filters["query"],
@@ -78,12 +82,14 @@ defmodule SpatoWeb.AvailableEquipmentLive do
            }}"
          )}
 
-      false ->
+      {:error, %{invalid_usage: iu, invalid_return: ir}} ->
         {:noreply,
          socket
          |> assign(:filters, new_filters)
          |> assign(:form, to_form(new_filters))
-         |> assign(:invalid_dates, true)}
+         |> assign(:invalid_dates, iu or ir)
+         |> assign(:invalid_usage, iu)
+         |> assign(:invalid_return, ir)}
     end
   end
 
@@ -197,6 +203,64 @@ defmodule SpatoWeb.AvailableEquipmentLive do
 
   defp validate_dates(_), do: false
 
+  defp validate_dates_with_flags(%{"usage_at" => usage_at, "return_at" => return_at}) do
+    parsed_usage =
+      case usage_at do
+        nil -> :error
+        "" -> :error
+        _ -> DateTime.from_iso8601(usage_at <> ":00Z")
+      end
+
+    parsed_return =
+      case return_at do
+        nil -> :error
+        "" -> :error
+        _ -> DateTime.from_iso8601(return_at <> ":00Z")
+      end
+
+    case {parsed_usage, parsed_return} do
+      {{:ok, usage, _}, {:ok, return, _}} ->
+        invalid_usage = DateTime.compare(usage, DateTime.utc_now()) == :lt
+        invalid_return = DateTime.compare(return, usage) != :gt
+
+        if invalid_usage or invalid_return do
+          {:error, %{invalid_usage: invalid_usage, invalid_return: invalid_return}}
+        else
+          {:ok, %{usage: usage, return: return}}
+        end
+
+      {_, {:ok, _r, _}} ->
+        {:error, %{invalid_usage: true, invalid_return: false}}
+
+      {{:ok, _u, _}, _} ->
+        {:error, %{invalid_usage: false, invalid_return: true}}
+
+      _ ->
+        {:error, %{invalid_usage: true, invalid_return: true}}
+    end
+  end
+
+  defp format_datetime_local(%NaiveDateTime{year: y, month: m, day: d, hour: h, minute: mi}) do
+    :io_lib.format("~4..0B-~2..0B-~2..0BT~2..0B:~2..0B", [y, m, d, h, mi])
+    |> IO.iodata_to_binary()
+  end
+
+  defp datetime_local_min_now do
+    now = DateTime.utc_now()
+    adjusted = %DateTime{now | second: 0, microsecond: {0, 0}}
+    adjusted
+    |> DateTime.to_naive()
+    |> format_datetime_local()
+  end
+
+  defp datetime_local_min_for_return(filters) do
+    case Map.get(filters, "usage_at") do
+      nil -> datetime_local_min_now()
+      "" -> datetime_local_min_now()
+      value -> value
+    end
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -209,6 +273,22 @@ defmodule SpatoWeb.AvailableEquipmentLive do
           <section class="mb-4">
             <h1 class="text-xl font-bold mb-1">Peralatan Tersedia</h1>
             <p class="text-md text-gray-500 mb-4">Cari dan tempah peralatan yang tersedia</p>
+
+            <div class="fixed top-24 right-6 z-50">
+              <%= if @invalid_usage or @invalid_return do %>
+                <div class="bg-red-600 text-white px-4 py-2 rounded shadow-lg animate-pulse">
+                  <%= if @invalid_usage and @invalid_return do %>
+                    Sila semak tarikh & masa guna dan pulang anda.
+                  <% else %>
+                    <%= if @invalid_usage do %>
+                      Tarikh & masa guna mesti di masa hadapan.
+                    <% else %>
+                      Tarikh & masa pulang mesti selepas tarikh & masa guna.
+                    <% end %>
+                  <% end %>
+                </div>
+              <% end %>
+            </div>
 
             <section class="mb-4 flex justify-end">
                 <.link patch={~p"/equipment_bookings"}>
@@ -245,13 +325,14 @@ defmodule SpatoWeb.AvailableEquipmentLive do
                     class="w-40"
                   />
 
-                 <.input
+                  <.input
                     field={@form[:usage_at]}
                     type="datetime-local"
                     label="Tarikh & Masa Guna"
+                    min={datetime_local_min_now()}
                     class={
                       ["w-44",
-                      if(@invalid_dates, do: "border-red-500 focus:ring-red-500", else: "border-gray-300")]
+                      if(@invalid_usage, do: "border-red-500 focus:ring-red-500", else: "border-gray-300")]
                     }
                   />
 
@@ -259,9 +340,10 @@ defmodule SpatoWeb.AvailableEquipmentLive do
                     field={@form[:return_at]}
                     type="datetime-local"
                     label="Tarikh & Masa Pulang"
+                    min={datetime_local_min_for_return(@filters)}
                     class={
                       ["w-44",
-                      if(@invalid_dates, do: "border-red-500 focus:ring-red-500", else: "border-gray-300")]
+                      if(@invalid_return, do: "border-red-500 focus:ring-red-500", else: "border-gray-300")]
                     }
                   />
 
@@ -322,7 +404,7 @@ defmodule SpatoWeb.AvailableEquipmentLive do
 
             <%= if Enum.empty?(@equipments) do %>
               <div class="text-center py-12">
-                <%= if @filters["usage_at"] not in [nil, ""] and @filters["return_at"] not in [nil, ""] and validate_dates(@filters) == {:ok, @filters} do %>
+                <%= if @filters["usage_at"] not in [nil, ""] and @filters["return_at"] not in [nil, ""] and validate_dates(@filters) do %>
                   <p class="text-red-500 text-lg font-semibold">
                     Tiada peralatan tersedia untuk tarikh & masa yang dipilih.
                   </p>
