@@ -52,6 +52,13 @@ defmodule SpatoWeb.Router do
     live "/catering_bookings/:id/edit", CateringBookingLive.Index, :edit
     live "/catering_bookings/:id", CateringBookingLive.Index, :show
     live "/available_catering", AvailableCateringLive
+    live "/meeting_room_bookings", MeetingRoomBookingLive.Index, :index
+    live "/meeting_room_bookings/new", MeetingRoomBookingLive.Index, :new
+    live "/meeting_room_bookings/:id/edit", MeetingRoomBookingLive.Index, :edit
+
+    live "/meeting_room_bookings/:id", MeetingRoomBookingLive.Index, :show
+    live "/meeting_room_bookings/:id/show/edit", MeetingRoomBookingLive.Show, :edit
+    live "/available_rooms", AvailableRoomLive
   end
 
   scope "/admin", SpatoWeb do
@@ -95,6 +102,10 @@ defmodule SpatoWeb.Router do
 
       live "/catering_bookings", CateringBookingLive.AdminIndex, :index
       live "/catering_bookings/:id", CateringBookingLive.AdminIndex, :show
+
+      live "/meeting_room_bookings", MeetingRoomBookingLive.AdminIndex, :index
+      live "/meeting_room_bookings/:id", MeetingRoomBookingLive.AdminIndex, :show
+
     end
   end
 

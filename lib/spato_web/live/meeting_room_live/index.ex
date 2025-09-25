@@ -88,12 +88,12 @@ defmodule SpatoWeb.MeetingRoomLive.Index do
   @impl true
   def handle_event("toggle_sidebar", _, socket), do: {:noreply, update(socket, :sidebar_open, &(!&1))}
 
+  @impl true
   def handle_event("search", %{"q" => query}, socket) do
     {:noreply,
-     socket
-     |> assign(:search_query, query)
-     |> assign(:page, 1)
-     |> load_meeting_rooms()}
+     push_patch(socket,
+       to: ~p"/admin/meeting_rooms?page=1&q=#{query}&status=#{socket.assigns.filter_status}&date=#{socket.assigns.filter_date}"
+     )}
   end
 
   @impl true
@@ -105,13 +105,12 @@ defmodule SpatoWeb.MeetingRoomLive.Index do
      )}
   end
 
-
   @impl true
   def handle_event("paginate", %{"page" => page}, socket) do
     {:noreply,
-     socket
-     |> assign(:page, String.to_integer(page))
-     |> load_meeting_rooms()}
+     push_patch(socket,
+       to: ~p"/admin/meeting_rooms?page=#{page}&q=#{socket.assigns.search_query}&status=#{socket.assigns.filter_status}&date=#{socket.assigns.filter_date}"
+     )}
   end
 
   @impl true
@@ -224,7 +223,13 @@ defmodule SpatoWeb.MeetingRoomLive.Index do
                   <div class="sr-only">
                     <.link navigate={~p"/admin/meeting_rooms/#{meeting_room.id}"}>Show</.link>
                   </div>
-                  <.link patch={~p"/admin/meeting_rooms/#{meeting_room.id}/edit"}>Kemaskini</.link>
+                   <.link
+                  patch={
+                    ~p"/admin/meeting_rooms/#{meeting_room.id}/edit?page=#{@page}&q=#{@search_query}&status=#{@filter_status}"
+                  }
+                >
+                  Kemaskini
+                </.link>
                 </:action>
                 <:action :let={meeting_room}>
                   <.link
@@ -275,7 +280,7 @@ defmodule SpatoWeb.MeetingRoomLive.Index do
           <% end %>
 
           <!-- Modals -->
-          <.modal :if={@live_action in [:new, :edit]} id="meeting_room-modal" show on_cancel={JS.patch(~p"/admin/meeting_rooms")}>
+          <.modal :if={@live_action in [:new, :edit]} id="meeting_room-modal" show on_cancel={JS.patch(~p"/admin/meeting_rooms?page=#{@page}&q=#{@search_query}&status=#{@filter_status}")}>
             <.live_component
               module={SpatoWeb.MeetingRoomLive.FormComponent}
               id={@meeting_room.id || :new}
@@ -284,7 +289,7 @@ defmodule SpatoWeb.MeetingRoomLive.Index do
               meeting_room={@meeting_room}
               current_user={@current_user}
               current_user_id={@current_user.id}
-              patch={~p"/admin/meeting_rooms"}
+              patch={~p"/admin/meeting_rooms?page=#{@page}&q=#{@search_query}&status=#{@filter_status}"}
             />
           </.modal>
 
