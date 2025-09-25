@@ -47,6 +47,11 @@ defmodule SpatoWeb.Router do
     live "/vehicle_bookings/:id", VehicleBookingLive.Index, :show
     live "/available_vehicles", AvailableVehicleLive
 
+    live "/catering_bookings", CateringBookingLive.Index, :index
+    live "/catering_bookings/new", CateringBookingLive.Index, :new
+    live "/catering_bookings/:id/edit", CateringBookingLive.Index, :edit
+    live "/catering_bookings/:id", CateringBookingLive.Index, :show
+    live "/available_catering", AvailableCateringLive
     live "/meeting_room_bookings", MeetingRoomBookingLive.Index, :index
     live "/meeting_room_bookings/new", MeetingRoomBookingLive.Index, :new
     live "/meeting_room_bookings/:id/edit", MeetingRoomBookingLive.Index, :edit
@@ -94,6 +99,9 @@ defmodule SpatoWeb.Router do
 
       live "/vehicle_bookings", VehicleBookingLive.AdminIndex, :index
       live "/vehicle_bookings/:id", VehicleBookingLive.AdminIndex, :show
+
+      live "/catering_bookings", CateringBookingLive.AdminIndex, :index
+      live "/catering_bookings/:id", CateringBookingLive.AdminIndex, :show
 
       live "/meeting_room_bookings", MeetingRoomBookingLive.AdminIndex, :index
       live "/meeting_room_bookings/:id", MeetingRoomBookingLive.AdminIndex, :show
