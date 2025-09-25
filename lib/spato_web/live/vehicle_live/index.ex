@@ -186,7 +186,7 @@ defmodule SpatoWeb.VehicleLive.Index do
             <!-- Search and Filter -->
             <div class="flex flex-wrap gap-2 mt-2">
               <form phx-change="search" class="flex-1 min-w-[200px]">
-                <input type="text" name="q" value={@search_query} placeholder="Cari nama atau kapasiti..." class="w-full border rounded-md px-2 py-1 text-sm"/>
+                <input type="text" name="q" value={@search_query} placeholder="Cari nama, nombor plat atau kapasiti..." class="w-full border rounded-md px-2 py-1 text-sm"/>
               </form>
 
               <!-- Filter by type -->
