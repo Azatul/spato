@@ -1,6 +1,8 @@
 defmodule Spato.Bookings.EquipmentBooking do
   use Ecto.Schema
   import Ecto.Changeset
+  import Ecto.Query
+  alias Spato.Repo
 
   schema "equipment_bookings" do
     field :status, :string
@@ -33,16 +35,40 @@ defmodule Spato.Bookings.EquipmentBooking do
   end
 
   defp validate_equipment_quantity(changeset) do
-    case {get_field(changeset, :equipment_id), get_field(changeset, :requested_quantity)} do
-      {nil, _} -> changeset
-      {_, nil} -> changeset
-      {equipment_id, requested_quantity} ->
-        case Spato.Repo.get(Spato.Assets.Equipment, equipment_id) do
+    equipment_id        = get_field(changeset, :equipment_id)
+    requested_quantity  = get_field(changeset, :requested_quantity)
+    usage_at            = get_field(changeset, :usage_at)
+    return_at           = get_field(changeset, :return_at)
+
+    cond do
+      is_nil(equipment_id) -> changeset
+      is_nil(requested_quantity) -> changeset
+      is_nil(usage_at) or is_nil(return_at) -> changeset
+      true ->
+        case Repo.get(Spato.Assets.Equipment, equipment_id) do
           nil -> changeset
           equipment ->
-            if requested_quantity > equipment.available_quantity do
+            # Sum of overlapping bookings (pending/approved) excluding current record when editing
+            base_query =
+              from b in __MODULE__,
+                where:
+                  b.equipment_id == ^equipment_id and
+                  b.status in ["pending", "approved"] and
+                  b.usage_at < ^return_at and
+                  b.return_at > ^usage_at
+
+            base_query =
+              case changeset.data && changeset.data.id do
+                nil -> base_query
+                current_id -> from b in base_query, where: b.id != ^current_id
+              end
+
+            already_booked = Repo.one(from b in base_query, select: sum(b.requested_quantity)) || 0
+            remaining = (equipment.total_quantity || 0) - already_booked
+
+            if requested_quantity > remaining do
               add_error(changeset, :requested_quantity,
-                "Jumlah peralatan melebihi stok tersedia (#{equipment.available_quantity})"
+                "Jumlah peralatan melebihi stok tersedia (#{max(remaining, 0)})"
               )
             else
               changeset

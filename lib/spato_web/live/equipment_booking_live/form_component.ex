@@ -71,6 +71,28 @@ defmodule SpatoWeb.EquipmentBookingLive.FormComponent do
 
     equipment = if equipment_id, do: Repo.get(Equipment, equipment_id), else: nil
 
+    # Compute available quantity for the selected window for max attribute and UX
+    available_quantity =
+      case {equipment, usage_at, return_at} do
+        {nil, _, _} -> nil
+        {_, nil, _} -> equipment && equipment.total_quantity
+        {_, _, nil} -> equipment && equipment.total_quantity
+        {%Equipment{} = eq, usage_at, return_at} ->
+          import Ecto.Query
+          alias Spato.Bookings.EquipmentBooking
+
+          overlapping_q =
+            from b in EquipmentBooking,
+              where:
+                b.equipment_id == ^eq.id and
+                b.status in ["pending", "approved"] and
+                b.usage_at < ^return_at and
+                b.return_at > ^usage_at,
+              select: sum(b.requested_quantity)
+
+          (eq.total_quantity || 0) - (Repo.one(overlapping_q) || 0)
+      end
+
     attrs =
       %{
         "equipment_id" => equipment_id,
@@ -80,6 +102,7 @@ defmodule SpatoWeb.EquipmentBookingLive.FormComponent do
       |> Enum.reject(fn {_k, v} -> v in [nil, ""] end)
       |> Map.new()
       |> maybe_merge_equipment(equipment)
+      |> Map.merge(%{"available_quantity" => available_quantity})
 
     changeset = Bookings.change_equipment_booking(equipment_booking, attrs)
 
