@@ -23,12 +23,26 @@ defmodule SpatoWeb.DepartmentLive.Index do
      |> assign(:total_pages, 1)
      |> assign(:filtered_count, 0)
      |> assign(:search_query, "")
-     |> stream(:departments, Accounts.list_departments())}
+     |> stream(:departments, [])}
   end
 
   @impl true
   def handle_params(params, _url, socket) do
-    {:noreply, apply_action(assign(socket, :live_action, socket.assigns.live_action), socket.assigns.live_action, params)}
+    %{departments_page: departments, total: total, total_pages: total_pages, page: page} =
+      Accounts.list_departments_paginated(%{
+        "page" => Map.get(params, "page", "1"),
+        "search" => Map.get(params, "q", "")
+      })
+
+    socket =
+      socket
+      |> assign(:page, page)
+      |> assign(:total_pages, total_pages)
+      |> assign(:filtered_count, total)
+      |> assign(:search_query, Map.get(params, "q", ""))
+      |> stream(:departments, departments, reset: true)
+
+    {:noreply, apply_action(socket, socket.assigns.live_action, params)}
   end
 
   # Modal actions
@@ -80,13 +94,9 @@ defmodule SpatoWeb.DepartmentLive.Index do
   end
 
   def handle_event("search", %{"q" => q}, socket) do
-    page_data = Spato.Accounts.list_departments_paginated(%{"search" => q})
     {:noreply,
-     assign(socket,
-       departments_page: page_data[:departments_page],
-       total_pages: page_data[:total_pages],
-       page: page_data[:page],
-       search_query: q
+     push_patch(socket,
+       to: ~p"/admin/departments?page=1&q=#{q}"
      )}
   end
 
@@ -178,6 +188,43 @@ defmodule SpatoWeb.DepartmentLive.Index do
               </:action>
             </.table>
           </section>
+
+          <!-- Pagination -->
+          <%= if @filtered_count > 0 do %>
+          <div class="relative flex items-center mt-4">
+            <!-- Previous button -->
+            <div class="flex-1">
+              <.link
+                patch={~p"/admin/departments?page=#{max(@page - 1, 1)}&q=#{@search_query}"}
+                class={"px-3 py-1 border rounded #{if @page == 1, do: "bg-gray-200 text-gray-500 cursor-not-allowed", else: "bg-white text-gray-700 hover:bg-gray-100"}"}
+              >
+                Sebelumnya
+              </.link>
+            </div>
+
+            <!-- Page numbers (centered) -->
+            <div class="absolute left-1/2 transform -translate-x-1/2 flex space-x-1">
+              <%= for p <- 1..@total_pages do %>
+                <.link
+                  patch={~p"/admin/departments?page=#{p}&q=#{@search_query}"}
+                  class={"px-3 py-1 border rounded #{if p == @page, do: "bg-gray-700 text-white", else: "bg-white text-gray-700 hover:bg-gray-100"}"}
+                >
+                  <%= p %>
+                </.link>
+              <% end %>
+            </div>
+
+            <!-- Next button -->
+            <div class="flex-1 text-right">
+              <.link
+                patch={~p"/admin/departments?page=#{min(@page + 1, @total_pages)}&q=#{@search_query}"}
+                class={"px-3 py-1 border rounded #{if @page == @total_pages, do: "bg-gray-200 text-gray-500 cursor-not-allowed", else: "bg-white text-gray-700 hover:bg-gray-100"}"}
+              >
+                Seterusnya
+              </.link>
+            </div>
+          </div>
+          <% end %>
 
           <!-- Modals -->
           <.modal :if={@live_action in [:new, :edit]} id="department-form-modal" show on_cancel={JS.patch(~p"/admin/departments")}>

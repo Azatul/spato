@@ -291,7 +291,11 @@ defmodule Spato.Accounts do
       |> offset(^offset)
       |> Repo.all()
 
-    total_pages = ceil(total / per_page)
+    total_pages =
+      total
+      |> Kernel.+(per_page - 1)
+      |> div(per_page)
+      |> max(1)
 
     %{
       departments_page: departments_page,
@@ -513,7 +517,11 @@ If a user has no profile, you’ll still get the user with `user_profile = nil`.
       |> Repo.all()
       |> Repo.preload([user_profile: :department])
 
-    total_pages = ceil(total / per_page)
+    total_pages =
+      total
+      |> Kernel.+(per_page - 1)
+      |> div(per_page)
+      |> max(1)
 
     %{
       users_page: users_page,
