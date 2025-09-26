@@ -10,6 +10,7 @@ defmodule Spato.Bookings.CateringBooking do
     field :participants, :integer
     field :total_cost, :decimal
     field :special_request, :string
+    field :rejection_reason, :string
 
     belongs_to :user, Spato.Accounts.User
     belongs_to :menu, Spato.Assets.CateringMenu
@@ -29,7 +30,7 @@ defmodule Spato.Bookings.CateringBooking do
       end
 
     catering_booking
-    |> cast(attrs, [:date, :time, :location, :participants, :total_cost, :special_request, :status, :menu_id, :user_id])
+    |> cast(attrs, [:date, :time, :location, :participants, :total_cost, :special_request, :status, :menu_id, :user_id, :rejection_reason])
     |> validate_required([:date, :status, :menu_id, :user_id])
     |> validate_inclusion(:status, ["pending", "approved", "rejected", "cancelled", "completed"])
     |> validate_number(:participants, greater_than: 0)
