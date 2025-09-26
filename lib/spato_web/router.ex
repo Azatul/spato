@@ -52,20 +52,21 @@ defmodule SpatoWeb.Router do
     live "/catering_bookings/:id/edit", CateringBookingLive.Index, :edit
     live "/catering_bookings/:id", CateringBookingLive.Index, :show
     live "/available_catering", AvailableCateringLive
+
     live "/meeting_room_bookings", MeetingRoomBookingLive.Index, :index
     live "/meeting_room_bookings/new", MeetingRoomBookingLive.Index, :new
     live "/meeting_room_bookings/:id/edit", MeetingRoomBookingLive.Index, :edit
-
     live "/meeting_room_bookings/:id", MeetingRoomBookingLive.Index, :show
-    live "/meeting_room_bookings/:id/show/edit", MeetingRoomBookingLive.Show, :edit
     live "/available_rooms", AvailableRoomLive
+
     live "/equipment_bookings", EquipmentBookingLive.Index, :index
     live "/equipment_bookings/new", EquipmentBookingLive.Index, :new
     live "/equipment_bookings/:id/edit", EquipmentBookingLive.Index, :edit
     live "/equipment_bookings/:id", EquipmentBookingLive.Index, :show
     live "/available_equipments", AvailableEquipmentLive
 
-    live "/equipment_bookings/:id/show/edit", EquipmentBookingLive.Index, :edit
+    live "/booking_history", HistoryLive.BookingHistoryLive
+
   end
 
   scope "/admin", SpatoWeb do
@@ -113,9 +114,10 @@ defmodule SpatoWeb.Router do
       live "/meeting_room_bookings", MeetingRoomBookingLive.AdminIndex, :index
       live "/meeting_room_bookings/:id", MeetingRoomBookingLive.AdminIndex, :show
 
-
       live "/equipment_bookings", EquipmentBookingLive.AdminIndex, :index
       live "/equipment_bookings/:id", EquipmentBookingLive.AdminIndex, :show
+
+      live "/booking_history", HistoryLive.AdminBookingHistory
     end
   end
 

@@ -113,10 +113,10 @@ defmodule SpatoWeb.Components.Sidebar do
             <li class="mt-auto">
                 <%= if @open do %>
                   <.link
-                    patch="/user/history"
+                    patch="/booking_history"
                     class={[
                       "flex items-center gap-2 px-4 py-2 rounded-md hover:bg-gray-200 transition-all duration-300",
-                      @active_tab == "user_history" && "bg-gray-300 font-bold"
+                      @active_tab == "history" && "bg-gray-300 font-bold"
                     ]}>
                     <.icon name="hero-clock" class="w-5 h-5" />
                     Sejarah Tempahan
@@ -213,7 +213,7 @@ defmodule SpatoWeb.Components.Sidebar do
               <li class="mt-auto">
                 <%= if @open do %>
                   <.link
-                    patch="/admin/history"
+                    patch="/admin/booking_history"
                     class={[
                       "flex items-center gap-2 px-4 py-2 rounded-md hover:bg-gray-200 transition-all duration-300",
                       @active_tab == "admin_history" && "bg-gray-300 font-bold"

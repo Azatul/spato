@@ -1302,4 +1302,78 @@ defmodule Spato.Bookings do
 
   def valid_datetime_range?(_, _), do: false
 
+
+ # Bookings hoistory for user
+ # Equipment Bookings
+  def list_closed_equipment_bookings(user \\ nil) do
+    base_query =
+      from eb in EquipmentBooking,
+        where: eb.status in ["cancelled", "completed", "rejected"],
+        order_by: [desc: eb.inserted_at]
+
+    scoped_query =
+      case user do
+        nil -> base_query
+        _ -> from eb in base_query, where: eb.user_id == ^user.id
+      end
+
+    scoped_query
+    |> preload([:equipment, user: [user_profile: [:department]]])
+    |> Repo.all()
+  end
+
+  # Meeting Room Bookings
+  def list_closed_room_bookings(user \\ nil) do
+    base_query =
+      from rb in MeetingRoomBooking,
+        where: rb.status in ["cancelled", "completed", "rejected"],
+        order_by: [desc: rb.inserted_at]
+
+    scoped_query =
+      case user do
+        nil -> base_query
+        _ -> from rb in base_query, where: rb.user_id == ^user.id
+      end
+
+    scoped_query
+    |> preload([:room, user: [user_profile: [:department]]])
+    |> Repo.all()
+  end
+
+  # Vehicle Bookings
+  def list_closed_vehicle_bookings(user \\ nil) do
+    base_query =
+      from vb in VehicleBooking,
+        where: vb.status in ["cancelled", "completed", "rejected"],
+        order_by: [desc: vb.inserted_at]
+
+    scoped_query =
+      case user do
+        nil -> base_query
+        _ -> from vb in base_query, where: vb.user_id == ^user.id
+      end
+
+    scoped_query
+    |> preload([:vehicle, user: [user_profile: [:department]]])
+    |> Repo.all()
+  end
+
+  # Catering Bookings
+  def list_closed_catering_bookings(user \\ nil) do
+    base_query =
+      from cb in CateringBooking,
+        where: cb.status in ["cancelled", "completed", "rejected"],
+        order_by: [desc: cb.inserted_at]
+
+    scoped_query =
+      case user do
+        nil -> base_query
+        _ -> from cb in base_query, where: cb.user_id == ^user.id
+      end
+
+    scoped_query
+    |> preload([user: [user_profile: [:department]]])
+    |> Repo.all()
+  end
+
 end
