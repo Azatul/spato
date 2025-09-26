@@ -440,6 +440,24 @@ defmodule SpatoWeb.EquipmentBookingLive.Index do
                   </div>
                 </form>
               </.modal>
+
+              <!-- Modal for new/edit -->
+              <.modal :if={@live_action in [:new, :edit]} id="equipment_booking-modal" show on_cancel={JS.patch(~p"/equipment_bookings") }>
+                <.live_component
+                  module={SpatoWeb.EquipmentBookingLive.FormComponent}
+                  id={@equipment_booking && @equipment_booking.id || :new}
+                  title={@page_title}
+                  action={@live_action}
+                  equipment_booking={@equipment_booking}
+                  current_user={@current_user}
+                  patch={~p"/equipment_bookings"}
+                  params={@params}
+                  equipment_id={@params["equipment_id"]}
+                  usage_at={@params["usage_at"]}
+                  return_at={@params["return_at"]}
+                />
+              </.modal>
+
             </section>
           </section>
         </main>
