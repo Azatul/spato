@@ -26,6 +26,9 @@ defmodule SpatoWeb.AvailableRoomLive do
      |> assign(:rooms, [])
      |> assign(:filters, filters)
      |> assign(:form, to_form(filters))
+     |> assign(:invalid_dates, false)
+     |> assign(:invalid_start, false)
+     |> assign(:invalid_end, false)
      |> assign(:page, 1)
      |> assign(:total_pages, 1)
      |> assign(:total, 0)
@@ -57,19 +60,34 @@ defmodule SpatoWeb.AvailableRoomLive do
         filters when is_map(filters) -> filters
       end
 
-      new_filters = %{
-        "query" => Map.get(filters, "query", ""),
-        "capacity" => Map.get(filters, "capacity", ""),
-        "start_time" => Map.get(filters, "start_time", ""),
-        "end_time" => Map.get(filters, "end_time", "")
-      }
+    new_filters = %{
+      "query" => Map.get(filters, "query", ""),
+      "capacity" => Map.get(filters, "capacity", ""),
+      "start_time" => Map.get(filters, "start_time", ""),
+      "end_time" => Map.get(filters, "end_time", "")
+    }
 
-    {:noreply,
-     socket
-     |> assign(:filters, new_filters)
-     |> assign(:form, to_form(filters)) # keep form fields as raw strings
-     |> assign(:page, 1)
-     |> load_rooms()}
+    case validate_dates_with_flags(new_filters) do
+      {:ok, _parsed} ->
+        {:noreply,
+         socket
+         |> assign(:invalid_dates, false)
+         |> assign(:invalid_start, false)
+         |> assign(:invalid_end, false)
+         |> assign(:filters, new_filters)
+         |> assign(:form, to_form(new_filters))
+         |> assign(:page, 1)
+         |> load_rooms()}
+
+      {:error, %{invalid_start: is, invalid_end: ie}} ->
+        {:noreply,
+         socket
+         |> assign(:filters, new_filters)
+         |> assign(:form, to_form(new_filters))
+         |> assign(:invalid_dates, is or ie)
+         |> assign(:invalid_start, is)
+         |> assign(:invalid_end, ie)}
+    end
   end
 
   @impl true
@@ -121,6 +139,77 @@ defmodule SpatoWeb.AvailableRoomLive do
     {:noreply, socket |> load_rooms()}
   end
 
+  defp validate_dates(%{"start_time" => start_time, "end_time" => end_time}) do
+    with {:ok, start_dt, _} <- DateTime.from_iso8601(start_time <> ":00Z"),
+         {:ok, end_dt, _} <- DateTime.from_iso8601(end_time <> ":00Z"),
+         true <- DateTime.compare(start_dt, DateTime.utc_now()) != :lt,
+         true <- DateTime.compare(end_dt, start_dt) == :gt do
+      true
+    else
+      _ -> false
+    end
+  end
+
+  defp validate_dates(_), do: false
+
+  defp validate_dates_with_flags(%{"start_time" => start_time, "end_time" => end_time}) do
+    parsed_start =
+      case start_time do
+        nil -> :error
+        "" -> :error
+        _ -> DateTime.from_iso8601(start_time <> ":00Z")
+      end
+
+    parsed_end =
+      case end_time do
+        nil -> :error
+        "" -> :error
+        _ -> DateTime.from_iso8601(end_time <> ":00Z")
+      end
+
+    case {parsed_start, parsed_end} do
+      {{:ok, start_dt, _}, {:ok, end_dt, _}} ->
+        invalid_start = DateTime.compare(start_dt, DateTime.utc_now()) == :lt
+        invalid_end = DateTime.compare(end_dt, start_dt) != :gt
+
+        if invalid_start or invalid_end do
+          {:error, %{invalid_start: invalid_start, invalid_end: invalid_end}}
+        else
+          {:ok, %{start: start_dt, end: end_dt}}
+        end
+
+      {_, {:ok, _e, _}} ->
+        {:error, %{invalid_start: true, invalid_end: false}}
+
+      {{:ok, _s, _}, _} ->
+        {:error, %{invalid_start: false, invalid_end: true}}
+
+      _ ->
+        {:error, %{invalid_start: true, invalid_end: true}}
+    end
+  end
+
+  defp format_datetime_local(%NaiveDateTime{year: y, month: m, day: d, hour: h, minute: mi}) do
+    :io_lib.format("~4..0B-~2..0B-~2..0BT~2..0B:~2..0B", [y, m, d, h, mi])
+    |> IO.iodata_to_binary()
+  end
+
+  defp datetime_local_min_now do
+    now = DateTime.utc_now()
+    adjusted = %DateTime{now | second: 0, microsecond: {0, 0}}
+    adjusted
+    |> DateTime.to_naive()
+    |> format_datetime_local()
+  end
+
+  defp datetime_local_min_for_end(filters) do
+    case Map.get(filters, "start_time") do
+      nil -> datetime_local_min_now()
+      "" -> datetime_local_min_now()
+      value -> value
+    end
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -133,6 +222,22 @@ defmodule SpatoWeb.AvailableRoomLive do
           <section class="mb-4">
             <h1 class="text-xl font-bold mb-1">Bilik Mesyuarat Tersedia</h1>
             <p class="text-md text-gray-500 mb-4">Cari dan tempah bilik mesyuarat yang tersedia</p>
+
+            <div class="fixed top-24 right-6 z-50">
+              <%= if @invalid_start or @invalid_end do %>
+                <div class="bg-red-600 text-white px-4 py-2 rounded shadow-lg animate-pulse">
+                  <%= if @invalid_start and @invalid_end do %>
+                    Sila semak tarikh & masa mula dan tamat anda.
+                  <% else %>
+                    <%= if @invalid_start do %>
+                      Tarikh & masa mula mesti di masa hadapan.
+                    <% else %>
+                      Tarikh & masa tamat mesti selepas tarikh & masa mula.
+                    <% end %>
+                  <% end %>
+                </div>
+              <% end %>
+            </div>
 
             <!-- Middle Section: Add Meeting Room Button -->
             <section class="mb-4 flex justify-end">
@@ -169,14 +274,22 @@ defmodule SpatoWeb.AvailableRoomLive do
                   field={@form[:start_time]}
                   type="datetime-local"
                   label="Tarikh & Masa Mula"
-                  class="w-44"
+                  min={datetime_local_min_now()}
+                  class={[
+                    "w-44",
+                    if(@invalid_start, do: "border-red-500 focus:ring-red-500", else: "border-gray-300")
+                  ]}
                 />
 
                 <.input
                   field={@form[:end_time]}
                   type="datetime-local"
                   label="Tarikh & Masa Tamat"
-                  class="w-44"
+                  min={datetime_local_min_for_end(@filters)}
+                  class={[
+                    "w-44",
+                    if(@invalid_end, do: "border-red-500 focus:ring-red-500", else: "border-gray-300")
+                  ]}
                 />
 
                 <.button
@@ -205,7 +318,9 @@ defmodule SpatoWeb.AvailableRoomLive do
                   <p class="text-gray-600 mb-2"><%= room.location %></p>
                   <p class="text-sm text-gray-500 mb-3">Kapasiti: <%= room.capacity %> Orang</p>
 
-                <%= if @filters["start_time"] not in [nil, ""] and @filters["end_time"] not in [nil, ""] do %>
+                <%= if @filters["start_time"] not in [nil, ""] and
+                        @filters["end_time"] not in [nil, ""] and
+                        validate_dates(@filters) do %>
                     <.link
                       patch={
                         ~p"/available_rooms?#{%{
@@ -232,7 +347,7 @@ defmodule SpatoWeb.AvailableRoomLive do
 
             <%= if Enum.empty?(@rooms) do %>
               <div class="text-center py-12">
-                <%= if @filters["start_time"] not in [nil, ""] and @filters["end_time"] not in [nil, ""] do %>
+                <%= if @filters["start_time"] not in [nil, ""] and @filters["end_time"] not in [nil, ""] and validate_dates(@filters) do %>
                   <p class="text-red-500 text-lg font-semibold">
                     Tiada bilik mesyuarat tersedia untuk tarikh & masa yang dipilih.
                   </p>

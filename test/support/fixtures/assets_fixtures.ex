@@ -32,7 +32,7 @@ defmodule Spato.AssetsFixtures do
       |> Enum.into(%{
         name: "some name",
         photo_url: "some photo_url",
-        quantity_available: 42,
+        total_quantity: 42,
         serial_number: "some serial_number",
         status: "some status",
         type: "some type"

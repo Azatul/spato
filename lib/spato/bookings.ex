@@ -391,6 +391,19 @@ defmodule Spato.Bookings do
     |> Repo.update()
   end
 
+  def update_booking_status(%VehicleBooking{} = booking, status, reason \\ nil) do
+    attrs =
+      if status == "rejected" and reason do
+        %{status: "rejected", rejection_reason: reason}
+      else
+        %{status: status}
+      end
+
+    booking
+    |> VehicleBooking.changeset(attrs)
+    |> Repo.update()
+  end
+
   def delete_vehicle_booking(%VehicleBooking{} = vb), do: Repo.delete(vb)
 
   def change_vehicle_booking(%VehicleBooking{} = vb, attrs \\ %{}) do
@@ -434,13 +447,17 @@ defmodule Spato.Bookings do
   def approve_booking(%VehicleBooking{} = vb),
     do: update_vehicle_booking(vb, %{status: "approved"})
 
-  def reject_booking(%VehicleBooking{} = vb),
-    do: update_vehicle_booking(vb, %{status: "rejected"})
+  def reject_booking(%VehicleBooking{} = vb, reason \\ nil) do
+    update_vehicle_booking(vb, %{status: "rejected", rejection_reason: reason})
+  end
 
-  def cancel_booking(%VehicleBooking{} = vb, %Spato.Accounts.User{} = user) do
+  def cancel_booking(%VehicleBooking{} = vb, %Spato.Accounts.User{} = user, reason \\ nil) do
     case vb.status do
       "pending" ->
-        update_vehicle_booking(vb, %{status: "cancelled", cancelled_by_user_id: user.id})
+        update_vehicle_booking(vb, %{status: "cancelled", cancelled_by_user_id: user.id, rejection_reason: reason})
+
+      "approved" ->
+        update_vehicle_booking(vb, %{status: "cancelled", cancelled_by_user_id: user.id, rejection_reason: reason})
 
       _ ->
         {:error, :not_allowed}
@@ -453,14 +470,29 @@ defmodule Spato.Bookings do
     update_catering_booking(cb, %{status: "approved", approved_by_user_id: user.id})
   end
 
-  def reject_catering_booking(%CateringBooking{} = cb, %Spato.Accounts.User{} = user) do
-    update_catering_booking(cb, %{status: "rejected", approved_by_user_id: user.id})
+  def reject_catering_booking(%CateringBooking{} = cb, %Spato.Accounts.User{} = user, reason \\ nil) do
+    update_catering_booking(cb, %{
+      status: "rejected",
+      approved_by_user_id: user.id,
+      rejection_reason: reason
+    })
   end
 
-  def cancel_catering_booking(%CateringBooking{} = cb, %Spato.Accounts.User{} = user) do
+  def cancel_catering_booking(%CateringBooking{} = cb, %Spato.Accounts.User{} = user, reason \\ nil) do
     case cb.status do
       "pending" ->
-        update_catering_booking(cb, %{status: "cancelled", cancelled_by_user_id: user.id})
+        update_catering_booking(cb, %{
+          status: "cancelled",
+          cancelled_by_user_id: user.id,
+          rejection_reason: reason
+        })
+
+      "approved" ->
+        update_catering_booking(cb, %{
+          status: "cancelled",
+          cancelled_by_user_id: user.id,
+          rejection_reason: reason
+        })
 
       _ ->
         {:error, :not_allowed}
@@ -567,6 +599,315 @@ defmodule Spato.Bookings do
       completed: Repo.aggregate(from(vb in base_query, where: vb.status == "completed"), :count, :id)
     }
   end
+
+
+  alias Spato.Bookings.EquipmentBooking
+
+    # ===================================================================
+  # --- EQUIPMENT BOOKINGS ---
+  # ===================================================================
+
+    def list_equipment_bookings(user \\ nil) do
+      EquipmentBooking
+      |> scope_by_user(user)
+      |> order_by([eb], desc: eb.inserted_at)
+      |> preload([:equipment, user: [user_profile: [:department]]])
+      |> Repo.all()
+    end
+
+    def list_equipment_bookings_paginated(params \\ %{}, user \\ nil) do
+      page   = Map.get(params, "page", 1) |> to_int()
+      search = Map.get(params, "search", "")
+      status = Map.get(params, "status", "all")
+      date   = Map.get(params, "date", "")
+      per_page = @per_page
+      offset = (page - 1) * per_page
+
+      base_query =
+        from eb in EquipmentBooking,
+          order_by: [desc: eb.inserted_at]
+
+      scoped_query =
+        case user do
+          nil -> base_query
+          _ -> from eb in base_query, where: eb.user_id == ^user.id
+        end
+
+      status_query =
+        if status != "all" do
+          from eb in scoped_query, where: eb.status == ^status
+        else
+          scoped_query
+        end
+
+      date_query =
+        if date != "" do
+          case Date.from_iso8601(date) do
+            {:ok, parsed} ->
+              from eb in status_query,
+                where:
+                  fragment("date(?)", eb.usage_at) == ^parsed or
+                  fragment("date(?)", eb.return_at) == ^parsed
+
+            _ -> status_query
+          end
+        else
+          status_query
+        end
+
+      final_query =
+        if search != "" do
+          like_search = "%#{search}%"
+
+          from eb in date_query,
+            left_join: u in assoc(eb, :user),
+            left_join: up in assoc(u, :user_profile),
+            left_join: d in assoc(up, :department),
+            left_join: e in assoc(eb, :equipment),
+            where:
+              ilike(eb.location, ^like_search) or
+              ilike(eb.status, ^like_search) or
+              ilike(u.email, ^like_search) or
+              ilike(e.name, ^like_search) or
+              ilike(e.serial_number, ^like_search) or
+              ilike(up.full_name, ^like_search) or
+              ilike(d.name, ^like_search),
+            distinct: eb.id,
+            select: eb
+        else
+          date_query
+        end
+
+      total =
+        final_query
+        |> exclude(:order_by)
+        |> Repo.aggregate(:count, :id)
+
+      equipment_bookings_page =
+        final_query
+        |> limit(^per_page)
+        |> offset(^offset)
+        |> Repo.all()
+        |> Repo.preload([:equipment, user: [user_profile: [:department]]])
+
+      total_pages = ceil(total / per_page)
+
+      %{
+        equipment_bookings_page: equipment_bookings_page,
+        total: total,
+        total_pages: total_pages,
+        page: page
+      }
+    end
+
+    def available_equipment(filters) do
+      import Ecto.Query
+
+      query    = filters["query"]
+      type     = filters["type"]
+      page     = Map.get(filters, "page", 1) |> to_int()
+      per_page = 12
+      offset   = (page - 1) * per_page
+
+      usage_at  = parse_datetime(filters["usage_at"])
+      return_at = parse_datetime(filters["return_at"])
+
+      # Base query – only equipment with status "tersedia"
+      base_query =
+        from e in Spato.Assets.Equipment,
+          where: e.status == "tersedia"
+
+      # Type filter
+      base_query =
+        if type && type != "all" do
+          from e in base_query, where: e.type == ^String.downcase(type)
+        else
+          base_query
+        end
+
+      # Search filter
+      base_query =
+        if query not in [nil, ""] do
+          like_q = "%#{query}%"
+          from e in base_query,
+            where: ilike(e.name, ^like_q) or ilike(e.serial_number, ^like_q)
+        else
+          base_query
+        end
+
+      # Availability filter – check overlapping bookings and remaining quantity
+      final_query =
+        if usage_at && return_at do
+          from e in base_query,
+            left_join: b in Spato.Bookings.EquipmentBooking,
+            on:
+              b.equipment_id == e.id and
+              b.status in ["pending", "approved"] and
+              b.usage_at < ^return_at and
+              b.return_at > ^usage_at,
+            group_by: e.id,
+            having:
+              e.total_quantity - coalesce(sum(b.requested_quantity), 0) > 0,
+            select_merge: %{
+              available_quantity: e.total_quantity - coalesce(sum(b.requested_quantity), 0)
+            }
+        else
+          from e in base_query,
+            select_merge: %{available_quantity: e.total_quantity}
+        end
+
+      # FIX: wrap in subquery before counting
+      total =
+        final_query
+        |> subquery()
+        |> Repo.aggregate(:count, :id)
+
+      total_pages = ceil(total / per_page)
+
+      equipments_page =
+        final_query
+        |> limit(^per_page)
+        |> offset(^offset)
+        |> Repo.all()
+
+      %{
+        equipments_page: equipments_page,
+        total: total,
+        total_pages: total_pages,
+        page: page
+      }
+    end
+
+    def get_equipment_booking!(id) do
+      Repo.get!(EquipmentBooking, id)
+      |> Repo.preload([
+        :equipment,
+        [user: [user_profile: [:department]]],
+        :approved_by_user,
+        :cancelled_by_user
+      ])
+    end
+
+    def create_equipment_booking(attrs) do
+      %EquipmentBooking{}
+      |> EquipmentBooking.changeset(attrs)
+      |> Repo.insert()
+    end
+
+    def complete_equipment_booking(%EquipmentBooking{} = booking) do
+      update_equipment_booking(booking, %{status: "completed"})
+    end
+
+    def cancel_equipment_booking(%EquipmentBooking{} = booking, %Spato.Accounts.User{} = user, reason \\ nil) do
+      case booking.status do
+        "pending" ->
+          update_equipment_booking(booking, %{
+            status: "cancelled",
+            cancelled_by_user_id: user.id,
+            rejection_reason: reason
+          })
+
+        "approved" ->
+          update_equipment_booking(booking, %{
+            status: "cancelled",
+            cancelled_by_user_id: user.id,
+            rejection_reason: reason
+          })
+
+        _ -> {:error, :not_allowed}
+      end
+    end
+
+    def update_equipment_booking(%EquipmentBooking{} = eb, attrs), do: eb |> EquipmentBooking.changeset(attrs) |> Repo.update()
+    def delete_equipment_booking(%EquipmentBooking{} = eb), do: Repo.delete(eb)
+    def change_equipment_booking(%EquipmentBooking{} = eb, attrs \\ %{}), do: EquipmentBooking.changeset(eb, attrs)
+
+    def approve_equipment_booking(%EquipmentBooking{} = booking) do
+      update_equipment_booking(booking, %{status: "approved"})
+    end
+
+    def reject_equipment_booking(%EquipmentBooking{} = booking, reason \\ nil) do
+      alias Spato.Assets.Equipment
+
+      Ecto.Multi.new()
+      |> Ecto.Multi.update(:booking,
+           EquipmentBooking.changeset(booking, %{status: "rejected", rejection_reason: reason})
+         )
+      |> Ecto.Multi.run(:restore_equipment, fn repo, %{booking: booking} ->
+        equipment = repo.get!(Equipment, booking.equipment_id)
+        new_qty = equipment.total_quantity + booking.requested_quantity
+        equipment
+        |> Ecto.Changeset.change(%{total_quantity: new_qty})
+        |> repo.update()
+      end)
+      |> Repo.transaction()
+    end
+
+    def get_equipment_booking_stats do
+      now = DateTime.utc_now()
+
+      total = Repo.aggregate(EquipmentBooking, :count, :id)
+      pending = Repo.aggregate(from(e in EquipmentBooking, where: e.status == "pending"), :count, :id)
+      approved = Repo.aggregate(from(e in EquipmentBooking, where: e.status == "approved"), :count, :id)
+
+      active =
+        Repo.aggregate(
+          from(e in EquipmentBooking,
+            where: e.status == "approved" and e.usage_at <= ^now and e.return_at >= ^now
+          ),
+          :count,
+          :id
+        )
+
+      %{total: total, pending: pending, approved: approved, active: active}
+    end
+
+    def get_user_equipment_booking_stats(user_id) do
+      base_query =
+        from eb in EquipmentBooking,
+          where: eb.user_id == ^user_id
+
+      %{
+        total: Repo.aggregate(base_query, :count, :id),
+        pending: Repo.aggregate(from(eb in base_query, where: eb.status == "pending"), :count, :id),
+        approved: Repo.aggregate(from(eb in base_query, where: eb.status == "approved"), :count, :id),
+        completed: Repo.aggregate(from(eb in base_query, where: eb.status == "completed"), :count, :id)
+      }
+    end
+
+    # == LIST APPROVED BOOKINGS IN RANGE ==
+      def list_approved_bookings_in_range(start_date, end_date) do
+        import Ecto.Query
+
+        # Vehicles
+        vehicle_query =
+          from v in Spato.Bookings.VehicleBooking,
+            where: v.status == "approved" and v.pickup_time >= ^start_date and v.return_time <= ^end_date,
+            join: veh in assoc(v, :vehicle),
+            select: %{
+              id: v.id,
+              type: "vehicle",
+              title: veh.name,
+              usage_at: v.pickup_time,
+              return_at: v.return_time
+            }
+
+        # Equipments
+        equipment_query =
+          from e in Spato.Bookings.EquipmentBooking,
+            where: e.status == "approved" and e.usage_at >= ^start_date and e.return_at <= ^end_date,
+            join: eq in assoc(e, :equipment),
+            select: %{
+              id: e.id,
+              type: "equipment",
+              title: eq.name,
+              usage_at: e.usage_at,
+              return_at: e.return_at
+            }
+
+        # Merge both
+        Repo.all(union_all(vehicle_query, ^equipment_query))
+      end
 
   def get_user_catering_booking_stats(user_id) do
     now = Date.utc_today()
@@ -811,13 +1152,24 @@ defmodule Spato.Bookings do
   def approve_meeting_room_booking(%MeetingRoomBooking{} = vb),
     do: update_meeting_room_booking(vb, %{status: "approved"})
 
-  def reject_meeting_room_booking(%MeetingRoomBooking{} = vb),
-    do: update_meeting_room_booking(vb, %{status: "rejected"})
+  def reject_meeting_room_booking(%MeetingRoomBooking{} = vb, reason \\ nil),
+    do: update_meeting_room_booking(vb, %{status: "rejected", rejection_reason: reason})
 
-  def cancel_meeting_room_booking(%MeetingRoomBooking{} = vb, %Spato.Accounts.User{} = user) do
+  def cancel_meeting_room_booking(%MeetingRoomBooking{} = vb, %Spato.Accounts.User{} = user, reason \\ nil) do
     case vb.status do
       "pending" ->
-        update_meeting_room_booking(vb, %{status: "cancelled", cancelled_by_user_id: user.id})
+        update_meeting_room_booking(vb, %{
+          status: "cancelled",
+          cancelled_by_user_id: user.id,
+          rejection_reason: reason
+        })
+
+      "approved" ->
+        update_meeting_room_booking(vb, %{
+          status: "cancelled",
+          cancelled_by_user_id: user.id,
+          rejection_reason: reason
+        })
 
       _ ->
         {:error, :not_allowed}
@@ -908,5 +1260,46 @@ defmodule Spato.Bookings do
       completed: completed
     }
   end
+
+   # Shared validator for all bookings
+   def validate_datetime_order(changeset, start_field, end_field) do
+    start_dt = Ecto.Changeset.get_field(changeset, start_field)
+    end_dt   = Ecto.Changeset.get_field(changeset, end_field)
+
+    cond do
+      is_nil(start_dt) or is_nil(end_dt) ->
+        changeset
+
+      # Same exact datetime
+      DateTime.compare(start_dt, end_dt) == :eq ->
+        Ecto.Changeset.add_error(
+          changeset,
+          end_field,
+          "Tarikh dan masa guna tidak boleh sama dengan tarikh dan masa pulang"
+        )
+
+      # End is before start
+      DateTime.compare(start_dt, end_dt) == :gt ->
+        Ecto.Changeset.add_error(
+          changeset,
+          end_field,
+          "Tarikh pulang mesti selepas tarikh guna"
+        )
+
+      true ->
+        changeset
+    end
+  end
+
+  def valid_datetime_range?(pickup_time, return_time) when is_binary(pickup_time) and is_binary(return_time) do
+    with {:ok, pickup, _} <- DateTime.from_iso8601(pickup_time),
+         {:ok, return, _} <- DateTime.from_iso8601(return_time) do
+      DateTime.compare(pickup, return) == :lt
+    else
+      _ -> false
+    end
+  end
+
+  def valid_datetime_range?(_, _), do: false
 
 end

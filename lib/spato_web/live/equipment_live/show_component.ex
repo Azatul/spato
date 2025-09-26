@@ -22,9 +22,25 @@ defmodule SpatoWeb.EquipmentLive.ShowComponent do
 
       <.list>
         <:item title="Nama">{@equipment.name}</:item>
-        <:item title="Jenis">{Spato.Assets.Equipment.human_type(@equipment.type)}</:item>
+        <:item title="Jenis">
+        <span class={
+          "px-1.5 py-0.5 rounded-full text-white text-xs font-semibold " <>
+          case @equipment.type do
+            "laptop" -> "bg-blue-500"
+            "projector" -> "bg-green-500"
+            "projector_screen" -> "bg-green-500"
+            "printer" -> "bg-purple-500"
+            "kamera" -> "bg-yellow-500"
+            "speaker" -> "bg-gray-500"
+            "laser_pointer" -> "bg-gray-500"
+            "extension_cord" -> "bg-gray-500"
+            "whiteboard" -> "bg-gray-500"
+          end
+        }>
+          {Spato.Assets.Equipment.human_type(@equipment.type)}
+        </span></:item>
         <:item title="No. Siri">{@equipment.serial_number}</:item>
-        <:item title="Kuantiti Tersedia">{@equipment.quantity_available}</:item>
+        <:item title="Kuantiti Tersedia">{@equipment.total_quantity} unit</:item>
         <:item title="Ditambah Oleh">
           <%= @equipment.created_by && @equipment.created_by.user_profile && @equipment.created_by.user_profile.full_name || "N/A" %>
         </:item>

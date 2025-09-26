@@ -72,7 +72,7 @@ defmodule Spato.AssetsTest do
 
     import Spato.AssetsFixtures
 
-    @invalid_attrs %{name: nil, status: nil, type: nil, photo_url: nil, serial_number: nil, quantity_available: nil}
+    @invalid_attrs %{name: nil, status: nil, type: nil, photo_url: nil, serial_number: nil, total_quantity: nil}
 
     test "list_equipments/0 returns all equipments" do
       equipment = equipment_fixture()
@@ -85,7 +85,7 @@ defmodule Spato.AssetsTest do
     end
 
     test "create_equipment/1 with valid data creates a equipment" do
-      valid_attrs = %{name: "some name", status: "some status", type: "some type", photo_url: "some photo_url", serial_number: "some serial_number", quantity_available: 42}
+      valid_attrs = %{name: "some name", status: "some status", type: "some type", photo_url: "some photo_url", serial_number: "some serial_number", total_quantity: 42}
 
       assert {:ok, %Equipment{} = equipment} = Assets.create_equipment(valid_attrs)
       assert equipment.name == "some name"
@@ -93,7 +93,7 @@ defmodule Spato.AssetsTest do
       assert equipment.type == "some type"
       assert equipment.photo_url == "some photo_url"
       assert equipment.serial_number == "some serial_number"
-      assert equipment.quantity_available == 42
+      assert equipment.total_quantity == 42
     end
 
     test "create_equipment/1 with invalid data returns error changeset" do
@@ -102,7 +102,7 @@ defmodule Spato.AssetsTest do
 
     test "update_equipment/2 with valid data updates the equipment" do
       equipment = equipment_fixture()
-      update_attrs = %{name: "some updated name", status: "some updated status", type: "some updated type", photo_url: "some updated photo_url", serial_number: "some updated serial_number", quantity_available: 43}
+      update_attrs = %{name: "some updated name", status: "some updated status", type: "some updated type", photo_url: "some updated photo_url", serial_number: "some updated serial_number", total_quantity: 43}
 
       assert {:ok, %Equipment{} = equipment} = Assets.update_equipment(equipment, update_attrs)
       assert equipment.name == "some updated name"
@@ -110,7 +110,7 @@ defmodule Spato.AssetsTest do
       assert equipment.type == "some updated type"
       assert equipment.photo_url == "some updated photo_url"
       assert equipment.serial_number == "some updated serial_number"
-      assert equipment.quantity_available == 43
+      assert equipment.total_quantity == 43
     end
 
     test "update_equipment/2 with invalid data returns error changeset" do

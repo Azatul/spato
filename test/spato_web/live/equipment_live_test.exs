@@ -4,9 +4,9 @@ defmodule SpatoWeb.EquipmentLiveTest do
   import Phoenix.LiveViewTest
   import Spato.AssetsFixtures
 
-  @create_attrs %{name: "some name", status: "some status", type: "some type", photo_url: "some photo_url", serial_number: "some serial_number", quantity_available: 42}
-  @update_attrs %{name: "some updated name", status: "some updated status", type: "some updated type", photo_url: "some updated photo_url", serial_number: "some updated serial_number", quantity_available: 43}
-  @invalid_attrs %{name: nil, status: nil, type: nil, photo_url: nil, serial_number: nil, quantity_available: nil}
+  @create_attrs %{name: "some name", status: "some status", type: "some type", photo_url: "some photo_url", serial_number: "some serial_number", total_quantity: 42}
+  @update_attrs %{name: "some updated name", status: "some updated status", type: "some updated type", photo_url: "some updated photo_url", serial_number: "some updated serial_number", total_quantity: 43}
+  @invalid_attrs %{name: nil, status: nil, type: nil, photo_url: nil, serial_number: nil, total_quantity: nil}
 
   defp create_equipment(_) do
     equipment = equipment_fixture()

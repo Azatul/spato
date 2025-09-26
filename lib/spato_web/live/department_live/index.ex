@@ -86,7 +86,7 @@ defmodule SpatoWeb.DepartmentLive.Index do
       <!-- Main content -->
        <main class="flex-1 pt-20 p-6 transition-all duration-300">
        <body class="bg-gray-100 p-4 md:p-8">
-          <h1 class="text-xl font-bold mb-1">Urus Jabatan</h1>
+          <h1 class="text-xl font-bold mb-1">Jabatan</h1>
           <p class="text-md text-gray-500 mb-6">Semak dan urus semua jabatan dalam sistem</p>
 
           <!-- Middle Section: Add User Button -->

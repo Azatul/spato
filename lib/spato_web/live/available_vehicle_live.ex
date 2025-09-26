@@ -27,6 +27,9 @@ defmodule SpatoWeb.AvailableVehicleLive do
      |> assign(:vehicles, [])
      |> assign(:filters, filters)
      |> assign(:form, to_form(filters))
+     |> assign(:invalid_dates, false)
+     |> assign(:invalid_pickup, false)
+     |> assign(:invalid_return, false)
      |> assign(:page, 1)
      |> assign(:total_pages, 1)
      |> assign(:total, 0)
@@ -58,26 +61,61 @@ defmodule SpatoWeb.AvailableVehicleLive do
         filters when is_map(filters) -> filters
       end
 
-      new_filters = %{
-        "query" => Map.get(filters, "query", ""),
-        "type" => Map.get(filters, "type", "all"),
-        "capacity" => Map.get(filters, "capacity", ""),
-        "pickup_time" => Map.get(filters, "pickup_time", ""),
-        "return_time" => Map.get(filters, "return_time", "")
-      }
+    new_filters = %{
+      "query" => Map.get(filters, "query", ""),
+      "type" => Map.get(filters, "type", "all"),
+      "capacity" => Map.get(filters, "capacity", ""),
+      "pickup_time" => Map.get(filters, "pickup_time", ""),
+      "return_time" => Map.get(filters, "return_time", "")
+    }
 
-    {:noreply,
-     socket
-     |> assign(:filters, new_filters)
-     |> assign(:form, to_form(filters)) # keep form fields as raw strings
-     |> assign(:page, 1)
-     |> load_vehicles()}
+    case validate_dates_with_flags(new_filters) do
+      {:ok, _parsed} ->
+        {:noreply,
+         push_patch(
+           socket
+           |> assign(:invalid_dates, false)
+           |> assign(:invalid_pickup, false)
+           |> assign(:invalid_return, false),
+           to:
+             ~p"/available_vehicles?#{%{
+               query: new_filters["query"],
+               type: new_filters["type"],
+               capacity: new_filters["capacity"],
+               pickup_time: new_filters["pickup_time"],
+               return_time: new_filters["return_time"],
+               page: 1
+             }}"
+         )}
+
+      {:error, %{invalid_pickup: ip, invalid_return: ir}} ->
+        {:noreply,
+         socket
+         |> assign(:filters, new_filters)
+         |> assign(:form, to_form(new_filters))
+         |> assign(:invalid_dates, ip or ir)
+         |> assign(:invalid_pickup, ip)
+         |> assign(:invalid_return, ir)}
+    end
   end
 
   @impl true
   def handle_event("next_page", _, socket) do
     if socket.assigns.page < socket.assigns.total_pages do
-      {:noreply, socket |> assign(:page, socket.assigns.page + 1) |> load_vehicles()}
+      new_page = socket.assigns.page + 1
+
+      {:noreply,
+       push_patch(socket,
+         to:
+           ~p"/available_vehicles?#{%{
+             query: socket.assigns.filters["query"],
+             type: socket.assigns.filters["type"],
+             capacity: socket.assigns.filters["capacity"],
+             pickup_time: socket.assigns.filters["pickup_time"],
+             return_time: socket.assigns.filters["return_time"],
+             page: new_page
+           }}"
+       )}
     else
       {:noreply, socket}
     end
@@ -86,7 +124,20 @@ defmodule SpatoWeb.AvailableVehicleLive do
   @impl true
   def handle_event("prev_page", _, socket) do
     if socket.assigns.page > 1 do
-      {:noreply, socket |> assign(:page, socket.assigns.page - 1) |> load_vehicles()}
+      new_page = socket.assigns.page - 1
+
+      {:noreply,
+       push_patch(socket,
+         to:
+           ~p"/available_vehicles?#{%{
+             query: socket.assigns.filters["query"],
+             type: socket.assigns.filters["type"],
+             capacity: socket.assigns.filters["capacity"],
+             pickup_time: socket.assigns.filters["pickup_time"],
+             return_time: socket.assigns.filters["return_time"],
+             page: new_page
+           }}"
+       )}
     else
       {:noreply, socket}
     end
@@ -98,6 +149,32 @@ defmodule SpatoWeb.AvailableVehicleLive do
 
   @impl true
   def handle_params(params, _url, socket) do
+    page =
+      case Map.get(params, "page") do
+        p when is_integer(p) -> p
+        p when is_binary(p) ->
+          case Integer.parse(p) do
+            {v, _} -> v
+            :error -> 1
+          end
+        _ -> 1
+      end
+
+    filters = %{
+      "query" => Map.get(params, "query", ""),
+      "type" => Map.get(params, "type", "all"),
+      "capacity" => Map.get(params, "capacity", ""),
+      "pickup_time" => Map.get(params, "pickup_time", ""),
+      "return_time" => Map.get(params, "return_time", "")
+    }
+
+    socket =
+      socket
+      |> assign(:filters, filters)
+      |> assign(:form, to_form(filters))
+      |> assign(:page, if(page < 1, do: 1, else: page))
+      |> assign(:params, params)
+
     socket =
       case params["action"] do
         "new" ->
@@ -107,7 +184,6 @@ defmodule SpatoWeb.AvailableVehicleLive do
           |> assign(:live_action, :new)
           |> assign(:page_title, "Tambah Tempahan Kenderaan")
           |> assign(:vehicle_booking, vehicle_booking)
-          |> assign(:params, params)
 
         _ ->
           socket
@@ -123,6 +199,77 @@ defmodule SpatoWeb.AvailableVehicleLive do
     {:noreply, socket |> load_vehicles()}
   end
 
+  defp validate_dates(%{"pickup_time" => pickup_time, "return_time" => return_time}) do
+    with {:ok, pickup_dt, _} <- DateTime.from_iso8601(pickup_time <> ":00Z"),
+         {:ok, return_dt, _} <- DateTime.from_iso8601(return_time <> ":00Z"),
+         true <- DateTime.compare(pickup_dt, DateTime.utc_now()) != :lt,
+         true <- DateTime.compare(return_dt, pickup_dt) == :gt do
+      true
+    else
+      _ -> false
+    end
+  end
+
+  defp validate_dates(_), do: false
+
+  defp validate_dates_with_flags(%{"pickup_time" => pickup_time, "return_time" => return_time}) do
+    parsed_pickup =
+      case pickup_time do
+        nil -> :error
+        "" -> :error
+        _ -> DateTime.from_iso8601(pickup_time <> ":00Z")
+      end
+
+    parsed_return =
+      case return_time do
+        nil -> :error
+        "" -> :error
+        _ -> DateTime.from_iso8601(return_time <> ":00Z")
+      end
+
+    case {parsed_pickup, parsed_return} do
+      {{:ok, pickup_dt, _}, {:ok, return_dt, _}} ->
+        invalid_pickup = DateTime.compare(pickup_dt, DateTime.utc_now()) == :lt
+        invalid_return = DateTime.compare(return_dt, pickup_dt) != :gt
+
+        if invalid_pickup or invalid_return do
+          {:error, %{invalid_pickup: invalid_pickup, invalid_return: invalid_return}}
+        else
+          {:ok, %{pickup: pickup_dt, return: return_dt}}
+        end
+
+      {_, {:ok, _r, _}} ->
+        {:error, %{invalid_pickup: true, invalid_return: false}}
+
+      {{:ok, _u, _}, _} ->
+        {:error, %{invalid_pickup: false, invalid_return: true}}
+
+      _ ->
+        {:error, %{invalid_pickup: true, invalid_return: true}}
+    end
+  end
+
+  defp format_datetime_local(%NaiveDateTime{year: y, month: m, day: d, hour: h, minute: mi}) do
+    :io_lib.format("~4..0B-~2..0B-~2..0BT~2..0B:~2..0B", [y, m, d, h, mi])
+    |> IO.iodata_to_binary()
+  end
+
+  defp datetime_local_min_now do
+    now = DateTime.utc_now()
+    adjusted = %DateTime{now | second: 0, microsecond: {0, 0}}
+    adjusted
+    |> DateTime.to_naive()
+    |> format_datetime_local()
+  end
+
+  defp datetime_local_min_for_return(filters) do
+    case Map.get(filters, "pickup_time") do
+      nil -> datetime_local_min_now()
+      "" -> datetime_local_min_now()
+      value -> value
+    end
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -135,6 +282,22 @@ defmodule SpatoWeb.AvailableVehicleLive do
           <section class="mb-4">
             <h1 class="text-xl font-bold mb-1">Kenderaan Tersedia</h1>
             <p class="text-md text-gray-500 mb-4">Cari dan tempah kenderaan yang tersedia</p>
+
+            <div class="fixed top-24 right-6 z-50">
+              <%= if @invalid_pickup or @invalid_return do %>
+                <div class="bg-red-600 text-white px-4 py-2 rounded shadow-lg animate-pulse">
+                  <%= if @invalid_pickup and @invalid_return do %>
+                    Sila semak tarikh & masa ambil dan pulang anda.
+                  <% else %>
+                    <%= if @invalid_pickup do %>
+                      Tarikh & masa ambil mesti di masa hadapan.
+                    <% else %>
+                      Tarikh & masa pulang mesti selepas tarikh & masa ambil.
+                    <% end %>
+                  <% end %>
+                </div>
+              <% end %>
+            </div>
 
             <!-- Middle Section: Add Vehicle Button -->
             <section class="mb-4 flex justify-end">
@@ -187,14 +350,22 @@ defmodule SpatoWeb.AvailableVehicleLive do
                   field={@form[:pickup_time]}
                   type="datetime-local"
                   label="Tarikh & Masa Ambil"
-                  class="w-44"
+                  min={datetime_local_min_now()}
+                  class={[
+                    "w-44",
+                    if(@invalid_pickup, do: "border-red-500 focus:ring-red-500", else: "border-gray-300")
+                  ]}
                 />
 
                 <.input
                   field={@form[:return_time]}
                   type="datetime-local"
                   label="Tarikh & Masa Pulang"
-                  class="w-44"
+                  min={datetime_local_min_for_return(@filters)}
+                  class={[
+                    "w-44",
+                    if(@invalid_return, do: "border-red-500 focus:ring-red-500", else: "border-gray-300")
+                  ]}
                 />
 
                 <.button
@@ -231,14 +402,20 @@ defmodule SpatoWeb.AvailableVehicleLive do
                   <p class="text-gray-600 mb-2"><%= vehicle.plate_number %></p>
                   <p class="text-sm text-gray-500 mb-3"><%= vehicle.capacity %> penumpang</p>
 
-                <%= if @filters["pickup_time"] not in [nil, ""] and @filters["return_time"] not in [nil, ""] do %>
+                <%= if @filters["pickup_time"] not in [nil, ""] and
+                        @filters["return_time"] not in [nil, ""] and
+                        validate_dates(@filters) do %>
                     <.link
                       patch={
                         ~p"/available_vehicles?#{%{
                           action: "new",
                           vehicle_id: vehicle.id,
+                          query: @filters["query"],
+                          type: @filters["type"],
+                          capacity: @filters["capacity"],
                           pickup_time: @filters["pickup_time"],
-                          return_time: @filters["return_time"]
+                          return_time: @filters["return_time"],
+                          page: @page
                         }}"
                       }
                       class="block"
@@ -258,7 +435,7 @@ defmodule SpatoWeb.AvailableVehicleLive do
 
             <%= if Enum.empty?(@vehicles) do %>
               <div class="text-center py-12">
-                <%= if @filters["pickup_time"] not in [nil, ""] and @filters["return_time"] not in [nil, ""] do %>
+                <%= if @filters["pickup_time"] not in [nil, ""] and @filters["return_time"] not in [nil, ""] and validate_dates(@filters) do %>
                   <p class="text-red-500 text-lg font-semibold">
                     Tiada kenderaan tersedia untuk tarikh & masa yang dipilih.
                   </p>
@@ -290,7 +467,7 @@ defmodule SpatoWeb.AvailableVehicleLive do
             </div>
 
             <!-- Modal -->
-            <.modal :if={@live_action in [:new, :edit]} id="vehicle_booking-modal" show on_cancel={JS.patch(~p"/available_vehicles")}>
+            <.modal :if={@live_action in [:new, :edit]} id="vehicle_booking-modal" show on_cancel={JS.patch(~p"/available_vehicles?#{%{query: @filters["query"], type: @filters["type"], capacity: @filters["capacity"], pickup_time: @filters["pickup_time"], return_time: @filters["return_time"], page: @page}}") }>
               <.live_component
                 module={SpatoWeb.VehicleBookingLive.FormComponent}
                 id={@vehicle_booking && @vehicle_booking.id || :new}
@@ -298,7 +475,7 @@ defmodule SpatoWeb.AvailableVehicleLive do
                 action={@live_action}
                 vehicle_booking={@vehicle_booking}
                 current_user={@current_user}
-                patch={~p"/available_vehicles"}
+                patch={~p"/available_vehicles?#{%{query: @filters["query"], type: @filters["type"], capacity: @filters["capacity"], pickup_time: @filters["pickup_time"], return_time: @filters["return_time"], page: @page}}"}
                 params={@params}
               />
             </.modal>

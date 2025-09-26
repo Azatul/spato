@@ -1,4 +1,4 @@
-defmodule SpatoWeb.MeetingRoomBookingLive.AdminIndex do
+defmodule SpatoWeb.EquipmentBookingLive.AdminIndex do
   use SpatoWeb, :live_view
   import SpatoWeb.Components.Sidebar
   import SpatoWeb.Components.Headbar
@@ -12,7 +12,7 @@ defmodule SpatoWeb.MeetingRoomBookingLive.AdminIndex do
   def mount(_params, _session, socket) do
     {:ok,
      socket
-     |> assign(:active_tab, "admin_meeting_rooms")
+     |> assign(:active_tab, "admin_equipments")
      |> assign(:sidebar_open, true)
      |> assign(:current_user, socket.assigns.current_user)
      |> assign(:filter_status, "all")
@@ -25,8 +25,8 @@ defmodule SpatoWeb.MeetingRoomBookingLive.AdminIndex do
      |> assign(:selected_status, nil)
      |> assign(:reason, nil)
      |> assign(:edit_booking, nil)
-     |> load_meeting_room_bookings()
-     |> assign(:stats, Bookings.get_meeting_room_booking_stats())}
+     |> assign(:stats, Bookings.get_equipment_booking_stats())
+     |> load_equipment_bookings()}
   end
 
   @impl true
@@ -42,49 +42,90 @@ defmodule SpatoWeb.MeetingRoomBookingLive.AdminIndex do
      |> assign(:search_query, search)
      |> assign(:filter_status, status)
      |> assign(:filter_date, date)
-     |> load_meeting_room_bookings()
+     |> load_equipment_bookings()
      |> apply_action(socket.assigns.live_action, params)}
   end
 
   # --- EVENTS ---
+
   @impl true
   def handle_event("approve", %{"id" => id}, socket) do
-    booking = Bookings.get_meeting_room_booking!(id)
-    {:ok, _} = Bookings.approve_meeting_room_booking(booking)
+    booking = Bookings.get_equipment_booking!(id)
+    {:ok, _} = Bookings.approve_equipment_booking(booking)
+    updated = Bookings.get_equipment_booking!(id)
     {:noreply,
      socket
      |> assign(:live_action, nil)
-     |> load_meeting_room_bookings()
+     |> replace_equipment_booking_in_list(updated)
+     |> assign(:stats, Bookings.get_equipment_booking_stats())
      |> put_flash(:info, "Tempahan telah diluluskan")}
   end
 
   @impl true
   def handle_event("reject", %{"id" => id}, socket) do
-    booking = Bookings.get_meeting_room_booking!(id)
-    {:ok, _} = Bookings.reject_meeting_room_booking(booking)
+    booking = Bookings.get_equipment_booking!(id)
+    {:ok, _} = Bookings.reject_equipment_booking(booking)
+    updated = Bookings.get_equipment_booking!(id)
     {:noreply,
      socket
      |> assign(:live_action, nil)
-     |> load_meeting_room_bookings()
+     |> replace_equipment_booking_in_list(updated)
+     |> assign(:stats, Bookings.get_equipment_booking_stats())
      |> put_flash(:info, "Tempahan telah ditolak")}
   end
 
   @impl true
-  def handle_event("open_reject_modal", %{"id" => id}, socket) do
-    booking = Bookings.get_meeting_room_booking!(id)
+  def handle_event("toggle_sidebar", _params, socket) do
+    {:noreply, update(socket, :sidebar_open, &(!&1))}
+  end
+
+  @impl true
+  def handle_event("search", %{"q" => query}, socket) do
     {:noreply,
      socket
-     |> assign(:reject_booking, booking)
-     |> assign(:show_reject_modal, true)}
+     |> assign(:search_query, query)
+     |> assign(:page, 1)
+     |> load_equipment_bookings()}
+  end
+
+  @impl true
+  def handle_event("filter_status", %{"status" => status}, socket) do
+    {:noreply,
+      push_patch(socket,
+        to: ~p"/admin/equipment_bookings?page=1&q=#{socket.assigns.search_query}&status=#{status}&date=#{socket.assigns.filter_date}") }
+  end
+
+  @impl true
+  def handle_event("filter_date", %{"date" => date}, socket) do
+    {:noreply,
+      push_patch(socket,
+        to: ~p"/admin/equipment_bookings?page=1&q=#{socket.assigns.search_query}&status=#{socket.assigns.filter_status}&date=#{date}") }
+  end
+
+  @impl true
+  def handle_event("paginate", %{"page" => page}, socket) do
+    {:noreply,
+     socket
+     |> assign(:page, String.to_integer(page))
+     |> load_equipment_bookings()}
+  end
+
+  @impl true
+  def handle_event("open_reject_modal", %{"id" => id}, socket) do
+    booking = Bookings.get_equipment_booking!(id)
+    {:noreply, socket |> assign(:reject_booking, booking) |> assign(:show_reject_modal, true)}
   end
 
   @impl true
   def handle_event("submit_rejection", %{"reason" => reason}, socket) do
-    {:ok, _} = Bookings.reject_meeting_room_booking(socket.assigns.reject_booking, reason)
+    {:ok, _} = Bookings.reject_equipment_booking(socket.assigns.reject_booking, reason)
+    updated = Bookings.get_equipment_booking!(socket.assigns.reject_booking.id)
     {:noreply,
      socket
      |> assign(:show_reject_modal, false)
-     |> load_meeting_room_bookings()
+     |> assign(:reject_booking, nil)
+     |> replace_equipment_booking_in_list(updated)
+     |> assign(:stats, Bookings.get_equipment_booking_stats())
      |> assign(:live_action, nil)}
   end
 
@@ -95,7 +136,7 @@ defmodule SpatoWeb.MeetingRoomBookingLive.AdminIndex do
 
   @impl true
   def handle_event("open_edit_modal", %{"id" => id}, socket) do
-    booking = Bookings.get_meeting_room_booking!(id)
+    booking = Bookings.get_equipment_booking!(id)
     {:noreply, socket |> assign(:edit_booking, booking) |> assign(:show_edit_modal, true) |> assign(:live_action, nil)}
   end
 
@@ -109,12 +150,14 @@ defmodule SpatoWeb.MeetingRoomBookingLive.AdminIndex do
         _ -> %{status: status, rejection_reason: nil}
       end
 
-    {:ok, _booking} = Bookings.update_meeting_room_booking(socket.assigns.edit_booking, update_params)
+    {:ok, _booking} = Bookings.update_equipment_booking(socket.assigns.edit_booking, update_params)
+    updated = Bookings.get_equipment_booking!(socket.assigns.edit_booking.id)
 
     {:noreply,
      socket
      |> assign(:show_edit_modal, false)
-     |> load_meeting_room_bookings()
+     |> replace_equipment_booking_in_list(updated)
+     |> assign(:stats, Bookings.get_equipment_booking_stats())
      |> assign(:selected_status, nil)
      |> assign(:live_action, nil)}
   end
@@ -128,55 +171,21 @@ defmodule SpatoWeb.MeetingRoomBookingLive.AdminIndex do
      |> assign(:live_action, nil)}
   end
 
-  @impl true
-  def handle_event("toggle_sidebar", _params, socket) do
-    {:noreply, update(socket, :sidebar_open, &(!&1))}
-  end
-
-  @impl true
-  def handle_event("search", %{"q" => query}, socket) do
-    {:noreply,
-     push_patch(socket,
-       to: ~p"/admin/meeting_room_bookings?page=1&q=#{query}&status=#{socket.assigns.filter_status}&date=#{socket.assigns.filter_date}"
-     )}
-  end
-
-  @impl true
-  def handle_event("filter_status", %{"status" => status}, socket) do
-    {:noreply,
-      push_patch(socket,
-        to: ~p"/admin/meeting_room_bookings?page=1&q=#{socket.assigns.search_query}&status=#{status}&date=#{socket.assigns.filter_date}") }
-  end
-
-  @impl true
-  def handle_event("filter_date", %{"date" => date}, socket) do
-    {:noreply,
-      push_patch(socket,
-        to: ~p"/admin/meeting_room_bookings?page=1&q=#{socket.assigns.search_query}&status=#{socket.assigns.filter_status}&date=#{date}") }
-  end
-
-  @impl true
-  def handle_event("paginate", %{"page" => page}, socket) do
-    {:noreply,
-     push_patch(socket,
-       to: ~p"/admin/meeting_room_bookings?page=#{page}&q=#{socket.assigns.search_query}&status=#{socket.assigns.filter_status}&date=#{socket.assigns.filter_date}"
-     )}
-  end
-
   defp apply_action(socket, :show, %{"id" => id}) do
     socket
-    |> assign(:page_title, "Butiran Tempahan Bilik Mesyuarat")
-    |> assign(:meeting_room_booking, Bookings.get_meeting_room_booking!(id))
+    |> assign(:page_title, "Butiran Tempahan Peralatan")
+    |> assign(:equipment_booking, Bookings.get_equipment_booking!(id))
   end
 
   defp apply_action(socket, :index, _params) do
     socket
-    |> assign(:page_title, "Senarai Tempahan Bilik Mesyuarat")
-    |> assign(:meeting_room_booking, nil)
+    |> assign(:page_title, "Senarai Tempahan Peralatan")
+    |> assign(:equipment_booking, nil)
   end
 
   # --- LOAD BOOKINGS ---
-  defp load_meeting_room_bookings(socket) do
+
+  defp load_equipment_bookings(socket) do
     params = %{
       "page" => socket.assigns.page,
       "search" => socket.assigns.search_query,
@@ -184,14 +193,23 @@ defmodule SpatoWeb.MeetingRoomBookingLive.AdminIndex do
       "date" => socket.assigns.filter_date
     }
 
-    data = Bookings.list_meeting_room_bookings_paginated(params)
+    data = Bookings.list_equipment_bookings_paginated(params)
 
     socket
-    |> assign(:meeting_room_bookings_page, data.meeting_room_bookings_page)
+    |> assign(:equipment_bookings_page, data.equipment_bookings_page)
     |> assign(:total_pages, data.total_pages)
     |> assign(:filtered_count, data.total)
-    |> assign(:stats, Bookings.get_meeting_room_booking_stats())
+    |> assign(:stats, Bookings.get_equipment_booking_stats())
     |> assign(:page, data.page)
+  end
+
+  defp replace_equipment_booking_in_list(socket, %{} = updated_booking) do
+    list =
+      Enum.map(socket.assigns.equipment_bookings_page, fn b ->
+        if b.id == updated_booking.id, do: updated_booking, else: b
+      end)
+
+    socket |> assign(:equipment_bookings_page, list)
   end
 
   @impl true
@@ -205,8 +223,8 @@ defmodule SpatoWeb.MeetingRoomBookingLive.AdminIndex do
         <main class="flex-1 overflow-y-auto pt-20 p-6 transition-all duration-300 bg-gray-100">
           <section class="mb-4">
             <!-- Page Title -->
-            <h1 class="text-xl font-bold mb-1">Urus Tempahan Bilik Mesyuarat</h1>
-            <p class="text-md text-gray-500 mb-4">Semak dan urus semua tempahan bilik mesyuarat dalam sistem</p>
+            <h1 class="text-xl font-bold mb-1">Tempahan Peralatan</h1>
+            <p class="text-md text-gray-500 mb-4">Semak dan urus semua tempahan peralatan dalam sistem</p>
 
             <!-- Stats Cards -->
             <div class="flex flex-wrap gap-4 mb-4">
@@ -227,26 +245,36 @@ defmodule SpatoWeb.MeetingRoomBookingLive.AdminIndex do
 
             <!-- Table Section -->
             <section class="bg-white p-4 md:p-6 rounded-xl shadow-md">
-              <!-- Header -->
               <div class="flex items-center justify-between mb-4">
-                <h2 class="text-lg font-semibold text-gray-900">Senarai Tempahan Bilik Mesyuarat</h2>
+                <h2 class="text-lg font-semibold text-gray-900">Senarai Tempahan Peralatan</h2>
               </div>
 
               <!-- Search & Filters -->
               <div class="flex flex-wrap gap-2 mb-4">
                 <!-- Search -->
                 <form phx-change="search" class="flex-1 min-w-[200px]">
-                  <input type="text" name="q" value={@search_query} placeholder="Cari tujuan, nama bilik, nama pengguna..." class="w-full border rounded-md px-2 py-1 text-sm"/>
+                  <div class="relative">
+                    <!-- Magnifying glass icon -->
+                    <.icon name="hero-magnifying-glass" class="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+
+                    <!-- Input -->
+                    <input type="text" name="q" value={@search_query} placeholder="Cari peralatan, nombor siri, nama pengguna..." class="w-full border rounded-md pl-8 pr-2 py-1 text-sm"/>
+                  </div>
                 </form>
 
                 <!-- Date Filter -->
                 <form phx-change="filter_date">
-                  <input type="date" name="date" value={@filter_date} class="border rounded-md px-2 py-1 text-sm"/>
+                    <input type="date" name="date" value={@filter_date} class="border rounded-md pl-8 pr-2 py-1 text-sm"/>
                 </form>
 
                 <!-- Status Filter -->
                 <form phx-change="filter_status">
-                  <select name="status" class="border rounded-md px-2 pr-8 py-1 text-sm">
+                  <div class="relative">
+                    <!-- Funnel icon -->
+                    <.icon name="hero-funnel" class="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+
+                    <!-- Select -->
+                    <select name="status" class="border rounded-md pl-8 pr-8 py-1 text-sm">
                     <option value="all" selected={@filter_status in [nil, "all"]}>Semua Status</option>
                     <option value="pending" selected={@filter_status == "pending"}>Menunggu</option>
                     <option value="approved" selected={@filter_status == "approved"}>Diluluskan</option>
@@ -254,8 +282,8 @@ defmodule SpatoWeb.MeetingRoomBookingLive.AdminIndex do
                     <option value="completed" selected={@filter_status == "completed"}>Selesai</option>
                     <option value="cancelled" selected={@filter_status == "cancelled"}>Dibatalkan</option>
                   </select>
+                  </div>
                 </form>
-
               </div>
 
               <!-- Count Message -->
@@ -268,110 +296,92 @@ defmodule SpatoWeb.MeetingRoomBookingLive.AdminIndex do
               </div>
 
               <!-- Bookings Table -->
-              <.table id="admin_meeting_room_bookings" rows={@meeting_room_bookings_page} row_click={fn booking -> JS.patch(
-                ~p"/admin/meeting_room_bookings/#{booking.id}?action=show&page=#{@page}&q=#{@search_query}&status=#{@filter_status}&date=#{@filter_date}"
+              <.table id="admin_equipment_bookings" rows={@equipment_bookings_page} row_click={fn booking -> JS.patch(
+                ~p"/admin/equipment_bookings/#{booking.id}?action=show&page=#{@page}&q=#{@search_query}&status=#{@filter_status}&date=#{@filter_date}"
               ) end}>
                 <:col :let={booking} label="ID"><%= booking.id %></:col>
-                <:col :let={booking} label="Bilik Mesyuarat">
-                  <%= if booking.meeting_room do %>
+                <:col :let={booking} label="Peralatan">
+                  <%= if booking.equipment do %>
                     <div class="flex flex-col">
-                      <!-- Room Name -->
-                      <div class="font-semibold text-gray-900">
-                        <%= booking.meeting_room.name %>
-                      </div>
-
-                      <!-- Location -->
-                      <div class="text-sm text-gray-500">
-                        <%= booking.meeting_room.location %>
-                      </div>
-
-                      <!-- Capacity -->
-                      <div class="mt-1">
-                        <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-blue-500">
-                          Kapasiti: <%= booking.meeting_room.capacity %>
-                        </span>
-                      </div>
+                      <div class="font-semibold text-gray-900"><%= booking.equipment.name %></div>
+                      <div class="text-sm text-gray-500">No. Siri: <%= booking.equipment.serial_number %></div>
                     </div>
                   <% else %>
-                    <span class="text-gray-400">—</span>
+                    <span class="text-gray-400"></span>
                   <% end %>
                 </:col>
                 <:col :let={booking} label="Dibuat Oleh">
                   <%= if booking.user do %>
                     <div class="flex flex-col">
-                      <span class="font-medium text-gray-900">
-                        <%= User.display_name(booking.user) %>
-                      </span>
+                      <span class="font-medium text-gray-900"><%= User.display_name(booking.user) %></span>
                       <%= if booking.user.user_profile && booking.user.user_profile.department do %>
-                        <span class="text-sm text-gray-500">
-                          <%= booking.user.user_profile.department.name %>
-                        </span>
+                        <span class="text-sm text-gray-500"><%= booking.user.user_profile.department.name %></span>
                       <% end %>
                     </div>
                   <% else %>
-                    -
+                    <span class="text-gray-400"></span>
                   <% end %>
                 </:col>
-                <:col :let={booking} label="Tujuan">
+                <:col :let={booking} label="Lokasi"><%= booking.location %></:col>
+                <:col :let={booking} label="Tarikh & Masa Guna">
                   <div class="flex flex-col">
-                    <span class="font-medium text-gray-900"><%= booking.purpose %></span>
-                    <span class="text-sm text-gray-500"><%= booking.notes %></span>
+                    <span class="font-medium text-gray-900">
+                      <%= Calendar.strftime(booking.usage_at, "%d-%m-%Y") %>
+                    </span>
+                    <span class="text-sm text-gray-500">
+                      <%= Calendar.strftime(booking.usage_at, "%H:%M") %>
+                    </span>
                   </div>
                 </:col>
-                <:col :let={booking} label="Peserta">
-                  <div class="flex items-center gap-1">
-                    <.icon name="hero-user" class="w-4 h-4 text-gray-500" />
-                    <span><%= booking.participants %> / <%= booking.meeting_room.capacity %></span>
-                  </div>
-                </:col>
-                <:col :let={booking} label="Masa Mula">
+                <:col :let={booking} label="Tarikh & Masa Pulang">
                   <div class="flex flex-col">
-                    <span class="font-medium text-gray-900"><%= Calendar.strftime(booking.start_time, "%d-%m-%Y") %></span>
-                    <span class="text-sm text-gray-500"><%= Calendar.strftime(booking.start_time, "%H:%M") %></span>
+                    <span class="font-medium text-gray-900">
+                      <%= Calendar.strftime(booking.return_at, "%d-%m-%Y") %>
+                    </span>
+                    <span class="text-sm text-gray-500">
+                      <%= Calendar.strftime(booking.return_at, "%H:%M") %>
+                    </span>
                   </div>
                 </:col>
-
-                <:col :let={booking} label="Masa Tamat">
-                  <div class="flex flex-col">
-                    <span class="font-medium text-gray-900"><%= Calendar.strftime(booking.end_time, "%d-%m-%Y") %></span>
-                    <span class="text-sm text-gray-500"><%= Calendar.strftime(booking.end_time, "%H:%M") %></span>
-                  </div>
-                </:col>
-
-                <:col :let={booking} label="Catatan Tambahan">{booking.notes}</:col>
+                <:col :let={booking} label="Kuantiti diminta"><%= booking.requested_quantity %> unit</:col>
+                <:col :let={booking} label="Catatan"><%= booking.additional_notes %></:col>
                 <:col :let={booking} label="Status">
-                  <span class={"px-1.5 py-0.5 rounded-full text-white text-xs font-semibold " <>
-                    case booking.status do
-                      "pending" -> "bg-yellow-500"
-                      "approved" -> "bg-green-500"
-                      "rejected" -> "bg-red-500"
-                      "completed" -> "bg-blue-500"
-                      "cancelled" -> "bg-gray-400"
-                      _ -> "bg-gray-400"
-                    end
-                  }>
-                    <%= Spato.Bookings.MeetingRoomBooking.human_status(booking.status) %>
-                  </span>
-                </:col>
-
+                <span class={"px-2 py-1 rounded-full text-white " <>
+                  case booking.status do
+                    "pending" -> "bg-yellow-500"
+                    "approved" -> "bg-green-500"
+                    "rejected" -> "bg-red-500"
+                    "completed" -> "bg-blue-500"
+                    "cancelled" -> "bg-gray-400"
+                    _ -> "bg-gray-400"
+                  end}>
+                  <%= Spato.Bookings.EquipmentBooking.human_status(booking.status) %>
+                </span>
+                <%= if booking.status == "rejected" do %>
+                  <%= if booking.rejection_reason do %>
+                    <p class="text-xs text-gray-500">Sebab: <%= booking.rejection_reason %></p>
+                  <% end %>
+                <% end %>
+                <%= if booking.status == "cancelled" do %>
+                  <%= if booking.rejection_reason do %>
+                    <p class="text-xs text-gray-500">Sebab: <%= booking.rejection_reason %></p>
+                  <% end %>
+                <% end %>
+              </:col>
                 <:action :let={booking}>
                   <%= case booking.status do %>
                     <% "pending" -> %>
-                      <button
-                        phx-click="approve"
-                        phx-value-id={booking.id}
+                      <!-- Approve -->
+                      <button phx-click="approve" phx-value-id={booking.id}
                         class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-600 hover:bg-green-700 text-white"
-                        title="Luluskan"
-                      >
+                        title="Luluskan">
                         <.icon name="hero-check" class="w-4 h-4" />
                       </button>
 
-                      <button
-                        phx-click="open_reject_modal"
-                        phx-value-id={booking.id}
+                      <!-- Reject -->
+                      <button phx-click="open_reject_modal" phx-value-id={booking.id}
                         class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-600 hover:bg-red-700 text-white ml-2"
-                        title="Tolak"
-                      >
+                        title="Tolak">
                         <.icon name="hero-x-mark" class="w-4 h-4" />
                       </button>
 
@@ -379,22 +389,9 @@ defmodule SpatoWeb.MeetingRoomBookingLive.AdminIndex do
                       <button
                         phx-click="open_edit_modal"
                         phx-value-id={booking.id}
-                        class="px-3 py-1 text-xs bg-blue-500 hover:bg-blue-600 text-white rounded-md"
-                      >
+                        class="px-3 py-1 text-xs bg-blue-500 hover:bg-blue-600 text-white rounded-md">
                         Ubah Status
                       </button>
-
-                    <% "rejected" -> %>
-                      <%= if booking.rejection_reason do %>
-                        <p class="text-xs text-red-500">Ditolak</p>
-                      <% end %>
-
-                    <% "completed" -> %>
-                      <span class="text-sm text-blue-600">Selesai</span>
-                    <% "cancelled" -> %>
-                      <%= if booking.rejection_reason do %>
-                        <p class="text-xs text-gray-500">Dibatalkan</p>
-                      <% end %>
                     <% _ -> %>
                       <span class="text-gray-500"></span>
                   <% end %>
@@ -406,12 +403,9 @@ defmodule SpatoWeb.MeetingRoomBookingLive.AdminIndex do
                 <div class="relative flex items-center mt-4">
                   <!-- Previous -->
                   <div class="flex-1">
-                    <.link
-                      patch={~p"/admin/meeting_room_bookings?page=#{max(@page - 1, 1)}&q=#{@search_query}&status=#{@filter_status}&date=#{@filter_date}"}
+                    <.link patch={~p"/admin/equipment_bookings?page=#{max(@page - 1, 1)}&q=#{@search_query}&status=#{@filter_status}&date=#{@filter_date}"}
                       class={"px-3 py-1 border rounded " <>
-                        if @page == 1,
-                          do: "bg-gray-200 text-gray-500 cursor-not-allowed",
-                          else: "bg-white text-gray-700 hover:bg-gray-100"}>
+                        if @page == 1, do: "bg-gray-200 text-gray-500 cursor-not-allowed", else: "bg-white text-gray-700 hover:bg-gray-100"}>
                       Sebelumnya
                     </.link>
                   </div>
@@ -419,12 +413,9 @@ defmodule SpatoWeb.MeetingRoomBookingLive.AdminIndex do
                   <!-- Page Numbers -->
                   <div class="absolute left-1/2 transform -translate-x-1/2 flex space-x-1">
                     <%= for p <- 1..@total_pages do %>
-                      <.link
-                        patch={~p"/admin/meeting_room_bookings?page=#{p}&q=#{@search_query}&status=#{@filter_status}&date=#{@filter_date}"}
+                      <.link patch={~p"/admin/equipment_bookings?page=#{p}&q=#{@search_query}&status=#{@filter_status}&date=#{@filter_date}"}
                         class={"px-3 py-1 border rounded " <>
-                          if p == @page,
-                            do: "bg-gray-700 text-white",
-                            else: "bg-white text-gray-700 hover:bg-gray-100"}>
+                          if p == @page, do: "bg-gray-700 text-white", else: "bg-white text-gray-700 hover:bg-gray-100"}>
                         <%= p %>
                       </.link>
                     <% end %>
@@ -432,12 +423,9 @@ defmodule SpatoWeb.MeetingRoomBookingLive.AdminIndex do
 
                   <!-- Next -->
                   <div class="flex-1 text-right">
-                    <.link
-                      patch={~p"/admin/meeting_room_bookings?page=#{min(@page + 1, @total_pages)}&q=#{@search_query}&status=#{@filter_status}&date=#{@filter_date}"}
+                    <.link patch={~p"/admin/equipment_bookings?page=#{min(@page + 1, @total_pages)}&q=#{@search_query}&status=#{@filter_status}&date=#{@filter_date}"}
                       class={"px-3 py-1 border rounded " <>
-                        if @page == @total_pages,
-                          do: "bg-gray-200 text-gray-500 cursor-not-allowed",
-                          else: "bg-white text-gray-700 hover:bg-gray-100"}>
+                        if @page == @total_pages, do: "bg-gray-200 text-gray-500 cursor-not-allowed", else: "bg-white text-gray-700 hover:bg-gray-100"}>
                       Seterusnya
                     </.link>
                   </div>
@@ -446,20 +434,17 @@ defmodule SpatoWeb.MeetingRoomBookingLive.AdminIndex do
             </section>
 
             <!-- Modal: Show booking -->
-            <.modal
-              :if={@live_action == :show}
-              id="admin-meeting-room-booking-show"
-              show
-              on_cancel={JS.patch(~p"/admin/meeting_room_bookings?page=#{@page}&q=#{@search_query}&status=#{@filter_status}&date=#{@filter_date}")}>
+            <.modal :if={@live_action == :show} id="admin-equipment-booking-show" show
+              on_cancel={JS.patch(~p"/admin/equipment_bookings?page=#{@page}&q=#{@search_query}&status=#{@filter_status}&date=#{@filter_date}")}>
               <.live_component
-                module={SpatoWeb.MeetingRoomBookingLive.AdminShowComponent}
-                id={@meeting_room_booking.id}
-                meeting_room_booking={@meeting_room_booking}
+                module={SpatoWeb.EquipmentBookingLive.AdminShowComponent}
+                id={@equipment_booking.id}
+                equipment_booking={@equipment_booking}
               />
             </.modal>
 
             <!-- Modal: Reject with reason -->
-            <.modal :if={@show_reject_modal} id="reject-meeting-room-modal" show on_cancel={JS.push("close_modal")}>
+            <.modal :if={@show_reject_modal} id="reject-equipment-modal" show on_cancel={JS.push("close_modal")}>
               <h2 class="text-lg font-semibold mb-2">Sebab Penolakan</h2>
               <form phx-submit="submit_rejection" class="space-y-3">
                 <textarea name="reason" rows="3" class="w-full border rounded-md p-2 text-sm" placeholder="Nyatakan sebab penolakan..."></textarea>
@@ -471,7 +456,7 @@ defmodule SpatoWeb.MeetingRoomBookingLive.AdminIndex do
             </.modal>
 
             <!-- Modal: Edit status -->
-            <.modal :if={@show_edit_modal} id="edit-meeting-room-modal" show on_cancel={JS.push("close_modal")}>
+            <.modal :if={@show_edit_modal} id="edit-equipment-modal" show on_cancel={JS.push("close_modal")}>
               <h2 class="text-lg font-semibold mb-2">Ubah Status Tempahan</h2>
               <form phx-submit="update_status" class="space-y-3">
                 <select name="status" phx-change="status_changed" class="w-full border rounded-md p-2 text-sm">

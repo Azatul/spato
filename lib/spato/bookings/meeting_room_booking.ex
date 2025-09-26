@@ -9,6 +9,7 @@ defmodule Spato.Bookings.MeetingRoomBooking do
     field :start_time, :utc_datetime
     field :end_time, :utc_datetime
     field :notes, :string
+    field :rejection_reason, :string
 
     belongs_to :user, Spato.Accounts.User
     belongs_to :meeting_room, Spato.Assets.MeetingRoom
@@ -21,11 +22,12 @@ defmodule Spato.Bookings.MeetingRoomBooking do
   @doc false
   def changeset(meeting_room_booking, attrs) do
     meeting_room_booking
-    |> cast(attrs, [:participants, :user_id, :meeting_room_id, :approved_by_user_id, :cancelled_by_user_id, :purpose, :start_time, :end_time, :status, :notes])
+    |> cast(attrs, [:participants, :user_id, :meeting_room_id, :approved_by_user_id, :cancelled_by_user_id, :purpose, :start_time, :end_time, :status, :notes, :rejection_reason])
     |> validate_required([:purpose, :participants, :start_time, :end_time])
     |> validate_inclusion(:status, ["pending", "approved", "rejected", "cancelled", "completed"])
     |> unique_constraint(:meeting_room_id, name: :no_overlapping_meeting_room_bookings)
     |> update_change(:status, &String.downcase/1)
+    |> Spato.Bookings.validate_datetime_order(:start_time, :end_time)
   end
 
   def human_status("pending"), do: "Menunggu Kelulusan"
