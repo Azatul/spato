@@ -56,8 +56,7 @@ defmodule SpatoWeb.Components.Sidebar do
             <%= if @open do %>
               <details
                 class="group"
-                open={@active_tab in ["meeting_rooms", "vehicles", "admin_vehicles", "catering", "admin_catering", "equipments"]}>
-                open={@active_tab in ["admin_meeting_rooms", "meeting_rooms", "vehicles", "admin_vehicles", "catering", "equipments"]}>
+                open={@active_tab in ["admin_meeting_rooms", "meeting_rooms", "vehicles", "admin_vehicles", "catering", "admin_catering", "equipments"]}>
                 <summary class="flex items-center justify-between px-4 py-2 rounded-md hover:bg-gray-200 cursor-pointer">
                   <div class="flex items-center gap-2">
                     <.icon name="hero-calendar" class="w-5 h-5" />
