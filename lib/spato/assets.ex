@@ -58,6 +58,7 @@ defmodule Spato.Assets do
     page = Map.get(params, "page", 1) |> to_int()
     search = Map.get(params, "search", "")
     status = Map.get(params, "status", "all")
+    type = Map.get(params, "type", "all")
     per_page = @per_page
     offset = (page - 1) * per_page
 
@@ -74,6 +75,14 @@ defmodule Spato.Assets do
         base_query
       end
 
+    # Type filter
+    filtered_query =
+      if type != "all" do
+        from v in filtered_query, where: v.type == ^type
+      else
+        filtered_query
+      end
+
     # Search filter — use proper joins!
     final_query =
       if search != "" do
@@ -84,13 +93,20 @@ defmodule Spato.Assets do
           left_join: up in assoc(u, :user_profile),
           where:
             ilike(v.name, ^like_search) or
-            ilike(v.type, ^like_search) or
             ilike(v.plate_number, ^like_search) or
             fragment("?::text LIKE ?", v.capacity, ^like_search),
             distinct: v.id,
           select: v
       else
         filtered_query
+      end
+
+    # Type filter
+    final_query =
+      if type != "all" do
+        from v in final_query, where: v.type == ^type
+      else
+        final_query
       end
 
     # Total count
@@ -156,18 +172,19 @@ defmodule Spato.Assets do
     page = Map.get(params, "page", 1) |> to_int()
     search = Map.get(params, "search", "")
     status = Map.get(params, "status", "all")
+    type = Map.get(params, "type", "all")
     per_page = @per_page
     offset = (page - 1) * per_page
 
     # Base query
     base_query =
-      from v in Equipment,
-        order_by: [desc: v.inserted_at]
+      from e in Equipment,
+        order_by: [desc: e.inserted_at]
 
     # Status filter
     filtered_query =
       if status != "all" do
-        from v in base_query, where: v.status == ^status
+        from e in base_query, where: e.status == ^status
       else
         base_query
       end
@@ -177,18 +194,25 @@ defmodule Spato.Assets do
       if search != "" do
         like_search = "%#{search}%"
 
-        from v in filtered_query,
-          left_join: u in assoc(v, :user),
+        from e in filtered_query,
+          left_join: u in assoc(e, :user),
           left_join: up in assoc(u, :user_profile),
           where:
-            ilike(v.name, ^like_search) or
-            ilike(v.type, ^like_search) or
-            ilike(v.serial_number, ^like_search) or
-            fragment("?::text LIKE ?", v.quantity_available, ^like_search),
-            distinct: v.id,
-          select: v
+            ilike(e.name, ^like_search) or
+            ilike(e.serial_number, ^like_search) or
+            fragment("?::text LIKE ?", e.total_quantity, ^like_search),
+          distinct: e.id,
+          select: e
       else
         filtered_query
+      end
+
+    # Type filter
+    final_query =
+      if type != "all" do
+        from e in final_query, where: e.type == ^type
+      else
+        final_query
       end
 
     # Total count

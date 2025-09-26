@@ -22,7 +22,7 @@ defmodule SpatoWeb.CateringMenuLive.ShowComponent do
       <.list>
         <:item title="Nama">{@catering_menu.name}</:item>
         <:item title="Keterangan">{@catering_menu.description}</:item>
-        <:item title="Harga/Seorang">{@catering_menu.price_per_head}</:item>
+        <:item title="Harga/Seorang">RM <%= @catering_menu.price_per_head %></:item>
         <:item title="Jenis">
         <span class={
           "px-1.5 py-0.5 rounded-full text-white text-xs font-semibold " <>

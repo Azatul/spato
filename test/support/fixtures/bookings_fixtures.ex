@@ -61,4 +61,25 @@ defmodule Spato.BookingsFixtures do
 
     meeting_room_booking
   end
+
+  @doc """
+  Generate a equipment_booking.
+  """
+  def equipment_booking_fixture(attrs \\ %{}) do
+    {:ok, equipment_booking} =
+      attrs
+      |> Enum.into(%{
+        additional_notes: "some additional_notes",
+        condition_after: "some condition_after",
+        condition_before: "some condition_before",
+        location: "some location",
+        requested_quantity: 42,
+        return_at: ~U[2025-09-22 09:02:00Z],
+        status: "some status",
+        usage_at: ~U[2025-09-22 09:02:00Z]
+      })
+      |> Spato.Bookings.create_equipment_booking()
+
+    equipment_booking
+  end
 end

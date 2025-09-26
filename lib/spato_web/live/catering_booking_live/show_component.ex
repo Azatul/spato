@@ -81,6 +81,27 @@ defmodule SpatoWeb.CateringBookingLive.ShowComponent do
       <% else %>
         <p class="mt-6 text-gray-500">Tiada maklumat menu dilampirkan.</p>
       <% end %>
+
+      <!-- Action Buttons -->
+      <div class="flex justify-end gap-2 mt-4">
+        <%= if @catering_booking.user_id == @current_user.id and @catering_booking.status in ["pending"] do %>
+          <.link
+            patch={~p"/catering_bookings/#{@catering_booking.id}/edit"}
+            class="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+            title="Kemaskini Tempahan">
+            <.icon name="hero-pencil-square" class="w-4 h-4" />
+          </.link>
+        <% end %>
+
+        <%= if @catering_booking.status in ["pending", "approved"] do %>
+          <button
+            phx-click={JS.push("open_cancel_modal", value: %{id: @catering_booking.id})}
+            class="flex items-center justify-center w-8 h-8 rounded-full bg-red-600 hover:bg-red-700 text-white transition-colors"
+            title="Batalkan Tempahan">
+            <.icon name="hero-x-mark" class="w-4 h-4" />
+          </button>
+        <% end %>
+      </div>
     </div>
     """
   end

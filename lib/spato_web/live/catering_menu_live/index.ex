@@ -166,11 +166,21 @@ defmodule SpatoWeb.CateringMenuLive.Index do
 
             <div class="flex flex-wrap gap-2 mt-2">
               <form phx-change="search" class="flex-1 min-w-[200px]">
-                <input type="text" name="q" value={@search_query} placeholder="Cari nama atau keterangan..." class="w-full border rounded-md px-2 py-1 text-sm"/>
+                <div class="relative">
+                  <!-- Magnifying glass icon -->
+                  <.icon name="hero-magnifying-glass" class="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+
+                  <!-- Input -->
+                  <input type="text" name="q" value={@search_query} placeholder="Cari nama atau keterangan..." class="w-full border rounded-md pl-8 pr-2 py-1 text-sm"/>
+                </div>
               </form>
 
              <form phx-change="filter_type">
-              <select name="type" class="border rounded-md px-2 pr-8 py-1 text-sm">
+              <div class="relative">
+                <!-- Funnel icon -->
+                <.icon name="hero-funnel" class="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+
+                <select name="type" class="border rounded-md pl-8 pr-8 py-1 text-sm">
                 <option value="all" selected={@filter_type in [nil, "all"]}>Semua Jenis</option>
                 <option value="sarapan" selected={@filter_type == "sarapan"}>Sarapan</option>
                 <option value="makan_tengahari" selected={@filter_type == "makan_tengahari"}>Makan Tengahari</option>
@@ -178,7 +188,8 @@ defmodule SpatoWeb.CateringMenuLive.Index do
                 <option value="minum_malam" selected={@filter_type == "minum_malam"}>Minum Malam</option>
                 <option value="makan_malam" selected={@filter_type == "makan_malam"}>Makan Malam</option>
                 <option value="minum_pagi" selected={@filter_type == "minum_pagi"}>Minum Pagi</option>
-              </select>
+                </select>
+              </div>
             </form>
 
             </div>

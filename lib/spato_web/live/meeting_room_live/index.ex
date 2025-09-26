@@ -92,7 +92,8 @@ defmodule SpatoWeb.MeetingRoomLive.Index do
   def handle_event("search", %{"q" => query}, socket) do
     {:noreply,
      push_patch(socket,
-       to: ~p"/admin/meeting_rooms?page=1&q=#{query}&status=#{socket.assigns.filter_status}&date=#{socket.assigns.filter_date}"
+       to:
+       ~p"/admin/meeting_rooms?page=1&q=#{query}&status=#{socket.assigns.filter_status}"
      )}
   end
 
@@ -109,7 +110,9 @@ defmodule SpatoWeb.MeetingRoomLive.Index do
   def handle_event("paginate", %{"page" => page}, socket) do
     {:noreply,
      push_patch(socket,
-       to: ~p"/admin/meeting_rooms?page=#{page}&q=#{socket.assigns.search_query}&status=#{socket.assigns.filter_status}&date=#{socket.assigns.filter_date}"
+       to:
+        ~p"/admin/meeting_rooms?page=#{page}&q=#{socket.assigns.search_query}&status=#{socket.assigns.filter_status}"
+
      )}
   end
 
@@ -197,9 +200,25 @@ defmodule SpatoWeb.MeetingRoomLive.Index do
             )
           end}>
                 <:col :let={meeting_room} label="ID"><%= meeting_room.id %></:col>
-                <:col :let={meeting_room} label="Nama">{meeting_room.name}</:col>
-                <:col :let={meeting_room} label="Lokasi">{meeting_room.location}</:col>
-                <:col :let={meeting_room} label="Kapasiti">{meeting_room.capacity}</:col>
+                <:col :let={meeting_room} label="Nama & Lokasi">
+                  <div class="flex flex-col">
+                    <!-- Meeting Room Name -->
+                    <div class="font-semibold text-gray-900">
+                      <%= meeting_room.name %>
+                    </div>
+
+                    <!-- Meeting Room Location -->
+                    <div class="text-sm text-gray-500">
+                      <%= meeting_room.location %>
+                    </div>
+                  </div>
+                </:col>
+                <:col :let={meeting_room} label="Kapasiti">
+                  <div class="flex items-center gap-1">
+                    <.icon name="hero-user" class="w-4 h-4 text-gray-500" />
+                    <span><%= meeting_room.capacity %></span>
+                  </div>
+                </:col>
                 <:col :let={meeting_room} label="Kemudahan Tersedia">{meeting_room.available_facility}</:col>
                 <:col :let={meeting_room} label="Ditambah Oleh">
                   <%= meeting_room.created_by && meeting_room.created_by.user_profile && meeting_room.created_by.user_profile.full_name || "N/A" %>
