@@ -470,14 +470,29 @@ defmodule Spato.Bookings do
     update_catering_booking(cb, %{status: "approved", approved_by_user_id: user.id})
   end
 
-  def reject_catering_booking(%CateringBooking{} = cb, %Spato.Accounts.User{} = user) do
-    update_catering_booking(cb, %{status: "rejected", approved_by_user_id: user.id})
+  def reject_catering_booking(%CateringBooking{} = cb, %Spato.Accounts.User{} = user, reason \\ nil) do
+    update_catering_booking(cb, %{
+      status: "rejected",
+      approved_by_user_id: user.id,
+      rejection_reason: reason
+    })
   end
 
-  def cancel_catering_booking(%CateringBooking{} = cb, %Spato.Accounts.User{} = user) do
+  def cancel_catering_booking(%CateringBooking{} = cb, %Spato.Accounts.User{} = user, reason \\ nil) do
     case cb.status do
       "pending" ->
-        update_catering_booking(cb, %{status: "cancelled", cancelled_by_user_id: user.id})
+        update_catering_booking(cb, %{
+          status: "cancelled",
+          cancelled_by_user_id: user.id,
+          rejection_reason: reason
+        })
+
+      "approved" ->
+        update_catering_booking(cb, %{
+          status: "cancelled",
+          cancelled_by_user_id: user.id,
+          rejection_reason: reason
+        })
 
       _ ->
         {:error, :not_allowed}

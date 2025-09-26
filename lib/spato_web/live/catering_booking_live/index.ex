@@ -22,6 +22,8 @@ defmodule SpatoWeb.CateringBookingLive.Index do
      |> assign(:catering_booking, nil)
      |> assign(:menus, [])
      |> assign(:params, %{})
+     |> assign(:show_cancel_modal, false)
+     |> assign(:cancel_booking, nil)
      |> assign(:stats, Bookings.get_user_catering_booking_stats(socket.assigns.current_user.id))
      |> load_catering_bookings()}
   end
@@ -163,7 +165,6 @@ defmodule SpatoWeb.CateringBookingLive.Index do
 
     case Bookings.cancel_catering_booking(booking, socket.assigns.current_user) do
       {:ok, _} ->
-        # reload both bookings and stats
         {:noreply,
          socket
          |> load_catering_bookings()
@@ -172,6 +173,43 @@ defmodule SpatoWeb.CateringBookingLive.Index do
       {:error, :not_allowed} ->
         {:noreply, socket |> put_flash(:error, "Tidak boleh batal selepas tindakan admin.")}
     end
+  end
+
+  # open modal
+  def handle_event("open_cancel_modal", %{"id" => id}, socket) do
+    booking = Bookings.get_catering_booking!(id)
+    {:noreply,
+     socket
+     |> assign(:cancel_booking, booking)
+     |> assign(:show_cancel_modal, true)}
+  end
+
+  # submit cancellation
+  def handle_event("submit_cancel", %{"reason" => reason}, socket) do
+    booking = socket.assigns.cancel_booking
+    user = socket.assigns.current_user
+
+    case Bookings.cancel_catering_booking(booking, user, reason) do
+      {:ok, _} ->
+        {:noreply,
+         socket
+         |> assign(:show_cancel_modal, false)
+         |> load_catering_bookings()
+         |> assign(:stats, Bookings.get_user_catering_booking_stats(user.id))}
+
+      {:error, :not_allowed} ->
+        {:noreply,
+         socket
+         |> assign(:show_cancel_modal, false)
+         |> put_flash(:error, "Tidak boleh batal tempahan ini.")}
+    end
+  end
+
+  # close modal
+  def handle_event("close_modal", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(:show_cancel_modal, false)}
   end
 
   # --- RENDER ---
@@ -341,19 +379,28 @@ defmodule SpatoWeb.CateringBookingLive.Index do
                 </:col>
 
               <:action :let={booking}>
-                <%= if booking.status == "pending" do %>
-                  <button
-                    phx-click="cancel"
-                    phx-value-id={booking.id}
-                    data-confirm="Batal tempahan?"
-                    class="flex items-center justify-center w-8 h-8 rounded-full bg-red-600 hover:bg-red-700 text-white transition-colors"
-                    title="Batalkan Tempahan"
-                  >
-                    <.icon name="hero-x-mark" class="w-4 h-4" />
-                  </button>
-                <% else %>
-                  <span class="text-gray-500"></span>
-                <% end %>
+                <div class="flex gap-2">
+                  <%= if booking.status == "pending" do %>
+                    <.link
+                      patch={~p"/catering_bookings/#{booking.id}/edit?page=#{@page}&q=#{@search_query}&status=#{@filter_status}&date=#{@filter_date}"}
+                      class="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                      title="Kemaskini Tempahan"
+                    >
+                      <.icon name="hero-pencil-square" class="w-4 h-4" />
+                    </.link>
+                  <% end %>
+
+                  <%= if booking.status in ["pending", "approved"] do %>
+                    <button
+                      phx-click="open_cancel_modal"
+                      phx-value-id={booking.id}
+                      class="flex items-center justify-center w-8 h-8 rounded-full bg-red-600 hover:bg-red-700 text-white transition-colors"
+                      title="Batalkan Tempahan"
+                    >
+                      <.icon name="hero-x-mark" class="w-4 h-4" />
+                    </button>
+                  <% end %>
+                </div>
               </:action>
               </.table>
 
@@ -428,7 +475,20 @@ defmodule SpatoWeb.CateringBookingLive.Index do
                   module={SpatoWeb.CateringBookingLive.ShowComponent}
                   id={@catering_booking.id}
                   catering_booking={@catering_booking}
+                  current_user={@current_user}
                 />
+              </.modal>
+
+              <!-- Cancel modal -->
+              <.modal :if={@show_cancel_modal} id="cancel-catering-modal" show on_cancel={JS.push("close_modal")}>
+                <h2 class="text-lg font-semibold mb-2">Sebab Pembatalan</h2>
+                <form phx-submit="submit_cancel" class="space-y-3">
+                  <textarea name="reason" rows="3" class="w-full border rounded-md p-2 text-sm" placeholder="Nyatakan sebab pembatalan..."></textarea>
+                  <div class="flex justify-end gap-2">
+                    <button type="button" phx-click="close_modal" class="px-3 py-1 border rounded-md">Batal</button>
+                    <button type="submit" class="px-3 py-1 bg-red-600 text-white rounded-md">Hantar</button>
+                  </div>
+                </form>
               </.modal>
             </section>
           </section>
