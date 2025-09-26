@@ -235,17 +235,28 @@ defmodule SpatoWeb.EquipmentBookingLive.AdminIndex do
               <div class="flex flex-wrap gap-2 mb-4">
                 <!-- Search -->
                 <form phx-change="search" class="flex-1 min-w-[200px]">
-                  <input type="text" name="q" value={@search_query} placeholder="Cari peralatan, nombor siri, nama pengguna..." class="w-full border rounded-md px-2 py-1 text-sm"/>
+                  <div class="relative">
+                    <!-- Magnifying glass icon -->
+                    <.icon name="hero-magnifying-glass" class="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+
+                    <!-- Input -->
+                    <input type="text" name="q" value={@search_query} placeholder="Cari peralatan, nombor siri, nama pengguna..." class="w-full border rounded-md pl-8 pr-2 py-1 text-sm"/>
+                  </div>
                 </form>
 
                 <!-- Date Filter -->
                 <form phx-change="filter_date">
-                  <input type="date" name="date" value={@filter_date} class="border rounded-md px-2 py-1 text-sm"/>
+                    <input type="date" name="date" value={@filter_date} class="border rounded-md pl-8 pr-2 py-1 text-sm"/>
                 </form>
 
                 <!-- Status Filter -->
                 <form phx-change="filter_status">
-                  <select name="status" class="border rounded-md px-2 pr-8 py-1 text-sm">
+                  <div class="relative">
+                    <!-- Funnel icon -->
+                    <.icon name="hero-funnel" class="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+
+                    <!-- Select -->
+                    <select name="status" class="border rounded-md pl-8 pr-8 py-1 text-sm">
                     <option value="all" selected={@filter_status in [nil, "all"]}>Semua Status</option>
                     <option value="pending" selected={@filter_status == "pending"}>Menunggu</option>
                     <option value="approved" selected={@filter_status == "approved"}>Diluluskan</option>
@@ -253,6 +264,7 @@ defmodule SpatoWeb.EquipmentBookingLive.AdminIndex do
                     <option value="completed" selected={@filter_status == "completed"}>Selesai</option>
                     <option value="cancelled" selected={@filter_status == "cancelled"}>Dibatalkan</option>
                   </select>
+                  </div>
                 </form>
               </div>
 
