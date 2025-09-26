@@ -60,46 +60,6 @@ defmodule SpatoWeb.MeetingRoomBookingLive.AdminShowComponent do
         <:item title="Catatan Tambahan"><%= @meeting_room_booking.notes || "-" %></:item>
       </.list>
 
-      <!-- Action Buttons -->
-      <div class="flex justify-end gap-2 mt-4">
-        <%= case @meeting_room_booking.status do %>
-          <% "pending" -> %>
-            <button
-              phx-click={JS.push("approve", value: %{id: @meeting_room_booking.id})}
-              class="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700">
-              Luluskan
-            </button>
-            <button
-              phx-click={JS.push("open_reject_modal", value: %{id: @meeting_room_booking.id})}
-              class="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700">
-              Tolak
-            </button>
-
-          <% "approved" -> %>
-            <button
-              phx-click={JS.push("open_edit_modal", value: %{id: @meeting_room_booking.id})}
-              class="px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">
-              Ubah Status
-            </button>
-
-          <% "rejected" -> %>
-            <%= if @meeting_room_booking.rejection_reason do %>
-              <p class="text-sm text-gray-500">Sebab: <%= @meeting_room_booking.rejection_reason %></p>
-            <% end %>
-
-          <% "completed" -> %>
-            <span class="text-sm text-blue-600">Selesai</span>
-
-          <% "cancelled" -> %>
-            <%= if @meeting_room_booking.rejection_reason do %>
-              <p class="text-sm text-gray-500">Sebab: <%= @meeting_room_booking.rejection_reason %></p>
-            <% end %>
-
-          <% _ -> %>
-            <span class="text-gray-500">—</span>
-        <% end %>
-      </div>
-
       <!-- User Details -->
       <.header class="mt-6">
         Maklumat Pengguna
@@ -168,6 +128,46 @@ defmodule SpatoWeb.MeetingRoomBookingLive.AdminShowComponent do
       <% else %>
         <p class="mt-6 text-gray-500">Tiada maklumat bilik mesyuarat dilampirkan.</p>
       <% end %>
+
+      <!-- Action Buttons -->
+      <div class="flex justify-end gap-2 mt-4">
+        <%= case @meeting_room_booking.status do %>
+          <% "pending" -> %>
+            <button
+              phx-click={JS.push("approve", value: %{id: @meeting_room_booking.id})}
+              class="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700">
+              Luluskan
+            </button>
+            <button
+              phx-click={JS.push("open_reject_modal", value: %{id: @meeting_room_booking.id})}
+              class="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700">
+              Tolak
+            </button>
+
+          <% "approved" -> %>
+            <button
+              phx-click={JS.push("open_edit_modal", value: %{id: @meeting_room_booking.id})}
+              class="px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">
+              Ubah Status
+            </button>
+
+          <% "rejected" -> %>
+            <%= if @meeting_room_booking.rejection_reason do %>
+              <p class="text-sm text-gray-500">Sebab: <%= @meeting_room_booking.rejection_reason %></p>
+            <% end %>
+
+          <% "completed" -> %>
+            <span class="text-sm text-blue-600">Selesai</span>
+
+          <% "cancelled" -> %>
+            <%= if @meeting_room_booking.rejection_reason do %>
+              <p class="text-sm text-gray-500">Sebab: <%= @meeting_room_booking.rejection_reason %></p>
+            <% end %>
+
+          <% _ -> %>
+            <span class="text-gray-500">—</span>
+        <% end %>
+      </div>
     </div>
     """
   end

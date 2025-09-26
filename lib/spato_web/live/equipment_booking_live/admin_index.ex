@@ -235,7 +235,7 @@ defmodule SpatoWeb.EquipmentBookingLive.AdminIndex do
               <div class="flex flex-wrap gap-2 mb-4">
                 <!-- Search -->
                 <form phx-change="search" class="flex-1 min-w-[200px]">
-                  <input type="text" name="q" value={@search_query} placeholder="Cari peralatan, nombor siri..." class="w-full border rounded-md px-2 py-1 text-sm"/>
+                  <input type="text" name="q" value={@search_query} placeholder="Cari peralatan, nombor siri, nama pengguna..." class="w-full border rounded-md px-2 py-1 text-sm"/>
                 </form>
 
                 <!-- Date Filter -->
