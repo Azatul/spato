@@ -167,10 +167,21 @@ defmodule SpatoWeb.DepartmentLive.Index do
               row_click={fn {_id, dept} -> JS.patch(~p"/admin/departments/#{dept}?action=show") end}
             >
               <:col :let={{_id, dept}} label="ID">{dept.id}</:col>
-              <:col :let={{_id, dept}} label="Nama Jabatan">{dept.name}</:col>
+              <:col :let={{_id, dept}} label="Nama & Lokasi">
+                  <div class="flex flex-col">
+                    <!-- Department Name -->
+                    <div class="font-semibold text-gray-900">
+                      <%= dept.name %>
+                    </div>
+
+                    <!-- Department Location -->
+                    <div class="text-sm text-gray-500">
+                      <%= dept.location %>
+                    </div>
+                  </div>
+                </:col>
               <:col :let={{_id, dept}} label="Kod Jabatan">{dept.code}</:col>
               <:col :let={{_id, dept}} label="Pengurus Jabatan">{dept.head_manager}</:col>
-              <:col :let={{_id, dept}} label="Lokasi Jabatan">{dept.location}</:col>
               <:col :let={{_id, dept}} label="Deskripsi Jabatan">{dept.description}</:col>
               <:col :let={{_id, dept}} label="Bil. Staf">
                 <%= Map.get(@dept_counts, dept.id, 0) %>
