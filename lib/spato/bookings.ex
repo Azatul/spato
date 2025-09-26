@@ -783,10 +783,21 @@ defmodule Spato.Bookings do
       update_equipment_booking(booking, %{status: "completed"})
     end
 
-    def cancel_equipment_booking(%EquipmentBooking{} = booking, %Spato.Accounts.User{} = user) do
+    def cancel_equipment_booking(%EquipmentBooking{} = booking, %Spato.Accounts.User{} = user, reason \\ nil) do
       case booking.status do
         "pending" ->
-          update_equipment_booking(booking, %{status: "cancelled", cancelled_by_user_id: user.id})
+          update_equipment_booking(booking, %{
+            status: "cancelled",
+            cancelled_by_user_id: user.id,
+            rejection_reason: reason
+          })
+
+        "approved" ->
+          update_equipment_booking(booking, %{
+            status: "cancelled",
+            cancelled_by_user_id: user.id,
+            rejection_reason: reason
+          })
 
         _ -> {:error, :not_allowed}
       end

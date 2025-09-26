@@ -26,7 +26,7 @@ defmodule Spato.Bookings.EquipmentBooking do
   @doc false
   def changeset(equipment_booking, attrs) do
     equipment_booking
-    |> cast(attrs, [:user_id, :equipment_id, :approved_by_user_id, :cancelled_by_user_id, :requested_quantity, :location, :usage_at, :return_at, :additional_notes, :condition_before, :condition_after, :status])
+    |> cast(attrs, [:user_id, :equipment_id, :approved_by_user_id, :cancelled_by_user_id, :requested_quantity, :location, :usage_at, :return_at, :additional_notes, :condition_before, :condition_after, :status, :rejection_reason])
     |> validate_required([:requested_quantity, :location, :usage_at, :return_at, :additional_notes, :status])
     |> validate_inclusion(:status, ["pending", "approved", "rejected", "cancelled", "completed"])
     |> unique_constraint(:equipment_id, name: :no_overlapping_bookings)

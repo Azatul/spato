@@ -52,6 +52,27 @@ defmodule SpatoWeb.EquipmentBookingLive.ShowComponent do
           </span>
         </:item>
       </.list>
+
+      <!-- Action Buttons -->
+      <div class="flex justify-end gap-2 mt-4">
+        <%= if @equipment_booking.user_id == @current_user.id and @equipment_booking.status in ["pending"] do %>
+          <.link
+            patch={~p"/equipment_bookings/#{@equipment_booking.id}/edit"}
+            class="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+            title="Kemaskini Tempahan">
+            <.icon name="hero-pencil-square" class="w-4 h-4" />
+          </.link>
+        <% end %>
+
+        <%= if @equipment_booking.status in ["pending", "approved"] do %>
+          <button
+            phx-click={JS.push("open_cancel_modal", value: %{id: @equipment_booking.id})}
+            class="flex items-center justify-center w-8 h-8 rounded-full bg-red-600 hover:bg-red-700 text-white transition-colors"
+            title="Batalkan Tempahan">
+            <.icon name="hero-x-mark" class="w-4 h-4" />
+          </button>
+        <% end %>
+      </div>
     </div>
     """
   end
