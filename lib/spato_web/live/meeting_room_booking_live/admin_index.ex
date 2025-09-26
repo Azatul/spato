@@ -19,6 +19,12 @@ defmodule SpatoWeb.MeetingRoomBookingLive.AdminIndex do
      |> assign(:search_query, "")
      |> assign(:page, 1)
      |> assign(:filter_date, "")
+     |> assign(:show_reject_modal, false)
+     |> assign(:reject_booking, nil)
+     |> assign(:show_edit_modal, false)
+     |> assign(:selected_status, nil)
+     |> assign(:reason, nil)
+     |> assign(:edit_booking, nil)
      |> load_meeting_room_bookings()
      |> assign(:stats, Bookings.get_meeting_room_booking_stats())}
   end
@@ -45,14 +51,81 @@ defmodule SpatoWeb.MeetingRoomBookingLive.AdminIndex do
   def handle_event("approve", %{"id" => id}, socket) do
     booking = Bookings.get_meeting_room_booking!(id)
     {:ok, _} = Bookings.approve_meeting_room_booking(booking)
-    {:noreply, load_meeting_room_bookings(socket)}
+    {:noreply,
+     socket
+     |> assign(:live_action, nil)
+     |> load_meeting_room_bookings()
+     |> put_flash(:info, "Tempahan telah diluluskan")}
   end
 
   @impl true
   def handle_event("reject", %{"id" => id}, socket) do
     booking = Bookings.get_meeting_room_booking!(id)
     {:ok, _} = Bookings.reject_meeting_room_booking(booking)
-    {:noreply, load_meeting_room_bookings(socket)}
+    {:noreply,
+     socket
+     |> assign(:live_action, nil)
+     |> load_meeting_room_bookings()
+     |> put_flash(:info, "Tempahan telah ditolak")}
+  end
+
+  @impl true
+  def handle_event("open_reject_modal", %{"id" => id}, socket) do
+    booking = Bookings.get_meeting_room_booking!(id)
+    {:noreply,
+     socket
+     |> assign(:reject_booking, booking)
+     |> assign(:show_reject_modal, true)}
+  end
+
+  @impl true
+  def handle_event("submit_rejection", %{"reason" => reason}, socket) do
+    {:ok, _} = Bookings.reject_meeting_room_booking(socket.assigns.reject_booking, reason)
+    {:noreply,
+     socket
+     |> assign(:show_reject_modal, false)
+     |> load_meeting_room_bookings()
+     |> assign(:live_action, nil)}
+  end
+
+  @impl true
+  def handle_event("status_changed", %{"status" => status}, socket) do
+    {:noreply, socket |> assign(:selected_status, status) |> assign(:live_action, nil)}
+  end
+
+  @impl true
+  def handle_event("open_edit_modal", %{"id" => id}, socket) do
+    booking = Bookings.get_meeting_room_booking!(id)
+    {:noreply, socket |> assign(:edit_booking, booking) |> assign(:show_edit_modal, true) |> assign(:live_action, nil)}
+  end
+
+  @impl true
+  def handle_event("update_status", %{"status" => status} = params, socket) do
+    reason = Map.get(params, "reason")
+
+    update_params =
+      case status do
+        "rejected" -> %{status: status, rejection_reason: reason}
+        _ -> %{status: status, rejection_reason: nil}
+      end
+
+    {:ok, _booking} = Bookings.update_meeting_room_booking(socket.assigns.edit_booking, update_params)
+
+    {:noreply,
+     socket
+     |> assign(:show_edit_modal, false)
+     |> load_meeting_room_bookings()
+     |> assign(:selected_status, nil)
+     |> assign(:live_action, nil)}
+  end
+
+  @impl true
+  def handle_event("close_modal", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(:show_reject_modal, false)
+     |> assign(:show_edit_modal, false)
+     |> assign(:live_action, nil)}
   end
 
   @impl true
@@ -282,28 +355,48 @@ defmodule SpatoWeb.MeetingRoomBookingLive.AdminIndex do
                 </:col>
 
                 <:action :let={booking}>
-                  <%= if booking.status == "pending" do %>
-                    <!-- Approve: green circle with check -->
-                    <button
-                      phx-click="approve"
-                      phx-value-id={booking.id}
-                      class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-600 hover:bg-green-700 text-white"
-                      title="Luluskan"
-                    >
-                      <.icon name="hero-check" class="w-4 h-4" />
-                    </button>
+                  <%= case booking.status do %>
+                    <% "pending" -> %>
+                      <button
+                        phx-click="approve"
+                        phx-value-id={booking.id}
+                        class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-600 hover:bg-green-700 text-white"
+                        title="Luluskan"
+                      >
+                        <.icon name="hero-check" class="w-4 h-4" />
+                      </button>
 
-                    <!-- Reject: red circle with x -->
-                    <button
-                      phx-click="reject"
-                      phx-value-id={booking.id}
-                      class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-600 hover:bg-red-700 text-white ml-2"
-                      title="Tolak"
-                    >
-                      <.icon name="hero-x-mark" class="w-4 h-4" />
-                    </button>
-                  <% else %>
-                    <span class="text-gray-500"></span>
+                      <button
+                        phx-click="open_reject_modal"
+                        phx-value-id={booking.id}
+                        class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-600 hover:bg-red-700 text-white ml-2"
+                        title="Tolak"
+                      >
+                        <.icon name="hero-x-mark" class="w-4 h-4" />
+                      </button>
+
+                    <% "approved" -> %>
+                      <button
+                        phx-click="open_edit_modal"
+                        phx-value-id={booking.id}
+                        class="px-3 py-1 text-xs bg-blue-500 hover:bg-blue-600 text-white rounded-md"
+                      >
+                        Ubah Status
+                      </button>
+
+                    <% "rejected" -> %>
+                      <%= if booking.rejection_reason do %>
+                        <p class="text-xs text-red-500">Ditolak</p>
+                      <% end %>
+
+                    <% "completed" -> %>
+                      <span class="text-sm text-blue-600">Selesai</span>
+                    <% "cancelled" -> %>
+                      <%= if booking.rejection_reason do %>
+                        <p class="text-xs text-gray-500">Dibatalkan</p>
+                      <% end %>
+                    <% _ -> %>
+                      <span class="text-gray-500"></span>
                   <% end %>
                 </:action>
               </.table>
@@ -352,7 +445,7 @@ defmodule SpatoWeb.MeetingRoomBookingLive.AdminIndex do
               <% end %>
             </section>
 
-            <!-- Modal -->
+            <!-- Modal: Show booking -->
             <.modal
               :if={@live_action == :show}
               id="admin-meeting-room-booking-show"
@@ -363,6 +456,41 @@ defmodule SpatoWeb.MeetingRoomBookingLive.AdminIndex do
                 id={@meeting_room_booking.id}
                 meeting_room_booking={@meeting_room_booking}
               />
+            </.modal>
+
+            <!-- Modal: Reject with reason -->
+            <.modal :if={@show_reject_modal} id="reject-meeting-room-modal" show on_cancel={JS.push("close_modal")}>
+              <h2 class="text-lg font-semibold mb-2">Sebab Penolakan</h2>
+              <form phx-submit="submit_rejection" class="space-y-3">
+                <textarea name="reason" rows="3" class="w-full border rounded-md p-2 text-sm" placeholder="Nyatakan sebab penolakan..."></textarea>
+                <div class="flex justify-end gap-2">
+                  <button type="button" phx-click="close_modal" class="px-3 py-1 border rounded-md">Batal</button>
+                  <button type="submit" class="px-3 py-1 bg-red-600 text-white rounded-md">Tolak</button>
+                </div>
+              </form>
+            </.modal>
+
+            <!-- Modal: Edit status -->
+            <.modal :if={@show_edit_modal} id="edit-meeting-room-modal" show on_cancel={JS.push("close_modal")}>
+              <h2 class="text-lg font-semibold mb-2">Ubah Status Tempahan</h2>
+              <form phx-submit="update_status" class="space-y-3">
+                <select name="status" phx-change="status_changed" class="w-full border rounded-md p-2 text-sm">
+                  <option value="pending" selected={@edit_booking && @edit_booking.status == "pending"}>Menunggu</option>
+                  <option value="approved" selected={@edit_booking && @edit_booking.status == "approved"}>Diluluskan</option>
+                  <option value="rejected" selected={@edit_booking && @edit_booking.status == "rejected"}>Ditolak</option>
+                  <option value="completed" selected={@edit_booking && @edit_booking.status == "completed"}>Selesai</option>
+                  <option value="cancelled" selected={@edit_booking && @edit_booking.status == "cancelled"}>Dibatalkan</option>
+                </select>
+
+                <%= if @selected_status == "rejected" or (@edit_booking && @edit_booking.status == "rejected") do %>
+                  <textarea name="reason" rows="3" class="w-full border rounded-md p-2 text-sm" placeholder="Nyatakan sebab penolakan..."><%= @edit_booking && (@edit_booking.rejection_reason || "") %></textarea>
+                <% end %>
+
+                <div class="flex justify-end gap-2">
+                  <button type="button" phx-click="close_modal" class="px-3 py-1 border rounded-md">Batal</button>
+                  <button type="submit" class="px-3 py-1 bg-blue-600 text-white rounded-md">Simpan</button>
+                </div>
+              </form>
             </.modal>
           </section>
         </main>

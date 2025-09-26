@@ -1152,13 +1152,24 @@ defmodule Spato.Bookings do
   def approve_meeting_room_booking(%MeetingRoomBooking{} = vb),
     do: update_meeting_room_booking(vb, %{status: "approved"})
 
-  def reject_meeting_room_booking(%MeetingRoomBooking{} = vb),
-    do: update_meeting_room_booking(vb, %{status: "rejected"})
+  def reject_meeting_room_booking(%MeetingRoomBooking{} = vb, reason \\ nil),
+    do: update_meeting_room_booking(vb, %{status: "rejected", rejection_reason: reason})
 
-  def cancel_meeting_room_booking(%MeetingRoomBooking{} = vb, %Spato.Accounts.User{} = user) do
+  def cancel_meeting_room_booking(%MeetingRoomBooking{} = vb, %Spato.Accounts.User{} = user, reason \\ nil) do
     case vb.status do
       "pending" ->
-        update_meeting_room_booking(vb, %{status: "cancelled", cancelled_by_user_id: user.id})
+        update_meeting_room_booking(vb, %{
+          status: "cancelled",
+          cancelled_by_user_id: user.id,
+          rejection_reason: reason
+        })
+
+      "approved" ->
+        update_meeting_room_booking(vb, %{
+          status: "cancelled",
+          cancelled_by_user_id: user.id,
+          rejection_reason: reason
+        })
 
       _ ->
         {:error, :not_allowed}
