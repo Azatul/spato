@@ -209,6 +209,97 @@ defmodule Spato.Accounts do
     Repo.aggregate(Department, :count, :id)
   end
 
+  def department_staff_counts do
+    Repo.all(from d in Department,
+      left_join: up in UserProfile, on: up.department_id == d.id,
+      group_by: d.id,
+      select: {d.id, count(up.id)})
+    |> Enum.map(fn {id, count} -> {id, count || 0} end)
+    |> Map.new()
+  end
+
+  @doc """
+  Returns department statistics as a map for use in the stats cards:
+    - total_departments: total number of departments
+    - active_departments: number of departments that have at least one staff
+    - inactive_departments: number of departments with no staff
+    - total_staff: total number of staff across all departments
+  """
+  def department_stats do
+    total_departments = Repo.aggregate(Department, :count, :id)
+
+    # Join departments with user_profiles to count staff
+    dept_counts =
+      from(d in Department,
+        left_join: up in UserProfile, on: up.department_id == d.id,
+        group_by: d.id,
+        select: {d.id, count(up.id)}
+      )
+      |> Repo.all()
+
+    # Convert to map for easier calculations
+    dept_map = Map.new(dept_counts)
+
+    active_departments = dept_map |> Enum.count(fn {_id, count} -> count > 0 end)
+    inactive_departments = dept_map |> Enum.count(fn {_id, count} -> count == 0 end)
+    total_staff = dept_map |> Enum.reduce(0, fn {_id, count}, acc -> acc + count end)
+
+    %{
+      total_departments: total_departments,
+      active_departments: active_departments,
+      inactive_departments: inactive_departments,
+      total_staff: total_staff
+    }
+  end
+
+  @doc """
+  Lists departments with optional search and pagination.
+
+  Params can include:
+    - "page" => integer or string
+    - "search" => string to search department name or code
+  """
+  def list_departments_paginated(params \\ %{}) do
+    page = Map.get(params, "page", 1) |> to_int()
+    search = Map.get(params, "search", "")
+    per_page = @per_page
+    offset = (page - 1) * per_page
+
+    # Base query
+    base_query = from(d in Department, order_by: [desc: d.inserted_at])
+
+    # Apply search filter
+    filtered_query =
+      if search != "" do
+        like_search = "%#{search}%"
+        from d in base_query,
+          where: ilike(d.name, ^like_search) or ilike(d.code, ^like_search)
+      else
+        base_query
+      end
+
+    # Total count
+    total =
+      filtered_query
+      |> exclude(:order_by)
+      |> Repo.aggregate(:count, :id)
+
+    # Paginated results
+    departments_page =
+      filtered_query
+      |> limit(^per_page)
+      |> offset(^offset)
+      |> Repo.all()
+
+    total_pages = ceil(total / per_page)
+
+    %{
+      departments_page: departments_page,
+      total: total,
+      total_pages: total_pages,
+      page: page
+    }
+  end
 
   ## ----------------------
   ## UserProfile functions

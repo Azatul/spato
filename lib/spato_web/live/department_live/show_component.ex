@@ -10,6 +10,9 @@ defmodule SpatoWeb.DepartmentLive.ShowComponent do
       <.list>
         <:item title="Nama Jabatan">{@department.name}</:item>
         <:item title="Kod Jabatan">{@department.code}</:item>
+        <:item title="Pengurus Jabatan">{@department.head_manager}</:item>
+        <:item title="Lokasi Jabatan">{@department.location}</:item>
+        <:item title="Deskripsi Jabatan">{@department.description}</:item>
       </.list>
     </div>
     """

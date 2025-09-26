@@ -18,6 +18,9 @@ defmodule SpatoWeb.DepartmentLive.FormComponent do
       >
         <.input field={@form[:name]} type="text" label="Nama Jabatan" />
         <.input field={@form[:code]} type="text" label="Kod Jabatan" />
+        <.input field={@form[:description]} type="text" label="Deskripsi Jabatan" />
+        <.input field={@form[:head_manager]} type="text" label="Pengurus Jabatan" />
+        <.input field={@form[:location]} type="text" label="Lokasi Jabatan" />
         <:actions>
           <.button phx-disable-with="Saving...">Simpan</.button>
         </:actions>
