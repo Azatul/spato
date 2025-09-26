@@ -92,7 +92,8 @@ defmodule SpatoWeb.MeetingRoomLive.Index do
   def handle_event("search", %{"q" => query}, socket) do
     {:noreply,
      push_patch(socket,
-       to: ~p"/admin/meeting_rooms?page=1&q=#{query}&status=#{socket.assigns.filter_status}&date=#{socket.assigns.filter_date}"
+       to:
+       ~p"/admin/meeting_rooms?page=1&q=#{query}&status=#{socket.assigns.filter_status}"
      )}
   end
 
@@ -109,7 +110,9 @@ defmodule SpatoWeb.MeetingRoomLive.Index do
   def handle_event("paginate", %{"page" => page}, socket) do
     {:noreply,
      push_patch(socket,
-       to: ~p"/admin/meeting_rooms?page=#{page}&q=#{socket.assigns.search_query}&status=#{socket.assigns.filter_status}&date=#{socket.assigns.filter_date}"
+       to:
+        ~p"/admin/meeting_rooms?page=#{page}&q=#{socket.assigns.search_query}&status=#{socket.assigns.filter_status}"
+
      )}
   end
 

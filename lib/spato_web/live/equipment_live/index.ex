@@ -182,12 +182,22 @@ defmodule SpatoWeb.EquipmentLive.Index do
             <!-- Search and Filter -->
             <div class="flex flex-wrap gap-2 mt-2">
               <form phx-change="search" class="flex-1 min-w-[200px]">
-                <input type="text" name="q" value={@search_query} placeholder="Cari nama atau no. siri..." class="w-full border rounded-md px-2 py-1 text-sm"/>
+                <div class="relative">
+                  <!-- Magnifying glass icon -->
+                  <.icon name="hero-magnifying-glass" class="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+
+                  <!-- Input -->
+                  <input type="text" name="q" value={@search_query} placeholder="Cari nama atau no. siri..." class="w-full border rounded-md pl-8 pr-2 py-1 text-sm"/>
+                </div>
               </form>
 
               <!-- Filter by type -->
               <form phx-change="filter_type">
-                <select name="type" class="border rounded-md px-2 pr-8 py-1 text-sm">
+                <div class="relative">
+                  <!-- Funnel icon -->
+                  <.icon name="hero-funnel" class="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+
+                  <select name="type" class="border rounded-md pl-8 pr-8 py-1 text-sm">
                   <option value="all" selected={@filter_type in [nil, "all"]}>Semua Jenis</option>
                   <option value="laptop" selected={@filter_type == "laptop"}>Laptop / Notebook</option>
                   <option value="projector" selected={@filter_type == "projector"}>Projektor</option>
@@ -198,16 +208,22 @@ defmodule SpatoWeb.EquipmentLive.Index do
                   <option value="laser_pointer" selected={@filter_type == "laser_pointer"}>Laser Pointer</option>
                   <option value="extension_cord" selected={@filter_type == "extension_cord"}>Extension Cord</option>
                   <option value="whiteboard" selected={@filter_type == "whiteboard"}>Whiteboard / Flipchart</option>
-                </select>
+                  </select>
+                </div>
               </form>
 
               <!-- Filter by status -->
               <form phx-change="filter_status">
-                <select name="status" class="border rounded-md px-2 pr-8 py-1 text-sm">
+                <div class="relative">
+                  <!-- Funnel icon -->
+                  <.icon name="hero-funnel" class="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+
+                  <select name="status" class="border rounded-md pl-8 pr-8 py-1 text-sm">
                   <option value="all" selected={@filter_status in [nil, "all"]}>Semua Status</option>
                   <option value="tersedia" selected={@filter_status == "tersedia"}>Tersedia</option>
                   <option value="tidak_tersedia" selected={@filter_status == "tidak_tersedia"}>Tidak Tersedia</option>
-                </select>
+                  </select>
+                </div>
               </form>
             </div>
           </div>
