@@ -314,9 +314,9 @@ defmodule SpatoWeb.EquipmentBookingLive.AdminIndex do
                   </div>
                 </:col>
                 <:col :let={booking} label="Kuantiti diminta"><%= booking.requested_quantity %> unit</:col>
-                <:col :let={booking} label="Catatan Tambahan"><%= booking.additional_notes %></:col>
+                <:col :let={booking} label="Catatan"><%= booking.additional_notes %></:col>
                 <:col :let={booking} label="Status">
-                <span class={"px-1.5 py-0.5 rounded-full text-white text-xs font-semibold " <>
+                <span class={"px-2 py-1 rounded-full text-white " <>
                   case booking.status do
                     "pending" -> "bg-yellow-500"
                     "approved" -> "bg-green-500"
@@ -362,20 +362,6 @@ defmodule SpatoWeb.EquipmentBookingLive.AdminIndex do
                         class="px-3 py-1 text-xs bg-blue-500 hover:bg-blue-600 text-white rounded-md">
                         Ubah Status
                       </button>
-
-                    <% "rejected" -> %>
-                      <%= if booking.rejection_reason do %>
-                        <p class="text-xs text-red-500">Ditolak</p>
-                      <% end %>
-
-                    <% "completed" -> %>
-                      <span class="text-sm text-blue-600">Selesai</span>
-
-                    <% "cancelled" -> %>
-                      <%= if booking.rejection_reason do %>
-                        <p class="text-xs text-gray-500">Dibatalkan</p>
-                      <% end %>
-
                     <% _ -> %>
                       <span class="text-gray-500"></span>
                   <% end %>
