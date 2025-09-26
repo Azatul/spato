@@ -52,10 +52,12 @@ defmodule SpatoWeb.EquipmentBookingLive.AdminIndex do
   def handle_event("approve", %{"id" => id}, socket) do
     booking = Bookings.get_equipment_booking!(id)
     {:ok, _} = Bookings.approve_equipment_booking(booking)
+    updated = Bookings.get_equipment_booking!(id)
     {:noreply,
      socket
      |> assign(:live_action, nil)
-     |> load_equipment_bookings()
+     |> replace_equipment_booking_in_list(updated)
+     |> assign(:stats, Bookings.get_equipment_booking_stats())
      |> put_flash(:info, "Tempahan telah diluluskan")}
   end
 
@@ -63,10 +65,12 @@ defmodule SpatoWeb.EquipmentBookingLive.AdminIndex do
   def handle_event("reject", %{"id" => id}, socket) do
     booking = Bookings.get_equipment_booking!(id)
     {:ok, _} = Bookings.reject_equipment_booking(booking)
+    updated = Bookings.get_equipment_booking!(id)
     {:noreply,
      socket
      |> assign(:live_action, nil)
-     |> load_equipment_bookings()
+     |> replace_equipment_booking_in_list(updated)
+     |> assign(:stats, Bookings.get_equipment_booking_stats())
      |> put_flash(:info, "Tempahan telah ditolak")}
   end
 
@@ -115,10 +119,13 @@ defmodule SpatoWeb.EquipmentBookingLive.AdminIndex do
   @impl true
   def handle_event("submit_rejection", %{"reason" => reason}, socket) do
     {:ok, _} = Bookings.reject_equipment_booking(socket.assigns.reject_booking, reason)
+    updated = Bookings.get_equipment_booking!(socket.assigns.reject_booking.id)
     {:noreply,
      socket
      |> assign(:show_reject_modal, false)
-     |> load_equipment_bookings()
+     |> assign(:reject_booking, nil)
+     |> replace_equipment_booking_in_list(updated)
+     |> assign(:stats, Bookings.get_equipment_booking_stats())
      |> assign(:live_action, nil)}
   end
 
@@ -144,11 +151,13 @@ defmodule SpatoWeb.EquipmentBookingLive.AdminIndex do
       end
 
     {:ok, _booking} = Bookings.update_equipment_booking(socket.assigns.edit_booking, update_params)
+    updated = Bookings.get_equipment_booking!(socket.assigns.edit_booking.id)
 
     {:noreply,
      socket
      |> assign(:show_edit_modal, false)
-     |> load_equipment_bookings()
+     |> replace_equipment_booking_in_list(updated)
+     |> assign(:stats, Bookings.get_equipment_booking_stats())
      |> assign(:selected_status, nil)
      |> assign(:live_action, nil)}
   end
@@ -192,6 +201,15 @@ defmodule SpatoWeb.EquipmentBookingLive.AdminIndex do
     |> assign(:filtered_count, data.total)
     |> assign(:stats, Bookings.get_equipment_booking_stats())
     |> assign(:page, data.page)
+  end
+
+  defp replace_equipment_booking_in_list(socket, %{} = updated_booking) do
+    list =
+      Enum.map(socket.assigns.equipment_bookings_page, fn b ->
+        if b.id == updated_booking.id, do: updated_booking, else: b
+      end)
+
+    socket |> assign(:equipment_bookings_page, list)
   end
 
   @impl true

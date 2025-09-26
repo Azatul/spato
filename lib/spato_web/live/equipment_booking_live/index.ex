@@ -166,9 +166,10 @@ defmodule SpatoWeb.EquipmentBookingLive.Index do
 
     case Bookings.cancel_equipment_booking(booking, socket.assigns.current_user) do
       {:ok, _} ->
+        updated = Bookings.get_equipment_booking!(id)
         {:noreply,
          socket
-         |> load_equipment_bookings()
+         |> replace_equipment_booking_in_list(updated)
          |> assign(:stats, Bookings.get_user_equipment_booking_stats(socket.assigns.current_user.id))}
 
       {:error, :not_allowed} ->
@@ -192,10 +193,12 @@ defmodule SpatoWeb.EquipmentBookingLive.Index do
 
     case Bookings.cancel_equipment_booking(booking, user, reason) do
       {:ok, _} ->
+        updated = Bookings.get_equipment_booking!(booking.id)
         {:noreply,
          socket
          |> assign(:show_cancel_modal, false)
-         |> load_equipment_bookings()
+         |> assign(:cancel_booking, nil)
+         |> replace_equipment_booking_in_list(updated)
          |> assign(:stats, Bookings.get_user_equipment_booking_stats(user.id))}
 
       {:error, :not_allowed} ->
@@ -464,5 +467,14 @@ defmodule SpatoWeb.EquipmentBookingLive.Index do
       </div>
     </div>
     """
+  end
+
+  defp replace_equipment_booking_in_list(socket, %{} = updated_booking) do
+    list =
+      Enum.map(socket.assigns.equipment_bookings_page, fn b ->
+        if b.id == updated_booking.id, do: updated_booking, else: b
+      end)
+
+    socket |> assign(:equipment_bookings_page, list)
   end
 end
