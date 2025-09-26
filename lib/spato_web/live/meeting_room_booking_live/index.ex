@@ -250,9 +250,11 @@ defmodule SpatoWeb.MeetingRoomBookingLive.Index do
 
             <!-- Middle Section: Add Meeting Room Button -->
             <section class="mb-4 flex justify-end">
-              <.link patch={~p"/available_rooms"}>
-                    <.button class="bg-gray-900 text-white px-4 py-2 rounded-md hover:bg-gray-700">Tempah Bilik Baru</.button>
-                  </.link>
+              <.link patch={~p"/available_rooms"}
+                class="inline-flex items-center justify-center rounded-md border border-transparent bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-800 focus:ring-offset-2"
+              >
+                Tempah Bilik Baru
+              </.link>
             </section>
 
             <!-- Booking Table Section -->
