@@ -274,26 +274,36 @@ defmodule SpatoWeb.HistoryLive.AdminBookingHistory do
           <h1 class="text-xl font-bold mb-4">Sejarah Tempahan</h1>
 
           <!-- Tabs -->
-          <div class="flex gap-4 mb-6">
-            <%= for {label, key} <- [
-                  {"Bilik Mesyuarat", :meeting_room},
-                  {"Kenderaan", :vehicle},
-                  {"Katering", :catering},
-                  {"Peralatan", :equipment}
-                ] do %>
-              <button
-                phx-click="switch_table"
-                phx-value-table={key}
-                class={"px-4 py-2 rounded-md border " <>
-                  if @selected_table == key, do: "bg-gray-700 text-white", else: "bg-white text-gray-700 hover:bg-gray-100"}>
-                <%= label %>
-              </button>
-            <% end %>
+          <div class="mb-0">
+            <div role="tablist" class="flex flex-wrap items-end gap-4 sm:gap-6 border-b border-gray-200">
+              <%= for {label, key} <- [
+                    {"Bilik Mesyuarat", :meeting_room},
+                    {"Kenderaan", :vehicle},
+                    {"Katering", :catering},
+                    {"Peralatan", :equipment}
+                  ] do %>
+                <button
+                  role="tab"
+                  aria-selected={@selected_table == key}
+                  phx-click="switch_table"
+                  phx-value-table={key}
+                  class={
+                    "-mb-px inline-flex items-center px-1 pb-3 text-sm font-medium transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 " <>
+                    if @selected_table == key do
+                      "text-gray-900 border-b-2 border-blue-600"
+                    else
+                      "text-gray-500 hover:text-gray-700 border-b-2 border-transparent"
+                    end
+                  }>
+                  <span><%= label %></span>
+                </button>
+              <% end %>
+            </div>
           </div>
 
           <!-- Equipment Table -->
           <%= if @selected_table == :equipment do %>
-            <section class="bg-white p-4 md:p-6 rounded-xl shadow-md">
+            <section class="bg-white p-4 md:p-6 border border-gray-200 border-t-0 rounded-b-xl shadow-sm">
               <div class="flex flex-col mb-4 gap-2">
                 <div class="flex items-center justify-between">
                   <h2 class="text-lg font-semibold text-gray-900">Sejarah Tempahan Peralatan</h2>
@@ -419,7 +429,7 @@ defmodule SpatoWeb.HistoryLive.AdminBookingHistory do
 
           <!-- Meeting Room Table -->
           <%= if @selected_table == :meeting_room do %>
-            <section class="bg-white p-4 md:p-6 rounded-xl shadow-md">
+            <section class="bg-white p-4 md:p-6 border border-gray-200 border-t-0 rounded-b-xl shadow-sm">
               <div class="flex flex-col mb-4 gap-2">
                 <div class="flex items-center justify-between">
                   <h2 class="text-lg font-semibold text-gray-900">Sejarah Tempahan Bilik Mesyuarat</h2>
@@ -549,7 +559,7 @@ defmodule SpatoWeb.HistoryLive.AdminBookingHistory do
 
           <!-- Vehicle Table -->
           <%= if @selected_table == :vehicle do %>
-            <section class="bg-white p-4 md:p-6 rounded-xl shadow-md">
+            <section class="bg-white p-4 md:p-6 border border-gray-200 border-t-0 rounded-b-xl shadow-sm">
               <div class="flex flex-col mb-4 gap-2">
                 <div class="flex items-center justify-between">
                   <h2 class="text-lg font-semibold text-gray-900">Sejarah Tempahan Kenderaan</h2>
@@ -700,7 +710,7 @@ defmodule SpatoWeb.HistoryLive.AdminBookingHistory do
 
           <!-- Catering Table -->
           <%= if @selected_table == :catering do %>
-            <section class="bg-white p-4 md:p-6 rounded-xl shadow-md">
+            <section class="bg-white p-4 md:p-6 border border-gray-200 border-t-0 rounded-b-xl shadow-sm">
               <div class="flex flex-col mb-4 gap-2">
                 <div class="flex items-center justify-between">
                   <h2 class="text-lg font-semibold text-gray-900">Sejarah Tempahan Katering</h2>
