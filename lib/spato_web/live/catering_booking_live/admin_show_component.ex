@@ -8,7 +8,7 @@ defmodule SpatoWeb.CateringBookingLive.AdminShowComponent do
       <!-- Booking Header -->
       <.header>
         Lihat Tempahan Katering
-        <:subtitle>Butiran penuh tempahan ini.</:subtitle>
+        <:subtitle>Maklumat penuh tempahan katering.</:subtitle>
       </.header>
 
       <!-- Booking Details -->

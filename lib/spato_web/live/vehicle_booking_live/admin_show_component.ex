@@ -8,7 +8,7 @@ defmodule SpatoWeb.VehicleBookingLive.AdminShowComponent do
       <!-- Booking Header -->
       <.header>
         Lihat Tempahan Kenderaan
-        <:subtitle>Butiran penuh tempahan ini.</:subtitle>
+        <:subtitle>Maklumat penuh tempahan kenderaan.</:subtitle>
       </.header>
 
       <!-- Booking Details -->

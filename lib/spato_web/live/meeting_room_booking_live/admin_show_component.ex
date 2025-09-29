@@ -8,7 +8,7 @@ defmodule SpatoWeb.MeetingRoomBookingLive.AdminShowComponent do
       <!-- Booking Header -->
       <.header>
         Lihat Tempahan Bilik Mesyuarat
-        <:subtitle>Butiran penuh tempahan ini.</:subtitle>
+        <:subtitle>Maklumat penuh tempahan bilik mesyuarat.</:subtitle>
       </.header>
 
       <!-- Booking Details -->
