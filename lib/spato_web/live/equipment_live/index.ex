@@ -5,6 +5,7 @@ defmodule SpatoWeb.EquipmentLive.Index do
 
   alias Spato.Assets
   alias Spato.Assets.Equipment
+  alias Spato.Notifications
 
   on_mount {SpatoWeb.UserAuth, :ensure_authenticated}
 
@@ -20,7 +21,26 @@ defmodule SpatoWeb.EquipmentLive.Index do
      |> assign(:filter_type, "all")
      |> assign(:search_query, "")
      |> assign(:page, 1)
+     |> assign(:show_notifications, false)
+     |> load_notifications()
      |> stream(:equipments, Assets.list_equipments())}
+  end
+
+  # --- LOAD NOTIFICATIONS ---
+  defp load_notifications(socket) do
+    user = socket.assigns.current_user
+    role = if user.role == "admin", do: :admin, else: :user
+
+    notifications = case role do
+      :user -> Notifications.list_user_notifications(user.id)
+      :admin -> Notifications.list_admin_notifications(user.id)
+    end
+
+    unread_count = Notifications.count_unread(user.id, role)
+
+    socket
+    |> assign(:notifications, notifications)
+    |> assign(:unread_count, unread_count)
   end
 
   # --- LOAD EQUIPMENTS ---
@@ -89,6 +109,23 @@ defmodule SpatoWeb.EquipmentLive.Index do
   def handle_event("toggle_sidebar", _, socket), do: {:noreply, update(socket, :sidebar_open, &(!&1))}
 
   @impl true
+  def handle_event("toggle_notifications", _params, socket) do
+    {:noreply, assign(socket, :show_notifications, !socket.assigns.show_notifications)}
+  end
+
+  @impl true
+  def handle_event("read_notification", %{"id" => id}, socket) do
+    case Notifications.get_notification(id) do
+      %{status: "unread"} = notification ->
+        {:ok, _} = Notifications.mark_as_read(notification)
+        socket = load_notifications(socket)
+        {:noreply, socket}
+      _ ->
+        {:noreply, socket}
+    end
+  end
+
+  @impl true
   def handle_event("delete", %{"id" => id}, socket) do
     equipment = Assets.get_equipment!(id)
     {:ok, _} = Assets.delete_equipment(equipment)
@@ -133,7 +170,7 @@ defmodule SpatoWeb.EquipmentLive.Index do
       <div class="flex h-screen overflow-hidden">
       <.sidebar active_tab={@active_tab} current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar"/>
      <div class="flex flex-col flex-1">
-      <.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title={@page_title} />
+      <.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title={@page_title} notifications={@notifications} unread_count={@unread_count} show_notifications={@show_notifications} />
 
       <main class="flex-1 overflow-y-auto pt-20 p-6 transition-all duration-300 bg-gray-100">
       <section class="mb-4">
@@ -147,18 +184,19 @@ defmodule SpatoWeb.EquipmentLive.Index do
                                       {"Dalam Penyelenggaraan", @stats.maintenance},
                                       {"Peralatan Aktif", @stats.active}] do %>
 
-              <% number_color =
-                case label do
-                  "Jumlah Peralatan Berdaftar" -> "text-gray-700"
-                  "Peralatan Tersedia" -> "text-green-500"
-                  "Dalam Penyelenggaraan" -> "text-red-500"
-                  "Peralatan Aktif" -> "text-blue-500"
-                end %>
-
-              <div class="bg-white p-4 rounded-xl shadow-md flex flex-col justify-between h-30 transition-transform hover:scale-105">
+              <% card_colors = case label do
+                "Jumlah Peralatan Berdaftar" -> %{border: "border-purple-300", bg: "bg-purple-100", icon: "text-purple-500", icon_class: "fa-solid fa-laptop"}
+                "Peralatan Tersedia" -> %{border: "border-teal-300", bg: "bg-teal-100", icon: "text-teal-500", icon_class: "fa-solid fa-check-circle"}
+                "Dalam Penyelenggaraan" -> %{border: "border-amber-300", bg: "bg-amber-100", icon: "text-amber-500", icon_class: "fa-solid fa-wrench"}
+                "Peralatan Aktif" -> %{border: "border-purple-300", bg: "bg-purple-100", icon: "text-purple-500", icon_class: "fa-solid fa-laptop"}
+              end %>
+              <div class={"bg-white p-6 rounded-xl shadow-md flex justify-between items-center min-h-[130px] border-l-4 #{card_colors.border} transition-transform hover:scale-105"}>
                 <div>
-                  <p class="text-sm text-gray-500"><%= label %></p>
-                  <p class={"text-3xl font-bold mt-1 #{number_color}"}><%= value %></p>
+                  <h3 class="text-gray-600 text-sm font-semibold"><%= label %></h3>
+                  <p class="text-4xl font-bold text-gray-800 mt-2"><%= value %></p>
+                </div>
+                <div class={"#{card_colors.bg} p-3 rounded-full"}>
+                  <i class={"#{card_colors.icon_class} #{card_colors.icon} text-2xl"}></i>
                 </div>
               </div>
             <% end %>
