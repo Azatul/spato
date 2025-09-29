@@ -1407,7 +1407,7 @@ defmodule Spato.Bookings do
       end
 
     scoped_query
-    |> preload([user: [user_profile: [:department]]])
+    |> preload([:menu, user: [user_profile: [:department]]])
     |> Repo.all()
   end
 

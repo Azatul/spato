@@ -552,6 +552,7 @@ defmodule SpatoWeb.MeetingRoomBookingLive.AdminIndex do
                   <p><b>Tujuan:</b> <%= @reject_booking.purpose %></p>
                   <p><b>Tarikh:</b> <%= Calendar.strftime(@reject_booking.start_time, "%d-%m-%Y") %></p>
                   <p><b>Masa:</b> <%= Calendar.strftime(@reject_booking.start_time, "%H:%M") %> – <%= Calendar.strftime(@reject_booking.end_time, "%H:%M") %></p>
+                  <p><b>Peserta:</b> <%= @reject_booking.participants %> / <%= @reject_booking.meeting_room.capacity %></p>
                 </div>
               <% end %>
               <form phx-submit="submit_rejection" class="space-y-3">
