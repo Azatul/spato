@@ -29,12 +29,21 @@ defmodule SpatoWeb.HistoryLive.BookingHistoryLive do
      |> assign(:vehicle_page, 1)
      |> assign(:catering_page, 1)
      |> init_filtered_lists()
-     |> init_paginated_lists()}
+     |> init_paginated_lists()
+     |> assign(:selected_table, :equipment)
+     |> compute_stats()}
   end
 
   @impl true
   def handle_event("switch_table", %{"table" => table}, socket) do
-    {:noreply, assign(socket, :selected_table, String.to_existing_atom(table))}
+    table_atom = String.to_existing_atom(table)
+
+    socket =
+      socket
+      |> assign(:selected_table, table_atom)
+      |> compute_stats()   # <- recompute stats for the new category
+
+    {:noreply, socket}
   end
 
   def handle_event("toggle_sidebar", _params, socket) do
@@ -282,6 +291,35 @@ defmodule SpatoWeb.HistoryLive.BookingHistoryLive do
     end
   end
 
+  defp compute_stats(socket) do
+    case socket.assigns.selected_table do
+      :equipment ->
+        list = socket.assigns.equipment_history_filtered
+        assign(socket, stats_for(list))
+
+      :meeting_room ->
+        list = socket.assigns.room_history_filtered
+        assign(socket, stats_for(list))
+
+      :vehicle ->
+        list = socket.assigns.vehicle_history_filtered
+        assign(socket, stats_for(list))
+
+      :catering ->
+        list = socket.assigns.catering_history_filtered
+        assign(socket, stats_for(list))
+    end
+  end
+
+  defp stats_for(list) do
+    %{
+      stats_total: Enum.count(list),
+      stats_completed: Enum.count(list, &(&1.status == "completed")),
+      stats_rejected: Enum.count(list, &(&1.status == "rejected")),
+      stats_cancelled: Enum.count(list, &(&1.status == "cancelled"))
+    }
+  end
+
 @impl true
 def render(assigns) do
     ~H"""
@@ -293,6 +331,23 @@ def render(assigns) do
 
         <main class="flex-1 overflow-y-auto pt-20 p-6 bg-gray-100">
           <h1 class="text-xl font-bold mb-4">Sejarah Tempahan Anda</h1>
+
+           <!-- Stats Cards for Completed / Rejected / Cancelled -->
+            <div class="flex flex-wrap gap-4 mb-4">
+              <%= for {label, value, color} <- [
+                    {"Jumlah", @stats_total, "text-gray-700"},
+                    {"Selesai", @stats_completed, "text-blue-500"},
+                    {"Ditolak", @stats_rejected, "text-red-500"},
+                    {"Dibatalkan", @stats_cancelled, "text-gray-400"}
+                  ] do %>
+                <div class="flex-1 min-w-[180px] bg-white p-4 rounded-xl shadow-md flex flex-col justify-between h-30 transition-transform hover:scale-105">
+                  <div>
+                    <p class="text-sm text-gray-500"><%= label %></p>
+                    <p class={"text-3xl font-bold mt-1 #{color}"}><%= value %></p>
+                  </div>
+                </div>
+              <% end %>
+            </div>
 
           <!-- Tabs -->
           <div class="mb-0">

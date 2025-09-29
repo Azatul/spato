@@ -1338,7 +1338,7 @@ defmodule Spato.Bookings do
   def valid_datetime_range?(_, _), do: false
 
 
- # Bookings hoistory for user
+ # Bookings history for user
  # Equipment Bookings
   def list_closed_equipment_bookings(user \\ nil) do
     base_query =
