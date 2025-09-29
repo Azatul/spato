@@ -114,7 +114,9 @@ defmodule SpatoWeb.EquipmentBookingLive.AdminIndex do
 
   @impl true
   def handle_event("open_reject_modal", %{"id" => id}, socket) do
-    booking = Bookings.get_equipment_booking!(id)
+    booking =
+      Bookings.get_equipment_booking!(id)
+      |> Spato.Repo.preload([:user, :equipment, user: [:user_profile, user_profile: [:department]]])
     {:noreply, socket |> assign(:reject_booking, booking) |> assign(:show_reject_modal, true)}
   end
 
@@ -479,11 +481,29 @@ defmodule SpatoWeb.EquipmentBookingLive.AdminIndex do
             <!-- Modal: Reject with reason -->
             <.modal :if={@show_reject_modal} id="reject-equipment-modal" show on_cancel={JS.push("close_modal")}>
               <h2 class="text-lg font-semibold mb-2">Sebab Penolakan</h2>
+              <%= if @reject_booking do %>
+                <div class="text-sm text-gray-700 space-y-1 mb-3">
+                  <%= if @reject_booking.equipment do %>
+                    <p>
+                      <b>Peralatan:</b>
+                      <%= @reject_booking.equipment.name %>
+                      (SN: <%= @reject_booking.equipment.serial_number %>)
+                    </p>
+                  <% end %>
+                  <%= if @reject_booking.user do %>
+                    <p><b>Pengguna:</b> <%= User.display_name(@reject_booking.user) %></p>
+                  <% end %>
+                  <p><b>Lokasi:</b> <%= @reject_booking.location %></p>
+                  <p><b>Tarikh Guna:</b> <%= Calendar.strftime(@reject_booking.usage_at, "%d-%m-%Y %H:%M") %></p>
+                  <p><b>Tarikh Pulang:</b> <%= Calendar.strftime(@reject_booking.return_at, "%d-%m-%Y %H:%M") %></p>
+                  <p><b>Kuantiti:</b> <%= @reject_booking.requested_quantity %> unit</p>
+                </div>
+              <% end %>
               <form phx-submit="submit_rejection" class="space-y-3">
                 <textarea name="reason" rows="3" class="w-full border rounded-md p-2 text-sm" placeholder="Nyatakan sebab penolakan..."></textarea>
                 <div class="flex justify-end gap-2">
-                  <button type="button" phx-click="close_modal" class="px-3 py-1 border rounded-md">Batal</button>
                   <button type="submit" class="px-3 py-1 bg-red-600 text-white rounded-md">Tolak</button>
+                  <button type="button" phx-click="close_modal" class="px-3 py-1 border rounded-md">Batal</button>
                 </div>
               </form>
             </.modal>
@@ -505,8 +525,8 @@ defmodule SpatoWeb.EquipmentBookingLive.AdminIndex do
                 <% end %>
 
                 <div class="flex justify-end gap-2">
-                  <button type="button" phx-click="close_modal" class="px-3 py-1 border rounded-md">Batal</button>
                   <button type="submit" class="px-3 py-1 bg-blue-600 text-white rounded-md">Simpan</button>
+                  <button type="button" phx-click="close_modal" class="px-3 py-1 border rounded-md">Batal</button>
                 </div>
               </form>
             </.modal>
@@ -535,8 +555,8 @@ defmodule SpatoWeb.EquipmentBookingLive.AdminIndex do
               <% end %>
 
               <div class="flex justify-end gap-2">
-                <button type="button" phx-click="close_modal" class="px-3 py-1 border rounded-md">Batal</button>
                 <button type="button" phx-click="confirm_approve" class="px-3 py-1 bg-green-600 text-white rounded-md">Sahkan</button>
+                <button type="button" phx-click="close_modal" class="px-3 py-1 border rounded-md">Batal</button>
               </div>
             </.modal>
           </section>

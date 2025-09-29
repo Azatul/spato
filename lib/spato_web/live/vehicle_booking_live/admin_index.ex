@@ -111,7 +111,9 @@ defmodule SpatoWeb.VehicleBookingLive.AdminIndex do
 
   @impl true
   def handle_event("open_reject_modal", %{"id" => id}, socket) do
-    booking = Bookings.get_vehicle_booking!(id)
+    booking =
+      Bookings.get_vehicle_booking!(id)
+      |> Spato.Repo.preload([:user, :vehicle, user: [:user_profile, user_profile: [:department]]])
     {:noreply,
     socket
     |> assign(:reject_booking, booking)
@@ -528,7 +530,7 @@ defmodule SpatoWeb.VehicleBookingLive.AdminIndex do
                   <%= case @vehicle_booking.status do %>
                     <% "pending" -> %>
                       <button
-                        phx-click="approve"
+                        phx-click="open_approve_modal"
                         phx-value-id={@vehicle_booking.id}
                         class="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700"
                       >
@@ -575,11 +577,29 @@ defmodule SpatoWeb.VehicleBookingLive.AdminIndex do
             <.modal :if={@show_reject_modal} id="reject-modal" show on_cancel={JS.push("close_modal")}>
 
               <h2 class="text-lg font-semibold mb-2">Sebab Penolakan</h2>
+              <%= if @reject_booking do %>
+                <div class="text-sm text-gray-700 space-y-1 mb-3">
+                  <%= if @reject_booking.vehicle do %>
+                    <p>
+                      <b>Kenderaan:</b>
+                      <%= @reject_booking.vehicle.name %>
+                      (<%= @reject_booking.vehicle.plate_number %>)
+                    </p>
+                  <% end %>
+                  <%= if @reject_booking.user do %>
+                    <p><b>Pengguna:</b> <%= User.display_name(@reject_booking.user) %></p>
+                  <% end %>
+                  <p><b>Tujuan:</b> <%= @reject_booking.purpose %></p>
+                  <p><b>Destinasi:</b> <%= @reject_booking.trip_destination %></p>
+                  <p><b>Masa Pickup:</b> <%= Calendar.strftime(@reject_booking.pickup_time, "%d-%m-%Y %H:%M") %></p>
+                  <p><b>Masa Pulang:</b> <%= Calendar.strftime(@reject_booking.return_time, "%d-%m-%Y %H:%M") %></p>
+                </div>
+              <% end %>
               <form phx-submit="submit_rejection" class="space-y-3">
                 <textarea name="reason" rows="3" class="w-full border rounded-md p-2 text-sm" placeholder="Nyatakan sebab penolakan..."></textarea>
                 <div class="flex justify-end gap-2">
+                <button type="submit" class="px-3 py-1 bg-red-600 text-white rounded-md">Tolak</button>
                   <button type="button" phx-click="close_modal" class="px-3 py-1 border rounded-md">Batal</button>
-                  <button type="submit" class="px-3 py-1 bg-red-600 text-white rounded-md">Tolak</button>
                 </div>
               </form>
             </.modal>
@@ -602,11 +622,11 @@ defmodule SpatoWeb.VehicleBookingLive.AdminIndex do
                 <% end %>
 
                 <div class="flex justify-end gap-2">
-                  <button type="button" phx-click="close_modal" class="px-3 py-1 border rounded-md">
-                    Batal
-                  </button>
                   <button type="submit" class="px-3 py-1 bg-blue-600 text-white rounded-md">
                     Simpan
+                  </button>
+                  <button type="button" phx-click="close_modal" class="px-3 py-1 border rounded-md">
+                    Batal
                   </button>
                 </div>
               </form>
@@ -636,8 +656,8 @@ defmodule SpatoWeb.VehicleBookingLive.AdminIndex do
               <% end %>
 
               <div class="flex justify-end gap-2">
-                <button type="button" phx-click="close_modal" class="px-3 py-1 border rounded-md">Batal</button>
                 <button type="button" phx-click="confirm_approve" class="px-3 py-1 bg-green-600 text-white rounded-md">Sahkan</button>
+                <button type="button" phx-click="close_modal" class="px-3 py-1 border rounded-md">Batal</button>
               </div>
             </.modal>
 
