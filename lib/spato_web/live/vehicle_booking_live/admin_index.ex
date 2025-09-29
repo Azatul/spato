@@ -284,9 +284,6 @@ defmodule SpatoWeb.VehicleBookingLive.AdminIndex do
                     <option value="all" selected={@filter_status in [nil, "all"]}>Semua Status</option>
                     <option value="pending" selected={@filter_status == "pending"}>Menunggu</option>
                     <option value="approved" selected={@filter_status == "approved"}>Diluluskan</option>
-                    <option value="rejected" selected={@filter_status == "rejected"}>Ditolak</option>
-                    <option value="completed" selected={@filter_status == "completed"}>Selesai</option>
-                    <option value="cancelled" selected={@filter_status == "cancelled"}>Dibatalkan</option>
                   </select>
                 </form>
 

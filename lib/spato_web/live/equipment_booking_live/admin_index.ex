@@ -130,6 +130,7 @@ defmodule SpatoWeb.EquipmentBookingLive.AdminIndex do
      |> assign(:reject_booking, nil)
      |> replace_equipment_booking_in_list(updated)
      |> assign(:stats, Bookings.get_equipment_booking_stats())
+     |> put_flash(:info, "Tempahan telah ditolak")
      |> assign(:live_action, nil)}
   end
 
@@ -313,9 +314,6 @@ defmodule SpatoWeb.EquipmentBookingLive.AdminIndex do
                     <option value="all" selected={@filter_status in [nil, "all"]}>Semua Status</option>
                     <option value="pending" selected={@filter_status == "pending"}>Menunggu</option>
                     <option value="approved" selected={@filter_status == "approved"}>Diluluskan</option>
-                    <option value="rejected" selected={@filter_status == "rejected"}>Ditolak</option>
-                    <option value="completed" selected={@filter_status == "completed"}>Selesai</option>
-                    <option value="cancelled" selected={@filter_status == "cancelled"}>Dibatalkan</option>
                   </select>
                   </div>
                 </form>
