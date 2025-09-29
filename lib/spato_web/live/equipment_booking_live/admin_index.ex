@@ -476,6 +476,52 @@ defmodule SpatoWeb.EquipmentBookingLive.AdminIndex do
                 id={@equipment_booking.id}
                 equipment_booking={@equipment_booking}
               />
+              <!-- Modal Footer: Action Buttons -->
+              <div class="flex justify-end gap-2 mt-4">
+                <%= case @equipment_booking.status do %>
+                  <% "pending" -> %>
+                    <button
+                      phx-click="open_approve_modal"
+                      phx-value-id={@equipment_booking.id}
+                      class="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+                    >
+                      Luluskan
+                    </button>
+
+                    <button
+                      phx-click="open_reject_modal"
+                      phx-value-id={@equipment_booking.id}
+                      class="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700"
+                    >
+                      Tolak
+                    </button>
+
+                  <% "approved" -> %>
+                    <button
+                      phx-click="open_edit_modal"
+                      phx-value-id={@equipment_booking.id}
+                      class="px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                    >
+                      Ubah Status
+                    </button>
+
+                  <% "rejected" -> %>
+                    <%= if @equipment_booking.rejection_reason do %>
+                      <p class="text-sm text-gray-500">Sebab: <%= @equipment_booking.rejection_reason %></p>
+                    <% end %>
+
+                  <% "completed" -> %>
+                    <span class="text-sm text-blue-600">Selesai</span>
+
+                  <% "cancelled" -> %>
+                    <%= if @equipment_booking.rejection_reason do %>
+                      <p class="text-sm text-gray-500">Sebab: <%= @equipment_booking.rejection_reason %></p>
+                    <% end %>
+
+                  <% _ -> %>
+                    <span class="text-gray-500">—</span>
+                <% end %>
+              </div>
             </.modal>
 
             <!-- Modal: Reject with reason -->
