@@ -381,7 +381,7 @@ defmodule SpatoWeb.EquipmentBookingLive.AdminIndex do
                 <:col :let={booking} label="Kuantiti diminta"><%= booking.requested_quantity %> unit</:col>
                 <:col :let={booking} label="Catatan"><%= booking.additional_notes %></:col>
                 <:col :let={booking} label="Status">
-                <span class={"px-2 py-1 rounded-full text-white " <>
+                <span class={"px-1.5 py-0.5 rounded-full text-white text-xs font-semibold " <>
                   case booking.status do
                     "pending" -> "bg-yellow-500"
                     "approved" -> "bg-green-500"
@@ -403,6 +403,7 @@ defmodule SpatoWeb.EquipmentBookingLive.AdminIndex do
                   <% end %>
                 <% end %>
               </:col>
+
                 <:action :let={booking}>
                   <%= case booking.status do %>
                     <% "pending" -> %>
