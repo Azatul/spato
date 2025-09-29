@@ -25,6 +25,8 @@ defmodule SpatoWeb.EquipmentBookingLive.AdminIndex do
      |> assign(:selected_status, nil)
      |> assign(:reason, nil)
      |> assign(:edit_booking, nil)
+     |> assign(:show_approve_modal, false)
+     |> assign(:approve_booking, nil)
      |> assign(:stats, Bookings.get_equipment_booking_stats())
      |> load_equipment_bookings()}
   end
@@ -167,8 +169,39 @@ defmodule SpatoWeb.EquipmentBookingLive.AdminIndex do
     {:noreply,
      socket
      |> assign(:show_reject_modal, false)
+     |> assign(:reject_booking, nil)
      |> assign(:show_edit_modal, false)
+     |> assign(:edit_booking, nil)
+     |> assign(:show_approve_modal, false)
+     |> assign(:approve_booking, nil)
      |> assign(:live_action, nil)}
+  end
+
+  @impl true
+  def handle_event("open_approve_modal", %{"id" => id}, socket) do
+    booking =
+      Bookings.get_equipment_booking!(id)
+      |> Spato.Repo.preload([:user, :equipment, user: [:user_profile]])
+
+    {:noreply,
+    socket
+    |> assign(:approve_booking, booking)
+    |> assign(:show_approve_modal, true)}
+  end
+
+  @impl true
+  def handle_event("confirm_approve", _params, socket) do
+    booking = socket.assigns.approve_booking
+    {:ok, _} = Bookings.approve_equipment_booking(booking)
+    updated = Bookings.get_equipment_booking!(booking.id)
+
+    {:noreply,
+    socket
+    |> assign(:show_approve_modal, false)
+    |> assign(:approve_booking, nil)
+    |> replace_equipment_booking_in_list(updated)
+    |> assign(:stats, Bookings.get_equipment_booking_stats())
+    |> put_flash(:info, "Tempahan telah diluluskan")}
   end
 
   defp apply_action(socket, :show, %{"id" => id}) do
@@ -372,7 +405,7 @@ defmodule SpatoWeb.EquipmentBookingLive.AdminIndex do
                   <%= case booking.status do %>
                     <% "pending" -> %>
                       <!-- Approve -->
-                      <button phx-click="approve" phx-value-id={booking.id}
+                      <button phx-click="open_approve_modal" phx-value-id={booking.id}
                         class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-600 hover:bg-green-700 text-white"
                         title="Luluskan">
                         <.icon name="hero-check" class="w-4 h-4" />
@@ -476,6 +509,35 @@ defmodule SpatoWeb.EquipmentBookingLive.AdminIndex do
                   <button type="submit" class="px-3 py-1 bg-blue-600 text-white rounded-md">Simpan</button>
                 </div>
               </form>
+            </.modal>
+
+            <!-- Modal: Approve confirmation -->
+            <.modal :if={@show_approve_modal} id="approve-equipment-modal" show on_cancel={JS.push("close_modal")}>
+              <h2 class="text-lg font-semibold mb-3">Sahkan Tempahan</h2>
+
+              <%= if @approve_booking do %>
+                <p class="mb-2">
+                  Sahkan tempahan
+                  <b><%= @approve_booking.equipment.name %></b>
+                  daripada
+                  <b><%= User.display_name(@approve_booking.user) %></b>?
+                </p>
+
+                <ul class="text-sm text-gray-600 space-y-1 mb-4">
+                  <li><b>Lokasi:</b> <%= @approve_booking.location %></li>
+                  <li><b>Tarikh Guna:</b> <%= Calendar.strftime(@approve_booking.usage_at, "%d-%m-%Y %H:%M") %></li>
+                  <li><b>Tarikh Pulang:</b> <%= Calendar.strftime(@approve_booking.return_at, "%d-%m-%Y %H:%M") %></li>
+                  <li><b>Kuantiti:</b> <%= @approve_booking.requested_quantity %> unit</li>
+                  <%= if @approve_booking.additional_notes do %>
+                    <li><b>Catatan:</b> <%= @approve_booking.additional_notes %></li>
+                  <% end %>
+                </ul>
+              <% end %>
+
+              <div class="flex justify-end gap-2">
+                <button type="button" phx-click="close_modal" class="px-3 py-1 border rounded-md">Batal</button>
+                <button type="button" phx-click="confirm_approve" class="px-3 py-1 bg-green-600 text-white rounded-md">Sahkan</button>
+              </div>
             </.modal>
           </section>
         </main>

@@ -25,6 +25,8 @@ defmodule SpatoWeb.MeetingRoomBookingLive.AdminIndex do
      |> assign(:selected_status, nil)
      |> assign(:reason, nil)
      |> assign(:edit_booking, nil)
+     |> assign(:show_approve_modal, false)
+     |> assign(:approve_booking, nil)
      |> load_meeting_room_bookings()
      |> assign(:stats, Bookings.get_meeting_room_booking_stats())}
   end
@@ -125,8 +127,37 @@ defmodule SpatoWeb.MeetingRoomBookingLive.AdminIndex do
      socket
      |> assign(:show_reject_modal, false)
      |> assign(:show_edit_modal, false)
+     |> assign(:show_approve_modal, false)
+     |> assign(:approve_booking, nil)
      |> assign(:live_action, nil)}
   end
+
+  @impl true
+  def handle_event("open_approve_modal", %{"id" => id}, socket) do
+    booking =
+      Bookings.get_meeting_room_booking!(id)
+      |> Spato.Repo.preload([:user, :meeting_room, user: [:user_profile, user_profile: [:department]]])
+
+    {:noreply,
+    socket
+    |> assign(:approve_booking, booking)
+    |> assign(:show_approve_modal, true)}
+  end
+
+  @impl true
+  def handle_event("confirm_approve", _params, socket) do
+    booking = socket.assigns.approve_booking
+    {:ok, _} = Bookings.approve_meeting_room_booking(booking)
+
+    {:noreply,
+    socket
+    |> assign(:show_approve_modal, false)
+    |> assign(:approve_booking, nil)
+    |> load_meeting_room_bookings()
+    |> put_flash(:info, "Tempahan bilik mesyuarat telah diluluskan")}
+  end
+
+
 
   @impl true
   def handle_event("toggle_sidebar", _params, socket) do
@@ -358,7 +389,7 @@ defmodule SpatoWeb.MeetingRoomBookingLive.AdminIndex do
                   <%= case booking.status do %>
                     <% "pending" -> %>
                       <button
-                        phx-click="approve"
+                        phx-click="open_approve_modal"
                         phx-value-id={booking.id}
                         class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-600 hover:bg-green-700 text-white"
                         title="Luluskan"
@@ -492,6 +523,35 @@ defmodule SpatoWeb.MeetingRoomBookingLive.AdminIndex do
                 </div>
               </form>
             </.modal>
+
+            <!-- Modal: Approve confirmation -->
+            <.modal :if={@show_approve_modal} id="approve-meeting-room-modal" show on_cancel={JS.push("close_modal")}>
+              <h2 class="text-lg font-semibold mb-3">Sahkan Tempahan Bilik Mesyuarat</h2>
+
+              <%= if @approve_booking do %>
+                <p class="mb-2">
+                  Sahkan tempahan <b><%= @approve_booking.meeting_room.name %></b>
+                  oleh <b><%= User.display_name(@approve_booking.user) %></b>?
+                </p>
+
+                <ul class="text-sm text-gray-600 space-y-1 mb-4">
+                  <li><b>Lokasi:</b> <%= @approve_booking.meeting_room.location %></li>
+                  <li><b>Tujuan:</b> <%= @approve_booking.purpose %></li>
+                  <li><b>Tarikh:</b> <%= Calendar.strftime(@approve_booking.start_time, "%d-%m-%Y") %></li>
+                  <li><b>Masa:</b> <%= Calendar.strftime(@approve_booking.start_time, "%H:%M") %> – <%= Calendar.strftime(@approve_booking.end_time, "%H:%M") %></li>
+                  <li><b>Peserta:</b> <%= @approve_booking.participants %> / <%= @approve_booking.meeting_room.capacity %></li>
+                  <%= if @approve_booking.notes do %>
+                    <li><b>Catatan:</b> <%= @approve_booking.notes %></li>
+                  <% end %>
+                </ul>
+              <% end %>
+
+              <div class="flex justify-end gap-2">
+                <button type="button" phx-click="close_modal" class="px-3 py-1 border rounded-md">Batal</button>
+                <button type="button" phx-click="confirm_approve" class="px-3 py-1 bg-green-600 text-white rounded-md">Sahkan</button>
+              </div>
+            </.modal>
+
           </section>
         </main>
       </div>

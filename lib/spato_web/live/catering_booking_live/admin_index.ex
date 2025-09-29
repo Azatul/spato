@@ -25,6 +25,8 @@ defmodule SpatoWeb.CateringBookingLive.AdminIndex do
      |> assign(:selected_status, nil)
      |> assign(:reason, nil)
      |> assign(:edit_booking, nil)
+     |> assign(:show_approve_modal, false)
+     |> assign(:approve_booking, nil)
      |> load_catering_bookings()
      |> assign(:stats, Bookings.get_catering_booking_stats())}
   end
@@ -124,8 +126,37 @@ defmodule SpatoWeb.CateringBookingLive.AdminIndex do
     {:noreply,
      socket
      |> assign(:show_reject_modal, false)
+     |> assign(:reject_booking, nil)
      |> assign(:show_edit_modal, false)
+     |> assign(:edit_booking, nil)
+     |> assign(:show_approve_modal, false)
+     |> assign(:approve_booking, nil)
      |> assign(:live_action, nil)}
+  end
+
+  @impl true
+  def handle_event("open_approve_modal", %{"id" => id}, socket) do
+    booking =
+      Bookings.get_catering_booking!(id)
+      |> Spato.Repo.preload([:user, :menu, user: [:user_profile, user_profile: [:department]]])
+
+    {:noreply,
+     socket
+     |> assign(:approve_booking, booking)
+     |> assign(:show_approve_modal, true)}
+  end
+
+  @impl true
+  def handle_event("confirm_approve", _params, socket) do
+    booking = socket.assigns.approve_booking
+    {:ok, _} = Bookings.approve_catering_booking(booking, socket.assigns.current_user)
+
+    {:noreply,
+    socket
+    |> assign(:show_approve_modal, false)
+    |> assign(:approve_booking, nil)
+    |> load_catering_bookings()
+    |> put_flash(:info, "Tempahan katering telah diluluskan")}
   end
 
   @impl true
@@ -365,7 +396,7 @@ defmodule SpatoWeb.CateringBookingLive.AdminIndex do
                   <%= case booking.status do %>
                     <% "pending" -> %>
                       <button
-                        phx-click="approve"
+                        phx-click="open_approve_modal"
                         phx-value-id={booking.id}
                         class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-600 hover:bg-green-700 text-white"
                         title="Luluskan"
@@ -499,6 +530,35 @@ defmodule SpatoWeb.CateringBookingLive.AdminIndex do
                 </div>
               </form>
             </.modal>
+
+            <!-- Modal: Approve confirmation -->
+            <.modal :if={@show_approve_modal} id="approve-catering-modal" show on_cancel={JS.push("close_modal")}>
+              <h2 class="text-lg font-semibold mb-3">Sahkan Tempahan Katering</h2>
+
+              <%= if @approve_booking do %>
+                <p class="mb-2">
+                  Sahkan tempahan <b><%= @approve_booking.menu && @approve_booking.menu.name %></b>
+                  untuk <b><%= User.display_name(@approve_booking.user) %></b>?
+                </p>
+
+                <ul class="text-sm text-gray-600 space-y-1 mb-4">
+                  <li><b>Lokasi:</b> <%= @approve_booking.location %></li>
+                  <li><b>Tarikh:</b> <%= Calendar.strftime(@approve_booking.date, "%d-%m-%Y") %></li>
+                  <li><b>Masa:</b> <%= Calendar.strftime(@approve_booking.time, "%H:%M") %></li>
+                  <li><b>Peserta:</b> <%= @approve_booking.participants %> orang</li>
+                  <li><b>Jumlah Kos:</b> <%= Spato.Bookings.format_money(@approve_booking.total_cost) %></li>
+                  <%= if @approve_booking.special_request do %>
+                    <li><b>Permintaan Khas:</b> <%= @approve_booking.special_request %></li>
+                  <% end %>
+                </ul>
+              <% end %>
+
+              <div class="flex justify-end gap-2">
+                <button type="button" phx-click="close_modal" class="px-3 py-1 border rounded-md">Batal</button>
+                <button type="button" phx-click="confirm_approve" class="px-3 py-1 bg-green-600 text-white rounded-md">Sahkan</button>
+              </div>
+            </.modal>
+
           </section>
         </main>
       </div>

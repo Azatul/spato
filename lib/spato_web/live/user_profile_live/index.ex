@@ -183,7 +183,6 @@ defmodule SpatoWeb.UserProfileLive.Index do
           </.link>
         </section>
 
-
         <!-- Bottom Section: User Table -->
         <section class="bg-white p-4 md:p-6 rounded-xl shadow-md">
 
@@ -233,8 +232,25 @@ defmodule SpatoWeb.UserProfileLive.Index do
           >
             <:col :let={{_id, u}} label="ID"><%= u.id %></:col>
             <:col :let={{_id, u}} label="Nama Penuh"><%= if u.user_profile && Map.has_key?(u.user_profile, :full_name), do: u.user_profile.full_name, else: "Belum diisi" %></:col>
-            <:col :let={{_id, u}} label="Jawatan"><%= if u.user_profile && Map.has_key?(u.user_profile, :position), do: u.user_profile.position, else: "Belum diisi" %></:col>
-            <:col :let={{_id, u}} label="Jabatan"><%= if u.user_profile && u.user_profile.department && Map.has_key?(u.user_profile.department, :name), do: u.user_profile.department.name, else: "Belum diisi" %></:col>
+
+            <:col :let={{_id, u}} label="Jawatan">
+              <div class="flex flex-col">
+                <%= if u.user_profile && u.user_profile.position do %>
+                  <!-- Position -->
+                  <div class="font-semibold text-gray-900">
+                    <%= u.user_profile.position %>
+                  </div>
+
+                  <!-- Department Name -->
+                  <div class="text-sm text-gray-500">
+                    <%= if u.user_profile.department, do: u.user_profile.department.name, else: "Belum diisi" %>
+                  </div>
+                <% else %>
+                  <span class="text-gray-400">Belum diisi</span>
+                <% end %>
+              </div>
+            </:col>
+
             <:col :let={{_id, u}} label="Jantina"><%= if u.user_profile && u.user_profile.gender, do: UserProfile.human_gender(u.user_profile.gender), else: "Belum diisi" %></:col>
             <:col :let={{_id, u}} label="Emel & No. Telefon">
               <div class="flex flex-col">
