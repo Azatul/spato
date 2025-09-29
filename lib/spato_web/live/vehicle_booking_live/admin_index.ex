@@ -2,6 +2,7 @@ defmodule SpatoWeb.VehicleBookingLive.AdminIndex do
   use SpatoWeb, :live_view
   import SpatoWeb.Components.Sidebar
   import SpatoWeb.Components.Headbar
+  use SpatoWeb.NotificationMixin
 
   alias Spato.Bookings
   alias Spato.Accounts.User
@@ -25,6 +26,8 @@ defmodule SpatoWeb.VehicleBookingLive.AdminIndex do
      |> assign(:selected_status, nil)
      |> assign(:reason, nil)
      |> assign(:edit_booking, nil)
+     |> assign(:show_notifications, false)
+     |> load_notifications()
      |> load_vehicle_bookings()
      |> assign(:stats, Bookings.get_booking_stats())}
   end
@@ -74,6 +77,17 @@ defmodule SpatoWeb.VehicleBookingLive.AdminIndex do
   @impl true
   def handle_event("toggle_sidebar", _params, socket) do
     {:noreply, update(socket, :sidebar_open, &(!&1))}
+  end
+
+  # Notification events
+  @impl true
+  def handle_event("toggle_notifications", params, socket) do
+    handle_toggle_notifications(params, socket)
+  end
+
+  @impl true
+  def handle_event("read_notification", params, socket) do
+    handle_read_notification(params, socket)
   end
 
   @impl true
@@ -203,7 +217,7 @@ defmodule SpatoWeb.VehicleBookingLive.AdminIndex do
     <div class="flex h-screen overflow-hidden">
       <.sidebar active_tab={@active_tab} current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar"/>
       <div class="flex flex-col flex-1">
-        <.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title={@page_title} />
+        <.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title={@page_title} notifications={@notifications} unread_count={@unread_count} show_notifications={@show_notifications} />
 
         <main class="flex-1 overflow-y-auto pt-20 p-6 transition-all duration-300 bg-gray-100">
           <section class="mb-4">
@@ -213,16 +227,25 @@ defmodule SpatoWeb.VehicleBookingLive.AdminIndex do
 
             <!-- Stats Cards -->
             <div class="flex flex-wrap gap-4 mb-4">
-              <%= for {label, value, color} <- [
-                    {"Jumlah Tempahan", @stats.total, "text-gray-700"},
-                    {"Menunggu Kelulusan", @stats.pending, "text-yellow-500"},
-                    {"Diluluskan", @stats.approved, "text-green-500"},
-                    {"Aktif", @stats.active, "text-blue-500"}
+              <%= for {label, value} <- [
+                    {"Jumlah Tempahan", @stats.total},
+                    {"Menunggu Kelulusan", @stats.pending},
+                    {"Diluluskan", @stats.approved},
+                    {"Aktif", @stats.active}
                   ] do %>
-                <div class="flex-1 min-w-[180px] bg-white p-4 rounded-xl shadow-md flex flex-col justify-between h-30 transition-transform hover:scale-105">
+                <% card_colors = case label do
+                  "Jumlah Tempahan" -> %{border: "border-purple-300", bg: "bg-purple-100", icon: "text-purple-500", icon_class: "fa-solid fa-calendar-days"}
+                  "Menunggu Kelulusan" -> %{border: "border-amber-300", bg: "bg-amber-100", icon: "text-amber-500", icon_class: "fa-solid fa-clock"}
+                  "Diluluskan" -> %{border: "border-teal-300", bg: "bg-teal-100", icon: "text-teal-500", icon_class: "fa-solid fa-check-circle"}
+                  "Aktif" -> %{border: "border-purple-300", bg: "bg-purple-100", icon: "text-purple-500", icon_class: "fa-solid fa-check-double"}
+                end %>
+                <div class={"flex-1 min-w-[180px] bg-white p-6 rounded-xl shadow-md flex justify-between items-center min-h-[130px] border-l-4 #{card_colors.border} transition-transform hover:scale-105"}>
                   <div>
-                    <p class="text-sm text-gray-500"><%= label %></p>
-                    <p class={"text-3xl font-bold mt-1 #{color}"}><%= value %></p>
+                    <h3 class="text-gray-600 text-sm font-semibold"><%= label %></h3>
+                    <p class="text-4xl font-bold text-gray-800 mt-2"><%= value %></p>
+                  </div>
+                  <div class={"#{card_colors.bg} p-3 rounded-full"}>
+                    <i class={"#{card_colors.icon_class} #{card_colors.icon} text-2xl"}></i>
                   </div>
                 </div>
               <% end %>

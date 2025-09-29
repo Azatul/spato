@@ -2,6 +2,7 @@ defmodule SpatoWeb.AvailableEquipmentLive do
   use SpatoWeb, :live_view
   import SpatoWeb.Components.Sidebar
   import SpatoWeb.Components.Headbar
+  use SpatoWeb.NotificationMixin
 
   alias Spato.Bookings
   alias Spato.Bookings.EquipmentBooking
@@ -28,6 +29,8 @@ defmodule SpatoWeb.AvailableEquipmentLive do
      |> assign(:form, to_form(filters))
      |> assign(:invalid_dates, false)
      |> assign(:invalid_usage, false)
+     |> assign(:show_notifications, false)
+     |> load_notifications()
      |> assign(:invalid_return, false)
      |> assign(:page, 1)
      |> assign(:total_pages, 1)
@@ -138,6 +141,17 @@ defmodule SpatoWeb.AvailableEquipmentLive do
   @impl true
   def handle_event("toggle_sidebar", _, socket),
     do: {:noreply, update(socket, :sidebar_open, &(!&1))}
+
+  # Notification events
+  @impl true
+  def handle_event("toggle_notifications", params, socket) do
+    handle_toggle_notifications(params, socket)
+  end
+
+  @impl true
+  def handle_event("read_notification", params, socket) do
+    handle_read_notification(params, socket)
+  end
 
   @impl true
   def handle_params(params, _url, socket) do
@@ -267,7 +281,7 @@ defmodule SpatoWeb.AvailableEquipmentLive do
     <div class="flex h-screen overflow-hidden">
       <.sidebar active_tab={@active_tab} current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar"/>
       <div class="flex flex-col flex-1">
-        <.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title={@page_title} />
+        <.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title={@page_title} notifications={@notifications} unread_count={@unread_count} show_notifications={@show_notifications} />
 
         <main class="flex-1 overflow-y-auto pt-20 p-6 transition-all duration-300 bg-gray-100">
           <section class="mb-4">
