@@ -50,15 +50,14 @@ defmodule SpatoWeb.AdminDashboardLive do
                 <div class="bg-white p-6 rounded-xl shadow-md flex flex-col justify-between h-40 transition-transform hover:scale-105">
                     <div>
                         <p class="text-sm text-gray-500">Bilik mesyuarat</p>
-                        <p class="text-3xl font-bold mt-1"><%= @meeting_room_stats.pending %></p>
+                        <p class="text-3xl font-bold mt-1 text-yellow-500"><%= @meeting_room_stats.pending %></p>
                     </div>
                     <div class="w-full flex justify-end">
                         <.link
                         navigate={"/admin/meeting_room_bookings?page=1&q=&status=pending&date="}
-                        style="background-color: #22376F; color: white;"
-                        class="font-semibold py-1 px-4 rounded-md shadow-lg transition-colors mt-4 text-sm inline-flex items-center justify-center hover:opacity-90"
+                        class="mt-4 inline-flex items-center justify-center px-3 py-1 bg-gradient-to-r from-yellow-400 to-yellow-500 text-black font-semibold rounded-lg shadow-md hover:from-yellow-500 hover:to-yellow-600 transition-all text-sm"
                         >
-                            Ambil tindakan →
+                        Ambil tindakan →
                         </.link>
                     </div>
                 </div>
@@ -67,13 +66,12 @@ defmodule SpatoWeb.AdminDashboardLive do
                 <div class="bg-white p-6 rounded-xl shadow-md flex flex-col justify-between h-40 transition-transform hover:scale-105">
                     <div>
                         <p class="text-sm text-gray-500">Kenderaan</p>
-                        <p class="text-3xl font-bold mt-1"><%= @vehicle_stats.pending %></p>
+                        <p class="text-3xl font-bold mt-1 text-yellow-500"><%= @vehicle_stats.pending %></p>
                     </div>
                     <div class="w-full flex justify-end">
                         <.link
                         navigate={"/admin/vehicle_bookings?page=1&q=&status=pending&date="}
-                        style="background-color: #22376F; color: white;"
-                        class="font-semibold py-1 px-4 rounded-md shadow-lg transition-colors mt-4 text-sm inline-flex items-center justify-center hover:opacity-90"
+                        class="mt-4 inline-flex items-center justify-center px-3 py-1 bg-gradient-to-r from-yellow-400 to-yellow-500 text-black font-semibold rounded-lg shadow-md hover:from-yellow-500 hover:to-yellow-600 transition-all text-sm"
                         >
                             Ambil tindakan →
                         </.link>
@@ -84,13 +82,12 @@ defmodule SpatoWeb.AdminDashboardLive do
                 <div class="bg-white p-6 rounded-xl shadow-md flex flex-col justify-between h-40 transition-transform hover:scale-105">
                     <div>
                         <p class="text-sm text-gray-500">Katering</p>
-                        <p class="text-3xl font-bold mt-1"><%= @catering_stats.pending %></p>
+                        <p class="text-3xl font-bold mt-1 text-yellow-500"><%= @catering_stats.pending %></p>
                     </div>
                     <div class="w-full flex justify-end">
                     <.link
                     navigate={"/admin/catering_bookings?page=1&q=&status=pending&date="}
-                    style="background-color: #22376F; color: white;"
-                    class="font-semibold py-1 px-4 rounded-md shadow-lg transition-colors mt-4 text-sm inline-flex items-center justify-center hover:opacity-90"
+                    class="mt-4 inline-flex items-center justify-center px-3 py-1 bg-gradient-to-r from-yellow-400 to-yellow-500 text-black font-semibold rounded-lg shadow-md hover:from-yellow-500 hover:to-yellow-600 transition-all text-sm"
                     >
                     Ambil tindakan →
                     </.link>
@@ -101,16 +98,15 @@ defmodule SpatoWeb.AdminDashboardLive do
                 <div class="bg-white p-6 rounded-xl shadow-md flex flex-col justify-between h-40 transition-transform hover:scale-105">
                 <div>
                     <p class="text-sm text-gray-500">Peralatan</p>
-                    <p class="text-3xl font-bold mt-1"><%= @equipment_stats.pending %></p>
+                    <p class="text-3xl font-bold mt-1 text-yellow-500"><%= @equipment_stats.pending %></p>
                 </div>
                 <div class="w-full flex justify-end">
-                    <.link
-                    navigate={"/admin/equipment_bookings?page=1&q=&status=pending&date="}
-                    style="background-color: #22376F; color: white;"
-                    class="font-semibold py-1 px-4 rounded-md shadow-lg transition-colors mt-4 text-sm inline-flex items-center justify-center hover:opacity-90"
-                    >
-                    Ambil tindakan →
-                    </.link>
+                        <.link
+                        navigate={"/admin/equipment_bookings?page=1&q=&status=pending&date="}
+                        class="mt-4 inline-flex items-center justify-center px-3 py-1 bg-gradient-to-r from-yellow-400 to-yellow-500 text-black font-semibold rounded-lg shadow-md hover:from-yellow-500 hover:to-yellow-600 transition-all text-sm"
+                        >
+                        Ambil tindakan →
+                        </.link>
                 </div>
                 </div>
             </div>
