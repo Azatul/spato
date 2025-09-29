@@ -55,7 +55,8 @@ defmodule SpatoWeb.AdminDashboardLive do
                     <div class="w-full flex justify-end">
                         <.link
                         navigate={"/admin/meeting_room_bookings?page=1&q=&status=pending&date="}
-                        class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-1 px-4 rounded-md shadow-lg transition-colors mt-4 text-sm"
+                        style="background-color: #22376F; color: white;"
+                        class="font-semibold py-1 px-4 rounded-md shadow-lg transition-colors mt-4 text-sm inline-flex items-center justify-center hover:opacity-90"
                         >
                             Ambil tindakan →
                         </.link>
@@ -71,7 +72,8 @@ defmodule SpatoWeb.AdminDashboardLive do
                     <div class="w-full flex justify-end">
                         <.link
                         navigate={"/admin/vehicle_bookings?page=1&q=&status=pending&date="}
-                        class="bg-green-600 hover:bg-green-700 text-white font-semibold py-1 px-4 rounded-md shadow-lg transition-colors mt-4 text-sm"
+                        style="background-color: #22376F; color: white;"
+                        class="font-semibold py-1 px-4 rounded-md shadow-lg transition-colors mt-4 text-sm inline-flex items-center justify-center hover:opacity-90"
                         >
                             Ambil tindakan →
                         </.link>
@@ -87,7 +89,8 @@ defmodule SpatoWeb.AdminDashboardLive do
                     <div class="w-full flex justify-end">
                     <.link
                     navigate={"/admin/catering_bookings?page=1&q=&status=pending&date="}
-                    class="bg-red-600 hover:bg-red-700 text-white font-semibold py-1 px-4 rounded-md shadow-lg transition-colors mt-4 text-sm"
+                    style="background-color: #22376F; color: white;"
+                    class="font-semibold py-1 px-4 rounded-md shadow-lg transition-colors mt-4 text-sm inline-flex items-center justify-center hover:opacity-90"
                     >
                     Ambil tindakan →
                     </.link>
@@ -103,7 +106,8 @@ defmodule SpatoWeb.AdminDashboardLive do
                 <div class="w-full flex justify-end">
                     <.link
                     navigate={"/admin/equipment_bookings?page=1&q=&status=pending&date="}
-                    class="bg-red-600 hover:bg-red-700 text-white font-semibold py-1 px-4 rounded-md shadow-lg transition-colors mt-4 text-sm"
+                    style="background-color: #22376F; color: white;"
+                    class="font-semibold py-1 px-4 rounded-md shadow-lg transition-colors mt-4 text-sm inline-flex items-center justify-center hover:opacity-90"
                     >
                     Ambil tindakan →
                     </.link>
