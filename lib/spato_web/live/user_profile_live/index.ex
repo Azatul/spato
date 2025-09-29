@@ -228,7 +228,7 @@ defmodule SpatoWeb.UserProfileLive.Index do
           <.table
             id="user_profiles"
             rows={@streams.user_profiles}
-            row_click={fn {_id, u} -> JS.patch(~p"/admin/user_profiles/#{u.id}?action=show") end}
+            row_click={fn {_id, u} -> JS.patch(~p"/admin/user_profiles/#{u.id}?action=show&page=#{@page}&q=#{@search_query}&role=#{@filter_role}&department=#{@filter_department}") end}
           >
             <:col :let={{_id, u}} label="ID"><%= u.id %></:col>
             <:col :let={{_id, u}} label="Nama Penuh"><%= if u.user_profile && Map.has_key?(u.user_profile, :full_name), do: u.user_profile.full_name, else: "Belum diisi" %></:col>
@@ -312,7 +312,6 @@ defmodule SpatoWeb.UserProfileLive.Index do
                 <!-- No delete option for self or admins -->
               <% end %>
             </:action>
-
           </.table>
         </section>
 
@@ -354,12 +353,13 @@ defmodule SpatoWeb.UserProfileLive.Index do
           <% end %>
 
         <!-- Modals (Show & Registration) -->
-        <.modal :if={@live_action == :show} id="user-profile-show-modal" show on_cancel={JS.patch(~p"/admin/user_profiles")}>
+        <.modal :if={@live_action == :show} id="user-profile-show-modal" show on_cancel={JS.patch(~p"/admin/user_profiles?page=#{@page}&q=#{@search_query}&role=#{@filter_role}&department=#{@filter_department}")}>
           <.live_component
             module={SpatoWeb.UserProfileLive.ShowComponent}
             id={@user.id}
             title={@page_title}
             user={@user}
+            page={~p"/admin/user_profiles?page=#{@page}&q=#{@search_query}&role=#{@filter_role}&department=#{@filter_department}"}
             user_profile={@user_profile}
           />
         </.modal>
@@ -371,7 +371,7 @@ defmodule SpatoWeb.UserProfileLive.Index do
           title="Daftar Pengguna Baru"
           action={:new}
           user={%Accounts.User{}}
-          patch={~p"/admin/user_profiles"}
+          patch={~p"/admin/user_profiles?page=#{@page}&q=#{@search_query}&role=#{@filter_role}&department=#{@filter_department}"}
           form={@form}
           roles={@roles}
           check_errors={@check_errors}
