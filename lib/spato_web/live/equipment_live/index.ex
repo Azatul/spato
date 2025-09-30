@@ -5,6 +5,7 @@ defmodule SpatoWeb.EquipmentLive.Index do
 
   alias Spato.Assets
   alias Spato.Assets.Equipment
+  alias Spato.Notifications
 
   on_mount {SpatoWeb.UserAuth, :ensure_authenticated}
 
@@ -17,9 +18,29 @@ defmodule SpatoWeb.EquipmentLive.Index do
      |> assign(:sidebar_open, true)
      |> assign(:current_user, socket.assigns.current_user)
      |> assign(:filter_status, "all")
+     |> assign(:filter_type, "all")
      |> assign(:search_query, "")
      |> assign(:page, 1)
+     |> assign(:show_notifications, false)
+     |> load_notifications()
      |> stream(:equipments, Assets.list_equipments())}
+  end
+
+  # --- LOAD NOTIFICATIONS ---
+  defp load_notifications(socket) do
+    user = socket.assigns.current_user
+    role = if user.role == "admin", do: :admin, else: :user
+
+    notifications = case role do
+      :user -> Notifications.list_user_notifications(user.id)
+      :admin -> Notifications.list_admin_notifications(user.id)
+    end
+
+    unread_count = Notifications.count_unread(user.id, role)
+
+    socket
+    |> assign(:notifications, notifications)
+    |> assign(:unread_count, unread_count)
   end
 
   # --- LOAD EQUIPMENTS ---
@@ -27,7 +48,8 @@ defmodule SpatoWeb.EquipmentLive.Index do
     params = %{
       "page" => socket.assigns.page,
       "search" => socket.assigns.search_query,
-      "status" => socket.assigns.filter_status
+      "status" => socket.assigns.filter_status,
+      "type" => socket.assigns.filter_type
     }
 
     data = Assets.list_equipments_paginated(params)
@@ -58,14 +80,22 @@ defmodule SpatoWeb.EquipmentLive.Index do
   end
 
   @impl true
-def handle_event("filter_status", %{"status" => status}, socket) do
-  {:noreply,
-   push_patch(socket,
-     to:
-       ~p"/admin/equipments?page=1&q=#{socket.assigns.search_query}&status=#{status}"
-   )}
-end
+  def handle_event("filter_status", %{"status" => status}, socket) do
+    {:noreply,
+    push_patch(socket,
+      to:
+        ~p"/admin/equipments?page=1&q=#{socket.assigns.search_query}&status=#{status}&type=#{socket.assigns.filter_type}"
+    )}
+  end
 
+  @impl true
+  def handle_event("filter_type", %{"type" => type}, socket) do
+    {:noreply,
+    push_patch(socket,
+      to:
+        ~p"/admin/equipments?page=1&q=#{socket.assigns.search_query}&status=#{socket.assigns.filter_status}&type=#{type}"
+    )}
+  end
 
   @impl true
   def handle_event("paginate", %{"page" => page}, socket) do
@@ -77,6 +107,23 @@ end
 
   @impl true
   def handle_event("toggle_sidebar", _, socket), do: {:noreply, update(socket, :sidebar_open, &(!&1))}
+
+  @impl true
+  def handle_event("toggle_notifications", _params, socket) do
+    {:noreply, assign(socket, :show_notifications, !socket.assigns.show_notifications)}
+  end
+
+  @impl true
+  def handle_event("read_notification", %{"id" => id}, socket) do
+    case Notifications.get_notification(id) do
+      %{status: "unread"} = notification ->
+        {:ok, _} = Notifications.mark_as_read(notification)
+        socket = load_notifications(socket)
+        {:noreply, socket}
+      _ ->
+        {:noreply, socket}
+    end
+  end
 
   @impl true
   def handle_event("delete", %{"id" => id}, socket) do
@@ -106,12 +153,13 @@ end
     page   = Map.get(params, "page", "1") |> String.to_integer()
     search = Map.get(params, "q", "")
     status = Map.get(params, "status", "all")
-
+    type = Map.get(params, "type", "all")
     {:noreply,
     socket
     |> assign(:page, page)
     |> assign(:search_query, search)
     |> assign(:filter_status, status)
+    |> assign(:filter_type, type)
     |> load_equipments()
     |> apply_action(socket.assigns.live_action, params)}
   end
@@ -122,7 +170,7 @@ end
       <div class="flex h-screen overflow-hidden">
       <.sidebar active_tab={@active_tab} current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar"/>
      <div class="flex flex-col flex-1">
-      <.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title={@page_title} />
+      <.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title={@page_title} notifications={@notifications} unread_count={@unread_count} show_notifications={@show_notifications} />
 
       <main class="flex-1 overflow-y-auto pt-20 p-6 transition-all duration-300 bg-gray-100">
       <section class="mb-4">
@@ -136,18 +184,19 @@ end
                                       {"Dalam Penyelenggaraan", @stats.maintenance},
                                       {"Peralatan Aktif", @stats.active}] do %>
 
-              <% number_color =
-                case label do
-                  "Jumlah Peralatan Berdaftar" -> "text-gray-700"
-                  "Peralatan Tersedia" -> "text-green-500"
-                  "Dalam Penyelenggaraan" -> "text-red-500"
-                  "Peralatan Aktif" -> "text-blue-500"
-                end %>
-
-              <div class="bg-white p-4 rounded-xl shadow-md flex flex-col justify-between h-30 transition-transform hover:scale-105">
+              <% card_colors = case label do
+                "Jumlah Peralatan Berdaftar" -> %{border: "border-purple-300", bg: "bg-purple-100", icon: "text-purple-500", icon_class: "fa-solid fa-laptop"}
+                "Peralatan Tersedia" -> %{border: "border-teal-300", bg: "bg-teal-100", icon: "text-teal-500", icon_class: "fa-solid fa-check-circle"}
+                "Dalam Penyelenggaraan" -> %{border: "border-amber-300", bg: "bg-amber-100", icon: "text-amber-500", icon_class: "fa-solid fa-wrench"}
+                "Peralatan Aktif" -> %{border: "border-purple-300", bg: "bg-purple-100", icon: "text-purple-500", icon_class: "fa-solid fa-laptop"}
+              end %>
+              <div class={"bg-white p-6 rounded-xl shadow-md flex justify-between items-center min-h-[130px] border-l-4 #{card_colors.border} transition-transform hover:scale-105"}>
                 <div>
-                  <p class="text-sm text-gray-500"><%= label %></p>
-                  <p class={"text-3xl font-bold mt-1 #{number_color}"}><%= value %></p>
+                  <h3 class="text-gray-600 text-sm font-semibold"><%= label %></h3>
+                  <p class="text-4xl font-bold text-gray-800 mt-2"><%= value %></p>
+                </div>
+                <div class={"#{card_colors.bg} p-3 rounded-full"}>
+                  <i class={"#{card_colors.icon_class} #{card_colors.icon} text-2xl"}></i>
                 </div>
               </div>
             <% end %>
@@ -171,16 +220,48 @@ end
             <!-- Search and Filter -->
             <div class="flex flex-wrap gap-2 mt-2">
               <form phx-change="search" class="flex-1 min-w-[200px]">
-                <input type="text" name="q" value={@search_query} placeholder="Cari nama, jenis atau kapasiti..." class="w-full border rounded-md px-2 py-1 text-sm"/>
+                <div class="relative">
+                  <!-- Magnifying glass icon -->
+                  <.icon name="hero-magnifying-glass" class="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+
+                  <!-- Input -->
+                  <input type="text" name="q" value={@search_query} placeholder="Cari nama atau no. siri..." class="w-full border rounded-md pl-8 pr-2 py-1 text-sm"/>
+                </div>
+              </form>
+
+              <!-- Filter by type -->
+              <form phx-change="filter_type">
+                <div class="relative">
+                  <!-- Funnel icon -->
+                  <.icon name="hero-funnel" class="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+
+                  <select name="type" class="border rounded-md pl-8 pr-8 py-1 text-sm">
+                  <option value="all" selected={@filter_type in [nil, "all"]}>Semua Jenis</option>
+                  <option value="laptop" selected={@filter_type == "laptop"}>Laptop / Notebook</option>
+                  <option value="projector" selected={@filter_type == "projector"}>Projektor</option>
+                  <option value="projector_screen" selected={@filter_type == "projector_screen"}>Projektor Screen</option>
+                  <option value="printer" selected={@filter_type == "printer"}>Printer Mudah Alih</option>
+                  <option value="kamera" selected={@filter_type == "kamera"}>Kamera</option>
+                  <option value="speaker" selected={@filter_type == "speaker"}>Speaker</option>
+                  <option value="laser_pointer" selected={@filter_type == "laser_pointer"}>Laser Pointer</option>
+                  <option value="extension_cord" selected={@filter_type == "extension_cord"}>Extension Cord</option>
+                  <option value="whiteboard" selected={@filter_type == "whiteboard"}>Whiteboard / Flipchart</option>
+                  </select>
+                </div>
               </form>
 
               <!-- Filter by status -->
               <form phx-change="filter_status">
-                <select name="status" class="border rounded-md px-2 pr-8 py-1 text-sm">
+                <div class="relative">
+                  <!-- Funnel icon -->
+                  <.icon name="hero-funnel" class="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+
+                  <select name="status" class="border rounded-md pl-8 pr-8 py-1 text-sm">
                   <option value="all" selected={@filter_status in [nil, "all"]}>Semua Status</option>
                   <option value="tersedia" selected={@filter_status == "tersedia"}>Tersedia</option>
                   <option value="tidak_tersedia" selected={@filter_status == "tidak_tersedia"}>Tidak Tersedia</option>
-                </select>
+                  </select>
+                </div>
               </form>
             </div>
           </div>
@@ -197,7 +278,7 @@ end
         <!-- Equipments Table -->
         <.table id="equipments" rows={@equipments_page} row_click={fn equipment ->
             JS.patch(
-              ~p"/admin/equipments/#{equipment.id}?action=show&page=#{@page}&q=#{@search_query}&status=#{@filter_status}"
+              ~p"/admin/equipments/#{equipment.id}?action=show&page=#{@page}&q=#{@search_query}&status=#{@filter_status}&type=#{@filter_type}"
             )
           end}>
           <:col :let={equipment} label="ID"><%= equipment.id %></:col>
@@ -214,8 +295,34 @@ end
                 </div>
               </div>
             </:col>
-          <:col :let={equipment} label="Jenis">{Equipment.human_type(equipment.type)}</:col>
-          <:col :let={equipment} label="Kuantiti Tersedia">{equipment.quantity_available}</:col>
+          <:col :let={equipment} label="Jenis">
+            <!-- Equipment Type (colored pill badge) -->
+                <div class="mt-1">
+                  <%= case equipment.type do %>
+                    <% "laptop" -> %>
+                      <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-blue-500">Laptop / Notebook</span>
+                    <% "projector" -> %>
+                      <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-indigo-500">Projektor</span>
+                    <% "projector_screen" -> %>
+                      <span class="px-1.5 py-0.5 rounded-full text-black text-xs font-semibold bg-yellow-400">Projektor Screen</span>
+                    <% "printer" -> %>
+                      <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-green-500">Printer Mudah Alih</span>
+                    <% "speaker" -> %>
+                      <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-purple-600">Speaker</span>
+                    <% "laser_pointer" -> %>
+                      <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-red-500">Laser Pointer</span>
+                    <% "extension_cord" -> %>
+                      <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-gray-400">Extension Cord</span>
+                    <% "whiteboard" -> %>
+                      <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-gray-400">Whiteboard / Flipchart</span>
+                    <% "kamera" -> %>
+                      <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-red-500">Kamera</span>
+                    <% _ -> %>
+                      <span class="px-1.5 py-0.5 rounded-full text-white text-xs font-semibold bg-gray-400">Peralatan Lain</span>
+                  <% end %>
+              </div>
+          </:col>
+          <:col :let={equipment} label="Kuantiti Tersedia">{equipment.total_quantity} unit</:col>
           <:col :let={equipment} label="Ditambah Oleh">
               <%= equipment.created_by && equipment.created_by.user_profile && equipment.created_by.user_profile.full_name || "N/A" %>
           </:col>
@@ -235,7 +342,7 @@ end
           </span>
           </:col>
           <:action :let={equipment}>
-              <.link patch={~p"/admin/equipments/#{equipment.id}/edit"}>Kemaskini</.link>
+              <.link patch={~p"/admin/equipments/#{equipment.id}/edit?page=#{@page}&q=#{@search_query}&status=#{@filter_status}&type=#{@filter_type}"}>Kemaskini</.link>
             </:action>
             <:action :let={equipment}>
               <.link phx-click={JS.push("delete", value: %{id: equipment.id}) |> hide("##{equipment.id}")} data-confirm="Padam peralatan?">Padam</.link>
@@ -249,7 +356,7 @@ end
             <!-- Previous button -->
             <div class="flex-1">
               <.link
-                patch={~p"/admin/equipments?page=#{max(@page - 1, 1)}&q=#{@search_query}&status=#{@filter_status}"}
+                patch={~p"/admin/equipments?page=#{max(@page - 1, 1)}&q=#{@search_query}&status=#{@filter_status}&type=#{@filter_type}"}
                 class={"px-3 py-1 border rounded #{if @page == 1, do: "bg-gray-200 text-gray-500 cursor-not-allowed", else: "bg-white text-gray-700 hover:bg-gray-100"}"}
               >
                 Sebelumnya
@@ -260,7 +367,7 @@ end
             <div class="absolute left-1/2 transform -translate-x-1/2 flex space-x-1">
               <%= for p <- 1..@total_pages do %>
                 <.link
-                  patch={~p"/admin/equipments?page=#{p}&q=#{@search_query}&status=#{@filter_status}"}
+                  patch={~p"/admin/equipments?page=#{p}&q=#{@search_query}&status=#{@filter_status}&type=#{@filter_type}"}
                   class={"px-3 py-1 border rounded #{if p == @page, do: "bg-gray-700 text-white", else: "bg-white text-gray-700 hover:bg-gray-100"}"}
                 >
                   <%= p %>
@@ -271,7 +378,7 @@ end
             <!-- Next button -->
             <div class="flex-1 text-right">
               <.link
-                patch={~p"/admin/equipments?page=#{min(@page + 1, @total_pages)}&q=#{@search_query}&status=#{@filter_status}"}
+                patch={~p"/admin/equipments?page=#{min(@page + 1, @total_pages)}&q=#{@search_query}&status=#{@filter_status}&type=#{@filter_type}"}
                 class={"px-3 py-1 border rounded #{if @page == @total_pages, do: "bg-gray-200 text-gray-500 cursor-not-allowed", else: "bg-white text-gray-700 hover:bg-gray-100"}"}
               >
                 Seterusnya
@@ -281,20 +388,20 @@ end
           <% end %>
 
           <!-- Modals -->
-          <.modal :if={@live_action in [:new, :edit]} id="equipment-modal" show on_cancel={JS.patch(~p"/admin/equipments")}>
+          <.modal :if={@live_action in [:new, :edit]} id="equipment-modal" show on_cancel={JS.patch(~p"/admin/equipments?page=#{@page}&q=#{@search_query}&status=#{@filter_status}&type=#{@filter_type}")}>
           <.live_component
             module={SpatoWeb.EquipmentLive.FormComponent}
             id={@equipment.id || :new}
             title={@page_title}
             action={@live_action}
             equipment={@equipment}
-            patch={~p"/admin/equipments"}
+            patch={~p"/admin/equipments?page=#{@page}&q=#{@search_query}&status=#{@filter_status}&type=#{@filter_type}"}
             current_user={@current_user}
             current_user_id={@current_user.id}
           />
         </.modal>
 
-        <.modal :if={@live_action == :show} id="equipment-show-modal" show on_cancel={JS.patch(~p"/admin/equipments?page=#{@page}&q=#{@search_query}&status=#{@filter_status}")}>
+        <.modal :if={@live_action == :show} id="equipment-show-modal" show on_cancel={JS.patch(~p"/admin/equipments?page=#{@page}&q=#{@search_query}&status=#{@filter_status}&type=#{@filter_type}")}>
           <.live_component module={SpatoWeb.EquipmentLive.ShowComponent} id={@equipment.id} equipment={@equipment} />
         </.modal>
         </section>

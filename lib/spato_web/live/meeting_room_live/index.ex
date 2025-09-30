@@ -5,6 +5,7 @@ defmodule SpatoWeb.MeetingRoomLive.Index do
 
   alias Spato.Assets
   alias Spato.Assets.MeetingRoom
+  alias Spato.Notifications
 
   on_mount {SpatoWeb.UserAuth, :ensure_authenticated}
 
@@ -19,7 +20,26 @@ defmodule SpatoWeb.MeetingRoomLive.Index do
      |> assign(:search_query, "")
      |> assign(:page, 1)
      |> assign(:current_user, socket.assigns.current_user)
+     |> assign(:show_notifications, false)
+     |> load_notifications()
      |> stream(:meeting_rooms, Assets.list_meeting_rooms())}
+  end
+
+  # --- LOAD NOTIFICATIONS ---
+  defp load_notifications(socket) do
+    user = socket.assigns.current_user
+    role = if user.role == "admin", do: :admin, else: :user
+
+    notifications = case role do
+      :user -> Notifications.list_user_notifications(user.id)
+      :admin -> Notifications.list_admin_notifications(user.id)
+    end
+
+    unread_count = Notifications.count_unread(user.id, role)
+
+    socket
+    |> assign(:notifications, notifications)
+    |> assign(:unread_count, unread_count)
   end
 
   defp load_meeting_rooms(socket) do
@@ -88,12 +108,30 @@ defmodule SpatoWeb.MeetingRoomLive.Index do
   @impl true
   def handle_event("toggle_sidebar", _, socket), do: {:noreply, update(socket, :sidebar_open, &(!&1))}
 
+  @impl true
+  def handle_event("toggle_notifications", _params, socket) do
+    {:noreply, assign(socket, :show_notifications, !socket.assigns.show_notifications)}
+  end
+
+  @impl true
+  def handle_event("read_notification", %{"id" => id}, socket) do
+    case Notifications.get_notification(id) do
+      %{status: "unread"} = notification ->
+        {:ok, _} = Notifications.mark_as_read(notification)
+        socket = load_notifications(socket)
+        {:noreply, socket}
+      _ ->
+        {:noreply, socket}
+    end
+  end
+
+  @impl true
   def handle_event("search", %{"q" => query}, socket) do
     {:noreply,
-     socket
-     |> assign(:search_query, query)
-     |> assign(:page, 1)
-     |> load_meeting_rooms()}
+     push_patch(socket,
+       to:
+       ~p"/admin/meeting_rooms?page=1&q=#{query}&status=#{socket.assigns.filter_status}"
+     )}
   end
 
   @impl true
@@ -105,13 +143,14 @@ defmodule SpatoWeb.MeetingRoomLive.Index do
      )}
   end
 
-
   @impl true
   def handle_event("paginate", %{"page" => page}, socket) do
     {:noreply,
-     socket
-     |> assign(:page, String.to_integer(page))
-     |> load_meeting_rooms()}
+     push_patch(socket,
+       to:
+        ~p"/admin/meeting_rooms?page=#{page}&q=#{socket.assigns.search_query}&status=#{socket.assigns.filter_status}"
+
+     )}
   end
 
   @impl true
@@ -120,7 +159,7 @@ defmodule SpatoWeb.MeetingRoomLive.Index do
       <div class="flex h-screen overflow-hidden">
       <.sidebar active_tab={@active_tab} current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar"/>
       <div class="flex flex-col flex-1">
-      <.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title={@page_title} />
+      <.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title={@page_title} notifications={@notifications} unread_count={@unread_count} show_notifications={@show_notifications} />
 
         <main class="flex-1 overflow-y-auto pt-20 p-6 transition-all duration-300 bg-gray-100">
           <section class="mb-4">
@@ -134,18 +173,19 @@ defmodule SpatoWeb.MeetingRoomLive.Index do
                                       {"Dalam Penyelenggaraan", @stats.maintenance},
                                       {"Bilik Mesyuarat Aktif", @stats.active}] do %>
 
-              <% number_color =
-                case label do
-                  "Jumlah Bilik Mesyuarat Berdaftar" -> "text-gray-700"
-                  "Bilik Mesyuarat Tersedia" -> "text-green-500"
-                  "Dalam Penyelenggaraan" -> "text-red-500"
-                  "Bilik Mesyuarat Aktif" -> "text-blue-500"
-                end %>
-
-              <div class="bg-white p-4 rounded-xl shadow-md flex flex-col justify-between h-30 transition-transform hover:scale-105">
+              <% card_colors = case label do
+                "Jumlah Bilik Mesyuarat Berdaftar" -> %{border: "border-purple-300", bg: "bg-purple-100", icon: "text-purple-500", icon_class: "fa-solid fa-users"}
+                "Bilik Mesyuarat Tersedia" -> %{border: "border-teal-300", bg: "bg-teal-100", icon: "text-teal-500", icon_class: "fa-solid fa-check-circle"}
+                "Dalam Penyelenggaraan" -> %{border: "border-amber-300", bg: "bg-amber-100", icon: "text-amber-500", icon_class: "fa-solid fa-wrench"}
+                "Bilik Mesyuarat Aktif" -> %{border: "border-purple-300", bg: "bg-purple-100", icon: "text-purple-500", icon_class: "fa-solid fa-users"}
+              end %>
+              <div class={"bg-white p-6 rounded-xl shadow-md flex justify-between items-center min-h-[130px] border-l-4 #{card_colors.border} transition-transform hover:scale-105"}>
                 <div>
-                  <p class="text-sm text-gray-500"><%= label %></p>
-                  <p class={"text-3xl font-bold mt-1 #{number_color}"}><%= value %></p>
+                  <h3 class="text-gray-600 text-sm font-semibold"><%= label %></h3>
+                  <p class="text-4xl font-bold text-gray-800 mt-2"><%= value %></p>
+                </div>
+                <div class={"#{card_colors.bg} p-3 rounded-full"}>
+                  <i class={"#{card_colors.icon_class} #{card_colors.icon} text-2xl"}></i>
                 </div>
               </div>
             <% end %>
@@ -198,9 +238,25 @@ defmodule SpatoWeb.MeetingRoomLive.Index do
             )
           end}>
                 <:col :let={meeting_room} label="ID"><%= meeting_room.id %></:col>
-                <:col :let={meeting_room} label="Nama">{meeting_room.name}</:col>
-                <:col :let={meeting_room} label="Lokasi">{meeting_room.location}</:col>
-                <:col :let={meeting_room} label="Kapasiti">{meeting_room.capacity}</:col>
+                <:col :let={meeting_room} label="Nama & Lokasi">
+                  <div class="flex flex-col">
+                    <!-- Meeting Room Name -->
+                    <div class="font-semibold text-gray-900">
+                      <%= meeting_room.name %>
+                    </div>
+
+                    <!-- Meeting Room Location -->
+                    <div class="text-sm text-gray-500">
+                      <%= meeting_room.location %>
+                    </div>
+                  </div>
+                </:col>
+                <:col :let={meeting_room} label="Kapasiti">
+                  <div class="flex items-center gap-1">
+                    <.icon name="hero-user" class="w-4 h-4 text-gray-500" />
+                    <span><%= meeting_room.capacity %></span>
+                  </div>
+                </:col>
                 <:col :let={meeting_room} label="Kemudahan Tersedia">{meeting_room.available_facility}</:col>
                 <:col :let={meeting_room} label="Ditambah Oleh">
                   <%= meeting_room.created_by && meeting_room.created_by.user_profile && meeting_room.created_by.user_profile.full_name || "N/A" %>
@@ -224,7 +280,13 @@ defmodule SpatoWeb.MeetingRoomLive.Index do
                   <div class="sr-only">
                     <.link navigate={~p"/admin/meeting_rooms/#{meeting_room.id}"}>Show</.link>
                   </div>
-                  <.link patch={~p"/admin/meeting_rooms/#{meeting_room.id}/edit"}>Kemaskini</.link>
+                   <.link
+                  patch={
+                    ~p"/admin/meeting_rooms/#{meeting_room.id}/edit?page=#{@page}&q=#{@search_query}&status=#{@filter_status}"
+                  }
+                >
+                  Kemaskini
+                </.link>
                 </:action>
                 <:action :let={meeting_room}>
                   <.link
@@ -275,7 +337,7 @@ defmodule SpatoWeb.MeetingRoomLive.Index do
           <% end %>
 
           <!-- Modals -->
-          <.modal :if={@live_action in [:new, :edit]} id="meeting_room-modal" show on_cancel={JS.patch(~p"/admin/meeting_rooms")}>
+          <.modal :if={@live_action in [:new, :edit]} id="meeting_room-modal" show on_cancel={JS.patch(~p"/admin/meeting_rooms?page=#{@page}&q=#{@search_query}&status=#{@filter_status}")}>
             <.live_component
               module={SpatoWeb.MeetingRoomLive.FormComponent}
               id={@meeting_room.id || :new}
@@ -284,7 +346,7 @@ defmodule SpatoWeb.MeetingRoomLive.Index do
               meeting_room={@meeting_room}
               current_user={@current_user}
               current_user_id={@current_user.id}
-              patch={~p"/admin/meeting_rooms"}
+              patch={~p"/admin/meeting_rooms?page=#{@page}&q=#{@search_query}&status=#{@filter_status}"}
             />
           </.modal>
 

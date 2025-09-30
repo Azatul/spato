@@ -7,7 +7,7 @@ defmodule Spato.Repo.Migrations.CreateEquipments do
       add :type, :string
       add :photo_url, :string
       add :serial_number, :string
-      add :quantity_available, :integer
+      add :total_quantity, :integer
       add :status, :string
       add :created_by_user_id, references(:users, on_delete: :nothing)
       add :user_id, references(:users, on_delete: :nothing)

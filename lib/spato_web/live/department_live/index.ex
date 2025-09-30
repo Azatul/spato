@@ -2,6 +2,7 @@ defmodule SpatoWeb.DepartmentLive.Index do
   use SpatoWeb, :live_view
   import SpatoWeb.Components.Sidebar
   import SpatoWeb.Components.Headbar
+  use SpatoWeb.NotificationMixin
 
   alias Spato.Accounts
   alias Spato.Accounts.Department
@@ -17,6 +18,8 @@ defmodule SpatoWeb.DepartmentLive.Index do
      |> assign(:active_tab, "departments")
      |> assign(:sidebar_open, true)
      |> assign(:current_user, socket.assigns.current_user)
+     |> assign(:show_notifications, false)
+     |> load_notifications()
      |> stream(:departments, Accounts.list_departments())}
   end
 
@@ -70,6 +73,17 @@ defmodule SpatoWeb.DepartmentLive.Index do
     {:noreply, update(socket, :sidebar_open, &(!&1))}
   end
 
+  # Notification events
+  @impl true
+  def handle_event("toggle_notifications", params, socket) do
+    handle_toggle_notifications(params, socket)
+  end
+
+  @impl true
+  def handle_event("read_notification", params, socket) do
+    handle_read_notification(params, socket)
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -81,12 +95,12 @@ defmodule SpatoWeb.DepartmentLive.Index do
         open={@sidebar_open}
         toggle_event="toggle_sidebar"
       />
-      <.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title={@page_title} />
+      <.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title={@page_title} notifications={@notifications} unread_count={@unread_count} show_notifications={@show_notifications} />
 
       <!-- Main content -->
        <main class="flex-1 pt-20 p-6 transition-all duration-300">
        <body class="bg-gray-100 p-4 md:p-8">
-          <h1 class="text-xl font-bold mb-1">Urus Jabatan</h1>
+          <h1 class="text-xl font-bold mb-1">Jabatan</h1>
           <p class="text-md text-gray-500 mb-6">Semak dan urus semua jabatan dalam sistem</p>
 
           <!-- Middle Section: Add User Button -->

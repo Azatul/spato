@@ -66,7 +66,7 @@ defmodule SpatoWeb.EquipmentLive.FormComponent do
           prompt="Pilih jenis peralatan"
         />
         <.input field={@form[:serial_number]} type="text" label="No. Siri" placeholder="e.g. 1234567890" />
-        <.input field={@form[:quantity_available]} type="number" label="Kuantiti Tersedia" placeholder="e.g. 1" />
+        <.input field={@form[:total_quantity]} type="number" label="Kuantiti Tersedia" placeholder="e.g. 1" />
         <.input
           field={@form[:status]}
           type="select"

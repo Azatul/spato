@@ -5,6 +5,7 @@ defmodule SpatoWeb.VehicleLive.Index do
 
   alias Spato.Assets
   alias Spato.Assets.Vehicle
+  alias Spato.Notifications
 
   on_mount {SpatoWeb.UserAuth, :ensure_authenticated}
 
@@ -18,9 +19,29 @@ defmodule SpatoWeb.VehicleLive.Index do
      |> assign(:sidebar_open, true)
      |> assign(:current_user, socket.assigns.current_user)
      |> assign(:filter_status, "all")
+     |> assign(:filter_type, "all")
      |> assign(:search_query, "")
      |> assign(:page, 1)
+     |> assign(:show_notifications, false)
+     |> load_notifications()
      |> load_vehicles()}
+  end
+
+  # --- LOAD NOTIFICATIONS ---
+  defp load_notifications(socket) do
+    user = socket.assigns.current_user
+    role = if user.role == "admin", do: :admin, else: :user
+
+    notifications = case role do
+      :user -> Notifications.list_user_notifications(user.id)
+      :admin -> Notifications.list_admin_notifications(user.id)
+    end
+
+    unread_count = Notifications.count_unread(user.id, role)
+
+    socket
+    |> assign(:notifications, notifications)
+    |> assign(:unread_count, unread_count)
   end
 
   # --- LOAD VEHICLES ---
@@ -28,7 +49,8 @@ defmodule SpatoWeb.VehicleLive.Index do
     params = %{
       "page" => socket.assigns.page,
       "search" => socket.assigns.search_query,
-      "status" => socket.assigns.filter_status
+      "status" => socket.assigns.filter_status,
+      "type" => socket.assigns.filter_type
     }
 
     data = Assets.list_vehicles_paginated(params)
@@ -64,7 +86,16 @@ defmodule SpatoWeb.VehicleLive.Index do
     {:noreply,
     push_patch(socket,
     to:
-    ~p"/admin/vehicles?page=1&q=#{socket.assigns.search_query}&status=#{status}"
+    ~p"/admin/vehicles?page=1&q=#{socket.assigns.search_query}&status=#{status}&type=#{socket.assigns.filter_type}"
+    )}
+  end
+
+  @impl true
+  def handle_event("filter_type", %{"type" => type}, socket) do
+    {:noreply,
+    push_patch(socket,
+    to:
+    ~p"/admin/vehicles?page=1&q=#{socket.assigns.search_query}&status=#{socket.assigns.filter_status}&type=#{type}"
     )}
   end
 
@@ -78,6 +109,23 @@ defmodule SpatoWeb.VehicleLive.Index do
 
   @impl true
   def handle_event("toggle_sidebar", _, socket), do: {:noreply, update(socket, :sidebar_open, &(!&1))}
+
+  @impl true
+  def handle_event("toggle_notifications", _params, socket) do
+    {:noreply, assign(socket, :show_notifications, !socket.assigns.show_notifications)}
+  end
+
+  @impl true
+  def handle_event("read_notification", %{"id" => id}, socket) do
+    case Notifications.get_notification(id) do
+      %{status: "unread"} = notification ->
+        {:ok, _} = Notifications.mark_as_read(notification)
+        socket = load_notifications(socket)
+        {:noreply, socket}
+      _ ->
+        {:noreply, socket}
+    end
+  end
 
   @impl true
   def handle_event("delete", %{"id" => id}, socket) do
@@ -107,12 +155,14 @@ defmodule SpatoWeb.VehicleLive.Index do
     page   = Map.get(params, "page", "1") |> String.to_integer()
     search = Map.get(params, "q", "")
     status = Map.get(params, "status", "all")
+    type = Map.get(params, "type", "all")
 
     {:noreply,
     socket
     |> assign(:page, page)
     |> assign(:search_query, search)
     |> assign(:filter_status, status)
+    |> assign(:filter_type, type)
     |> load_vehicles()
     |> apply_action(socket.assigns.live_action, params)}
   end
@@ -124,7 +174,7 @@ defmodule SpatoWeb.VehicleLive.Index do
       <div class="flex h-screen overflow-hidden">
       <.sidebar active_tab={@active_tab} current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar"/>
       <div class="flex flex-col flex-1">
-      <.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title={@page_title} />
+      <.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title={@page_title} notifications={@notifications} unread_count={@unread_count} show_notifications={@show_notifications} />
 
       <main class="flex-1 overflow-y-auto pt-20 p-6 transition-all duration-300 bg-gray-100">
       <section class="mb-4">
@@ -140,27 +190,36 @@ defmodule SpatoWeb.VehicleLive.Index do
 
               <% number_color =
                 case label do
-                  "Jumlah Kenderaan Berdaftar" -> "text-gray-700"
-                  "Kenderaan Tersedia" -> "text-green-500"
-                  "Dalam Penyelenggaraan" -> "text-red-500"
-                  "Kenderaan Aktif" -> "text-blue-500"
+                  "Jumlah Kenderaan Berdaftar" -> "text-gray-800"
+                  "Kenderaan Tersedia" -> "text-gray-800"
+                  "Dalam Penyelenggaraan" -> "text-gray-800"
+                  "Kenderaan Aktif" -> "text-gray-800"
                 end %>
 
-              <div class="bg-white p-4 rounded-xl shadow-md flex flex-col justify-between h-30 transition-transform hover:scale-105">
+              <% card_colors = case label do
+                "Jumlah Kenderaan Berdaftar" -> %{border: "border-purple-300", bg: "bg-purple-100", icon: "text-purple-500", icon_class: "fa-solid fa-car"}
+                "Kenderaan Tersedia" -> %{border: "border-teal-300", bg: "bg-teal-100", icon: "text-teal-500", icon_class: "fa-solid fa-check-circle"}
+                "Dalam Penyelenggaraan" -> %{border: "border-amber-300", bg: "bg-amber-100", icon: "text-amber-500", icon_class: "fa-solid fa-wrench"}
+                "Kenderaan Aktif" -> %{border: "border-purple-300", bg: "bg-purple-100", icon: "text-purple-500", icon_class: "fa-solid fa-car"}
+              end %>
+              <div class={"bg-white p-6 rounded-xl shadow-md flex justify-between items-center min-h-[130px] border-l-4 #{card_colors.border} transition-transform hover:scale-105"}>
                 <div>
-                  <p class="text-sm text-gray-500"><%= label %></p>
-                  <p class={"text-3xl font-bold mt-1 #{number_color}"}><%= value %></p>
+                  <h3 class="text-gray-600 text-sm font-semibold"><%= label %></h3>
+                  <p class="text-4xl font-bold text-gray-800 mt-2"><%= value %></p>
+                </div>
+                <div class={"#{card_colors.bg} p-3 rounded-full"}>
+                  <i class={"#{card_colors.icon_class} #{card_colors.icon} text-2xl"}></i>
                 </div>
               </div>
             <% end %>
           </div>
 
           <!-- Middle Section: Add Vehicle Button -->
-        <section class="mb-4 flex justify-end">
-          <.link patch={~p"/admin/vehicles/new"}>
-                <.button class="bg-gray-900 text-white px-4 py-2 rounded-md hover:bg-gray-700">Tambah Kenderaan</.button>
-              </.link>
-        </section>
+          <section class="mb-4 flex justify-end">
+            <.link patch={~p"/admin/vehicles/new"}>
+                  <.button class="bg-gray-900 text-white px-4 py-2 rounded-md hover:bg-gray-700">Tambah Kenderaan</.button>
+                </.link>
+          </section>
 
           <!-- Bottom Section: Vehicle Table -->
           <section class="bg-white p-4 md:p-6 rounded-xl shadow-md">
@@ -172,18 +231,57 @@ defmodule SpatoWeb.VehicleLive.Index do
 
             <!-- Search and Filter -->
             <div class="flex flex-wrap gap-2 mt-2">
+              <!-- Search -->
               <form phx-change="search" class="flex-1 min-w-[200px]">
-                <input type="text" name="q" value={@search_query} placeholder="Cari nama, jenis atau kapasiti..." class="w-full border rounded-md px-2 py-1 text-sm"/>
+                <div class="relative">
+                  <!-- Magnifying glass icon -->
+                  <.icon name="hero-magnifying-glass" class="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+
+                  <!-- Input -->
+                  <input
+                    type="text"
+                    name="q"
+                    value={@search_query}
+                    placeholder="Cari nama, nombor plat atau kapasiti..."
+                    class="w-full border rounded-md pl-8 pr-2 py-1 text-sm"
+                  />
+                </div>
+              </form>
+
+              <!-- Filter by type -->
+              <form phx-change="filter_type">
+                <div class="relative inline-block">
+                  <!-- Funnel icon (left side) -->
+                  <.icon name="hero-funnel" class="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+
+                <select name="type" class="border rounded-md pl-8 pr-8 py-1 text-sm appearance-none">
+                  <option value="all" selected={@filter_type in [nil, "all"]}>Semua Jenis</option>
+                  <option value="kereta" selected={@filter_type == "kereta"}>Kereta</option>
+                  <option value="mpv" selected={@filter_type == "mpv"}>SUV / MPV</option>
+                  <option value="pickup" selected={@filter_type == "pickup"}>Pickup / 4WD</option>
+                  <option value="van" selected={@filter_type == "van"}>Van</option>
+                  <option value="bas" selected={@filter_type == "bas"}>Bas</option>
+                    <option value="motosikal" selected={@filter_type == "motosikal"}>Motosikal</option>
+                  </select>
+                </div>
               </form>
 
               <!-- Filter by status -->
-              <form phx-change="filter_status">
-                <select name="status" class="border rounded-md px-2 py-1 text-sm">
-                  <option value="all" selected={@filter_status in [nil, "all"]}>Semua Status</option>
-                  <option value="tersedia" selected={@filter_status == "tersedia"}>Tersedia</option>
-                  <option value="dalam_penyelenggaraan" selected={@filter_status == "dalam_penyelenggaraan"}>Dalam Penyelenggaraan</option>
-                </select>
-              </form>
+                <form phx-change="filter_status">
+                  <div class="relative inline-block">
+                    <!-- Funnel icon (left side) -->
+                    <.icon name="hero-funnel" class="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+
+                    <select
+                      name="status"
+                      class="border rounded-md pl-8 pr-6 py-1 text-sm appearance-none"
+                    >
+                      <option value="all" selected={@filter_status in [nil, "all"]}>Semua Status</option>
+                      <option value="tersedia" selected={@filter_status == "tersedia"}>Tersedia</option>
+                      <option value="dalam_penyelenggaraan" selected={@filter_status == "dalam_penyelenggaraan"}>Dalam Penyelenggaraan</option>
+                    </select>
+                  </div>
+                </form>
             </div>
           </div>
 
@@ -199,7 +297,7 @@ defmodule SpatoWeb.VehicleLive.Index do
           <!-- Vehicles Table -->
           <.table id="vehicles" rows={@vehicles_page} row_click={fn vehicle ->
             JS.patch(
-              ~p"/admin/vehicles/#{vehicle.id}?action=show&page=#{@page}&q=#{@search_query}&status=#{@filter_status}"
+              ~p"/admin/vehicles/#{vehicle.id}?action=show&page=#{@page}&q=#{@search_query}&status=#{@filter_status}&type=#{@filter_type}"
             )
           end}>
             <:col :let={vehicle} label="ID"><%= vehicle.id %></:col>
@@ -236,7 +334,12 @@ defmodule SpatoWeb.VehicleLive.Index do
                 </div>
               </div>
             </:col>
-            <:col :let={vehicle} label="Kapasiti">{vehicle.capacity}</:col>
+            <:col :let={vehicle} label="Kapasiti">
+              <div class="flex items-center gap-1">
+                <.icon name="hero-user" class="w-4 h-4 text-gray-500" />
+                <span><%= vehicle.capacity %></span>
+              </div>
+            </:col>
             <:col :let={vehicle} label="Tarikh Servis Terakhir">
               <%= Calendar.strftime(vehicle.last_services_at, "%d/%m/%Y") %>
             </:col>
@@ -258,7 +361,13 @@ defmodule SpatoWeb.VehicleLive.Index do
               </span>
             </:col>
             <:action :let={vehicle}>
-              <.link patch={~p"/admin/vehicles/#{vehicle.id}/edit"}>Kemaskini</.link>
+              <.link
+                patch={
+                  ~p"/admin/vehicles/#{vehicle.id}/edit?page=#{@page}&q=#{@search_query}&status=#{@filter_status}&type=#{@filter_type}"
+                }
+              >
+                Kemaskini
+              </.link>
             </:action>
             <:action :let={vehicle}>
               <.link phx-click={JS.push("delete", value: %{id: vehicle.id}) |> hide("##{vehicle.id}")} data-confirm="Padam vehicle?">Padam</.link>
@@ -272,7 +381,7 @@ defmodule SpatoWeb.VehicleLive.Index do
             <!-- Previous button -->
             <div class="flex-1">
               <.link
-                patch={~p"/admin/vehicles?page=#{max(@page - 1, 1)}&q=#{@search_query}&status=#{@filter_status}"}
+                patch={~p"/admin/vehicles?page=#{max(@page - 1, 1)}&q=#{@search_query}&status=#{@filter_status}&type=#{@filter_type}"}
                 class={"px-3 py-1 border rounded #{if @page == 1, do: "bg-gray-200 text-gray-500 cursor-not-allowed", else: "bg-white text-gray-700 hover:bg-gray-100"}"}
               >
                 Sebelumnya
@@ -283,7 +392,7 @@ defmodule SpatoWeb.VehicleLive.Index do
             <div class="absolute left-1/2 transform -translate-x-1/2 flex space-x-1">
               <%= for p <- 1..@total_pages do %>
                 <.link
-                  patch={~p"/admin/vehicles?page=#{p}&q=#{@search_query}&status=#{@filter_status}"}
+                  patch={~p"/admin/vehicles?page=#{p}&q=#{@search_query}&status=#{@filter_status}&type=#{@filter_type}"}
                   class={"px-3 py-1 border rounded #{if p == @page, do: "bg-gray-700 text-white", else: "bg-white text-gray-700 hover:bg-gray-100"}"}
                 >
                   <%= p %>
@@ -294,7 +403,7 @@ defmodule SpatoWeb.VehicleLive.Index do
             <!-- Next button -->
             <div class="flex-1 text-right">
               <.link
-                patch={~p"/admin/vehicles?page=#{min(@page + 1, @total_pages)}&q=#{@search_query}&status=#{@filter_status}"}
+                patch={~p"/admin/vehicles?page=#{min(@page + 1, @total_pages)}&q=#{@search_query}&status=#{@filter_status}&type=#{@filter_type}"}
                 class={"px-3 py-1 border rounded #{if @page == @total_pages, do: "bg-gray-200 text-gray-500 cursor-not-allowed", else: "bg-white text-gray-700 hover:bg-gray-100"}"}
               >
                 Seterusnya
@@ -304,20 +413,25 @@ defmodule SpatoWeb.VehicleLive.Index do
           <% end %>
 
           <!-- Modals -->
-          <.modal :if={@live_action in [:new, :edit]} id="vehicle-modal" show on_cancel={JS.patch(~p"/admin/vehicles")}>
+          <.modal
+              :if={@live_action in [:new, :edit]}
+              id="vehicle-modal"
+              show
+              on_cancel={JS.patch(~p"/admin/vehicles?page=#{@page}&q=#{@search_query}&status=#{@filter_status}&type=#{@filter_type}")}
+            >
             <.live_component
               module={SpatoWeb.VehicleLive.FormComponent}
               id={@vehicle.id || :new}
               title={@page_title}
               action={@live_action}
               vehicle={@vehicle}
-              patch={~p"/admin/vehicles"}
+              patch={~p"/admin/vehicles?page=#{@page}&q=#{@search_query}&status=#{@filter_status}&type=#{@filter_type}"}
               current_user={@current_user}
               current_user_id={@current_user.id}
             />
           </.modal>
 
-          <.modal :if={@live_action == :show} id="vehicle-show-modal" show on_cancel={JS.patch(~p"/admin/vehicles?page=#{@page}&q=#{@search_query}&status=#{@filter_status}")}>
+          <.modal :if={@live_action == :show} id="vehicle-show-modal" show on_cancel={JS.patch(~p"/admin/vehicles?page=#{@page}&q=#{@search_query}&status=#{@filter_status}&type=#{@filter_type}")}>
             <.live_component module={SpatoWeb.VehicleLive.ShowComponent} id={@vehicle.id} vehicle={@vehicle} />
           </.modal>
         </section>

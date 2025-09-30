@@ -19,6 +19,9 @@ defmodule SpatoWeb.Components.Headbar do
   attr :class, :string, default: nil
   attr :title, :string, default: nil
   attr :full_width, :boolean, default: false
+  attr :notifications, :list, default: []
+  attr :unread_count, :integer, default: 0
+  attr :show_notifications, :boolean, default: false
 
   slot :actions
 
@@ -60,6 +63,64 @@ defmodule SpatoWeb.Components.Headbar do
       </div>
 
       <div class="flex items-center gap-4">
+        <!-- Notification Bell -->
+        <div class="relative">
+          <button
+            phx-click="toggle_notifications"
+            class="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full"
+            title="Notifikasi"
+          >
+            <.icon name="hero-bell" class="w-6 h-6" />
+            <%= if @unread_count > 0 do %>
+              <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                <%= @unread_count %>
+              </span>
+            <% end %>
+          </button>
+
+          <%= if @show_notifications do %>
+            <div class="absolute right-0 mt-2 w-80 bg-white shadow-lg rounded-lg border border-gray-200 z-50 max-h-96 overflow-y-auto">
+              <div class="p-3 border-b border-gray-200">
+                <h3 class="text-sm font-semibold text-gray-900">Notifikasi</h3>
+              </div>
+
+              <%= if @notifications == [] do %>
+                <div class="p-4 text-center text-gray-500 text-sm">
+                  Tiada notifikasi
+                </div>
+              <% else %>
+                <%= for notif <- @notifications do %>
+                  <div class={[
+                    "p-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors",
+                    notif.status == "unread" && "bg-blue-50"
+                  ]}
+                      phx-click="read_notification"
+                      phx-value-id={notif.id}>
+                    <div class="flex items-start gap-2">
+                      <div class="flex-1">
+                        <p class={[
+                          "font-medium text-sm",
+                          notif.status == "unread" && "text-gray-900",
+                          notif.status == "read" && "text-gray-700"
+                        ]}>
+                          <%= notif.title %>
+                        </p>
+                        <p class="text-xs text-gray-600 mt-1"><%= notif.message %></p>
+                        <p class="text-xs text-gray-400 mt-1">
+                          <%= Calendar.strftime(notif.inserted_at, "%d/%m/%Y %H:%M") %>
+                        </p>
+                      </div>
+                      <%= if notif.status == "unread" do %>
+                        <div class="w-2 h-2 bg-blue-500 rounded-full mt-1"></div>
+                      <% end %>
+                    </div>
+                  </div>
+                <% end %>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+
         <span :if={@current_user.role} class="hidden sm:inline text-sm text-gray-600">
           {Spato.Accounts.User.display_role(@current_user)}
         </span>

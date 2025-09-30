@@ -58,6 +58,7 @@ defmodule Spato.Assets do
     page = Map.get(params, "page", 1) |> to_int()
     search = Map.get(params, "search", "")
     status = Map.get(params, "status", "all")
+    type = Map.get(params, "type", "all")
     per_page = @per_page
     offset = (page - 1) * per_page
 
@@ -74,6 +75,14 @@ defmodule Spato.Assets do
         base_query
       end
 
+    # Type filter
+    filtered_query =
+      if type != "all" do
+        from v in filtered_query, where: v.type == ^type
+      else
+        filtered_query
+      end
+
     # Search filter — use proper joins!
     final_query =
       if search != "" do
@@ -84,13 +93,20 @@ defmodule Spato.Assets do
           left_join: up in assoc(u, :user_profile),
           where:
             ilike(v.name, ^like_search) or
-            ilike(v.type, ^like_search) or
             ilike(v.plate_number, ^like_search) or
             fragment("?::text LIKE ?", v.capacity, ^like_search),
             distinct: v.id,
           select: v
       else
         filtered_query
+      end
+
+    # Type filter
+    final_query =
+      if type != "all" do
+        from v in final_query, where: v.type == ^type
+      else
+        final_query
       end
 
     # Total count
@@ -156,18 +172,19 @@ defmodule Spato.Assets do
     page = Map.get(params, "page", 1) |> to_int()
     search = Map.get(params, "search", "")
     status = Map.get(params, "status", "all")
+    type = Map.get(params, "type", "all")
     per_page = @per_page
     offset = (page - 1) * per_page
 
     # Base query
     base_query =
-      from v in Equipment,
-        order_by: [desc: v.inserted_at]
+      from e in Equipment,
+        order_by: [desc: e.inserted_at]
 
     # Status filter
     filtered_query =
       if status != "all" do
-        from v in base_query, where: v.status == ^status
+        from e in base_query, where: e.status == ^status
       else
         base_query
       end
@@ -177,18 +194,25 @@ defmodule Spato.Assets do
       if search != "" do
         like_search = "%#{search}%"
 
-        from v in filtered_query,
-          left_join: u in assoc(v, :user),
+        from e in filtered_query,
+          left_join: u in assoc(e, :user),
           left_join: up in assoc(u, :user_profile),
           where:
-            ilike(v.name, ^like_search) or
-            ilike(v.type, ^like_search) or
-            ilike(v.serial_number, ^like_search) or
-            fragment("?::text LIKE ?", v.quantity_available, ^like_search),
-            distinct: v.id,
-          select: v
+            ilike(e.name, ^like_search) or
+            ilike(e.serial_number, ^like_search) or
+            fragment("?::text LIKE ?", e.total_quantity, ^like_search),
+          distinct: e.id,
+          select: e
       else
         filtered_query
+      end
+
+    # Type filter
+    final_query =
+      if type != "all" do
+        from e in final_query, where: e.type == ^type
+      else
+        final_query
       end
 
     # Total count
@@ -312,51 +336,19 @@ defmodule Spato.Assets do
 
   alias Spato.Assets.CateringMenu
 
-  @doc """
-  Returns the list of catering_menus.
-
-  ## Examples
-
-      iex> list_catering_menus()
-      [%CateringMenu{}, ...]
-
-  """
+  # --- CRUD FUNCTIONS ---
   def list_catering_menus do
     Repo.all(CateringMenu)
     |> Repo.preload([user: :user_profile, created_by: :user_profile])
   end
 
-  @doc """
-  Gets a single catering_menu.
 
-  Raises `Ecto.NoResultsError` if the Catering menu does not exist.
-
-  ## Examples
-
-      iex> get_catering_menu!(123)
-      %CateringMenu{}
-
-      iex> get_catering_menu!(456)
-      ** (Ecto.NoResultsError)
-
-  """
   def get_catering_menu!(id) do
     Repo.get!(CateringMenu, id)
     |> Repo.preload([user: :user_profile, created_by: :user_profile])
   end
 
-  @doc """
-  Creates a catering_menu.
 
-  ## Examples
-
-      iex> create_catering_menu(%{field: value})
-      {:ok, %CateringMenu{}}
-
-      iex> create_catering_menu(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
   def create_catering_menu(attrs \\ %{}, admin_id) do
     %CateringMenu{}
     |> CateringMenu.changeset(attrs)
@@ -364,49 +356,19 @@ defmodule Spato.Assets do
     |> Repo.insert()
   end
 
-  @doc """
-  Updates a catering_menu.
 
-  ## Examples
-
-      iex> update_catering_menu(catering_menu, %{field: new_value})
-      {:ok, %CateringMenu{}}
-
-      iex> update_catering_menu(catering_menu, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
   def update_catering_menu(%CateringMenu{} = catering_menu, attrs) do
     catering_menu
     |> CateringMenu.changeset(attrs)
     |> Repo.update()
   end
 
-  @doc """
-  Deletes a catering_menu.
 
-  ## Examples
-
-      iex> delete_catering_menu(catering_menu)
-      {:ok, %CateringMenu{}}
-
-      iex> delete_catering_menu(catering_menu)
-      {:error, %Ecto.Changeset{}}
-
-  """
   def delete_catering_menu(%CateringMenu{} = catering_menu) do
     Repo.delete(catering_menu)
   end
 
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking catering_menu changes.
 
-  ## Examples
-
-      iex> change_catering_menu(catering_menu)
-      %Ecto.Changeset{data: %CateringMenu{}}
-
-  """
   def change_catering_menu(%CateringMenu{} = catering_menu, attrs \\ %{}) do
     CateringMenu.changeset(catering_menu, attrs)
   end

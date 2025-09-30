@@ -2,6 +2,7 @@ defmodule SpatoWeb.AdminDashboardLive do
   use SpatoWeb, :live_view
   import SpatoWeb.Components.Sidebar
   import SpatoWeb.Components.Headbar
+  alias Spato.Notifications
 
   on_mount {SpatoWeb.UserAuth, :ensure_authenticated}
 
@@ -16,7 +17,9 @@ defmodule SpatoWeb.AdminDashboardLive do
        socket
        |> assign(:page_title, "Admin Dashboard")
        |> assign(:active_tab, "admin_dashboard")
-       |> assign(:sidebar_open, true)}
+       |> assign(:sidebar_open, true)
+       |> assign(:show_notifications, false)
+       |> load_notifications()}
     end
   end
 
@@ -24,12 +27,44 @@ defmodule SpatoWeb.AdminDashboardLive do
     {:noreply, update(socket, :sidebar_open, &(!&1))}
   end
 
+  def handle_event("toggle_notifications", _params, socket) do
+    {:noreply, assign(socket, :show_notifications, !socket.assigns.show_notifications)}
+  end
+
+  def handle_event("read_notification", %{"id" => id}, socket) do
+    case Notifications.get_notification(id) do
+      %{status: "unread"} = notification ->
+        {:ok, _} = Notifications.mark_as_read(notification)
+        socket = load_notifications(socket)
+        {:noreply, socket}
+      _ ->
+        {:noreply, socket}
+    end
+  end
+
+  defp load_notifications(socket) do
+    admin_id = socket.assigns.current_user.id
+    notifications = Notifications.list_admin_notifications(admin_id)
+    unread_count = Notifications.count_unread(admin_id, :admin)
+
+    socket
+    |> assign(:notifications, notifications)
+    |> assign(:unread_count, unread_count)
+  end
+
   def render(assigns) do
     ~H"""
     <div class="flex h-screen">
-      <.sidebar active_tab={@active_tab} current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar"/><.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title={@page_title} />
-      <.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title={@page_title} />
-
+      <.sidebar active_tab={@active_tab} current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar"/>
+      <.headbar
+        current_user={@current_user}
+        open={@sidebar_open}
+        toggle_event="toggle_sidebar"
+        title={@page_title}
+        notifications={@notifications}
+        unread_count={@unread_count}
+        show_notifications={@show_notifications}
+      />
       <main class="flex-1 pt-20 p-6 transition-all duration-300">
       <body class="bg-gray-100 p-4 md:p-8">
         <!-- Top Section: Today's Reservations -->

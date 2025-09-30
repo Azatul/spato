@@ -2,6 +2,7 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
   use SpatoWeb, :live_view
   import SpatoWeb.Components.Sidebar
   import SpatoWeb.Components.Headbar
+  use SpatoWeb.NotificationMixin
 
   alias Spato.Bookings
   alias Spato.Bookings.VehicleBooking
@@ -22,6 +23,10 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
      |> assign(:vehicle_booking, nil)
      |> assign(:vehicles, [])
      |> assign(:params, %{})
+     |> assign(:show_cancel_modal, false)
+     |> assign(:cancel_booking, nil)
+     |> assign(:show_notifications, false)
+     |> load_notifications()
      |> assign(:stats, Bookings.get_user_booking_stats(socket.assigns.current_user.id))
      |> load_vehicle_bookings()}
   end
@@ -122,6 +127,17 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
     {:noreply, update(socket, :sidebar_open, &(!&1))}
   end
 
+  # Notification events
+  @impl true
+  def handle_event("toggle_notifications", params, socket) do
+    handle_toggle_notifications(params, socket)
+  end
+
+  @impl true
+  def handle_event("read_notification", params, socket) do
+    handle_read_notification(params, socket)
+  end
+
   @impl true
   def handle_event("search", %{"q" => query}, socket) do
     {:noreply,
@@ -142,9 +158,9 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
   @impl true
   def handle_event("paginate", %{"page" => page}, socket) do
     {:noreply,
-     socket
-     |> assign(:page, String.to_integer(page))
-     |> load_vehicle_bookings()}
+     push_patch(socket,
+       to: ~p"/vehicle_bookings?page=#{page}&q=#{socket.assigns.search_query}&status=#{socket.assigns.filter_status}&date=#{socket.assigns.filter_date}"
+     )}
   end
 
   @impl true
@@ -173,6 +189,43 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
     end
   end
 
+  # open modal
+  def handle_event("open_cancel_modal", %{"id" => id}, socket) do
+    booking = Bookings.get_vehicle_booking!(id)
+    {:noreply,
+    socket
+    |> assign(:cancel_booking, booking)
+    |> assign(:show_cancel_modal, true)}
+  end
+
+  # submit cancellation
+  def handle_event("submit_cancel", %{"reason" => reason}, socket) do
+    booking = socket.assigns.cancel_booking
+    user = socket.assigns.current_user
+
+    case Bookings.cancel_booking(booking, user, reason) do
+      {:ok, _} ->
+        {:noreply,
+        socket
+        |> assign(:show_cancel_modal, false)
+        |> load_vehicle_bookings()
+        |> assign(:stats, Bookings.get_user_booking_stats(user.id))}
+
+      {:error, :not_allowed} ->
+        {:noreply,
+        socket
+        |> assign(:show_cancel_modal, false)
+        |> put_flash(:error, "Tidak boleh batal tempahan ini.")}
+    end
+  end
+
+  # close modal
+  def handle_event("close_modal", _params, socket) do
+    {:noreply,
+    socket
+    |> assign(:show_cancel_modal, false)}
+  end
+
   # --- RENDER ---
 
   @impl true
@@ -181,26 +234,34 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
     <div class="flex h-screen overflow-hidden">
       <.sidebar active_tab={@active_tab} current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar"/>
       <div class="flex flex-col flex-1">
-        <.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title={@page_title} />
+        <.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title={@page_title} notifications={@notifications} unread_count={@unread_count} show_notifications={@show_notifications} />
 
         <main class="flex-1 overflow-y-auto pt-20 p-6 transition-all duration-300 bg-gray-100">
           <section class="mb-4">
-            <h1 class="text-xl font-bold mb-1">Tempahan Kenderaan Saya</h1>
+            <h1 class="text-xl font-bold mb-1">Tempahan Kenderaan</h1>
             <p class="text-md text-gray-500 mb-4">Semak semua tempahan kenderaan yang anda buat</p>
 
             <!-- Stats Cards for Current User -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-              <%= for {label, value, color} <- [
-                    {"Jumlah Tempahan Minggu Ini", @stats.total, "text-gray-700"},
-                    {"Menunggu", @stats.pending, "text-yellow-500"},
-                    {"Diluluskan", @stats.approved, "text-green-500"},
-                    {"Selesai", @stats.completed, "text-blue-500"}
+              <%= for {label, value} <- [
+                    {"Jumlah Tempahan Minggu Ini", @stats.total},
+                    {"Menunggu", @stats.pending},
+                    {"Diluluskan", @stats.approved},
+                    {"Selesai", @stats.completed}
                   ] do %>
-
-                <div class="bg-white p-4 rounded-xl shadow-md flex flex-col justify-between h-30 transition-transform hover:scale-105">
+                <% card_colors = case label do
+                  "Jumlah Tempahan Minggu Ini" -> %{border: "border-purple-300", bg: "bg-purple-100", icon: "text-purple-500", icon_class: "fa-solid fa-calendar-days"}
+                  "Menunggu" -> %{border: "border-amber-300", bg: "bg-amber-100", icon: "text-amber-500", icon_class: "fa-solid fa-clock"}
+                  "Diluluskan" -> %{border: "border-teal-300", bg: "bg-teal-100", icon: "text-teal-500", icon_class: "fa-solid fa-check-circle"}
+                  "Selesai" -> %{border: "border-purple-300", bg: "bg-purple-100", icon: "text-purple-500", icon_class: "fa-solid fa-check-double"}
+                end %>
+                <div class={"bg-white p-6 rounded-xl shadow-md flex justify-between items-center min-h-[130px] border-l-4 #{card_colors.border} transition-transform hover:scale-105"}>
                   <div>
-                    <p class="text-sm text-gray-500"><%= label %></p>
-                    <p class={"text-3xl font-bold mt-1 #{color}"}><%= value %></p>
+                    <h3 class="text-gray-600 text-sm font-semibold"><%= label %></h3>
+                    <p class="text-4xl font-bold text-gray-800 mt-2"><%= value %></p>
+                  </div>
+                  <div class={"#{card_colors.bg} p-3 rounded-full"}>
+                    <i class={"#{card_colors.icon_class} #{card_colors.icon} text-2xl"}></i>
                   </div>
                 </div>
               <% end %>
@@ -234,6 +295,7 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
                       <option value="approved" selected={@filter_status == "approved"}>Diluluskan</option>
                       <option value="rejected" selected={@filter_status == "rejected"}>Ditolak</option>
                       <option value="completed" selected={@filter_status == "completed"}>Selesai</option>
+                      <option value="cancelled" selected={@filter_status == "cancelled"}>Dibatalkan</option>
                     </select>
                   </form>
 
@@ -348,23 +410,44 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
                     end}>
                     <%= Spato.Bookings.VehicleBooking.human_status(booking.status) %>
                   </span>
+                  <%= if booking.status == "rejected" do %>
+                    <%= if booking.rejection_reason do %>
+                      <p class="text-xs text-gray-500">Sebab: <%= booking.rejection_reason %></p>
+                    <% end %>
+                  <% end %>
+                  <%= if booking.status == "cancelled" do %>
+                    <%= if booking.rejection_reason do %>
+                      <p class="text-xs text-gray-500">Sebab: <%= booking.rejection_reason %></p>
+                    <% end %>
+                  <% end %>
                 </:col>
 
-              <:action :let={booking}>
-                <%= if booking.status == "pending" do %>
-                  <button
-                    phx-click="cancel"
-                    phx-value-id={booking.id}
-                    data-confirm="Batal tempahan?"
-                    class="flex items-center justify-center w-8 h-8 rounded-full bg-red-600 hover:bg-red-700 text-white transition-colors"
-                    title="Batalkan Tempahan"
-                  >
-                    <.icon name="hero-x-mark" class="w-4 h-4" />
-                  </button>
-                <% else %>
-                  <span class="text-gray-500"></span>
-                <% end %>
-              </:action>
+                <:col :let={booking} label="Tindakan">
+                  <div class="flex gap-2">
+                    <%= if booking.status in ["pending"] do %>
+                      <!-- Edit button -->
+                      <.link
+                        patch={~p"/vehicle_bookings/#{booking.id}/edit?page=#{@page}&q=#{@search_query}&status=#{@filter_status}&date=#{@filter_date}"}
+                        class="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                        title="Kemaskini Tempahan"
+                      >
+                        <.icon name="hero-pencil-square" class="w-4 h-4" />
+                      </.link>
+                    <% end %>
+
+                    <%= if booking.status in ["pending", "approved"] do %>
+                      <!-- Cancel button -->
+                      <button
+                        phx-click="open_cancel_modal"
+                        phx-value-id={booking.id}
+                        class="flex items-center justify-center w-8 h-8 rounded-full bg-red-600 hover:bg-red-700 text-white transition-colors"
+                        title="Batalkan Tempahan"
+                      >
+                        <.icon name="hero-x-mark" class="w-4 h-4" />
+                      </button>
+                    <% end %>
+                  </div>
+                </:col>
               </.table>
 
               <!-- Pagination -->
@@ -410,18 +493,73 @@ defmodule SpatoWeb.VehicleBookingLive.Index do
                 </div>
               <% end %>
 
-              <!-- Modal for show -->
+              <!-- Modal -->
               <.modal
                 :if={@live_action == :show}
                 id="vehicle-booking-show-modal"
                 show
                 on_cancel={JS.patch(~p"/vehicle_bookings?page=#{@page}&q=#{@search_query}&status=#{@filter_status}&date=#{@filter_date}")}>
+
                 <.live_component
                   module={SpatoWeb.VehicleBookingLive.ShowComponent}
                   id={@vehicle_booking.id}
                   vehicle_booking={@vehicle_booking}
+                  current_user={@current_user}
+                  page={@page}
+                  search_query={@search_query}
+                  filter_status={@filter_status}
+                  filter_date={@filter_date}
                 />
+
+                <!-- Modal Footer: Action Buttons -->
+                <div class="flex justify-end gap-2 mt-4">
+                  <%= if @vehicle_booking.user_id == @current_user.id and @vehicle_booking.status in ["pending"] do %>
+                    <!-- Edit button -->
+                    <.link
+                      patch={~p"/vehicle_bookings/#{@vehicle_booking.id}/edit?page=#{@page}&q=#{@search_query}&status=#{@filter_status}&date=#{@filter_date}"}
+                      class="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                      title="Kemaskini Tempahan">
+                      <.icon name="hero-pencil-square" class="w-4 h-4" />
+                    </.link>
+                  <% end %>
+
+                  <%= if @vehicle_booking.status in ["pending", "approved"] do %>
+                    <!-- Cancel button -->
+                    <button
+                      phx-click="open_cancel_modal"
+                      phx-value-id={@vehicle_booking.id}
+                      class="flex items-center justify-center w-8 h-8 rounded-full bg-red-600 hover:bg-red-700 text-white transition-colors"
+                      title="Batalkan Tempahan">
+                      <.icon name="hero-x-mark" class="w-4 h-4" />
+                    </button>
+                  <% end %>
+                </div>
               </.modal>
+
+              <.modal :if={@show_cancel_modal} id="cancel-modal" show on_cancel={JS.push("close_modal")}>
+                <h2 class="text-lg font-semibold mb-2">Sebab Pembatalan</h2>
+                <form phx-submit="submit_cancel" class="space-y-3">
+                  <textarea name="reason" rows="3" class="w-full border rounded-md p-2 text-sm" placeholder="Nyatakan sebab pembatalan..."></textarea>
+                  <div class="flex justify-end gap-2">
+                    <button type="button" phx-click="close_modal" class="px-3 py-1 border rounded-md">Batal</button>
+                    <button type="submit" class="px-3 py-1 bg-red-600 text-white rounded-md">Hantar</button>
+                  </div>
+                </form>
+              </.modal>
+
+            <.modal :if={@live_action in [:new, :edit]} id="vehicle_booking-modal" show on_cancel={JS.patch(~p"/vehicle_bookings")}>
+              <.live_component
+                module={SpatoWeb.VehicleBookingLive.FormComponent}
+                id={@vehicle_booking && @vehicle_booking.id || :edit}
+                title={@page_title}
+                action={@live_action}
+                vehicle_booking={@vehicle_booking}
+                current_user={@current_user}
+                patch={~p"/vehicle_bookings"}
+                params={@params}
+              />
+            </.modal>
+
             </section>
           </section>
         </main>

@@ -56,7 +56,11 @@ defmodule SpatoWeb.CateringMenuLive.FormComponent do
           options={[
             {"Sarapan", "sarapan"},
             {"Makan Tengahari", "makan_tengahari"},
-            {"Minum Petang", "minum_petang"}
+            {"Minum Petang", "minum_petang"},
+            {"Minum Malam", "minum_malam"},
+            {"Makan Malam", "makan_malam"},
+            {"Minum Pagi", "minum_pagi"},
+            {"Semua", "all"}
           ]}
         />
         <.input
@@ -65,7 +69,8 @@ defmodule SpatoWeb.CateringMenuLive.FormComponent do
           label="Status"
           options={[
             {"Tersedia", "tersedia"},
-            {"Tidak Tersedia", "tidak_tersedia"}
+            {"Tidak Tersedia", "tidak_tersedia"},
+            {"Semua", "all"}
           ]}
         />
         <:actions>

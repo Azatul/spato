@@ -44,7 +44,7 @@ defmodule SpatoWeb.VehicleBookingLive.FormComponent do
           type="number"
           label="Jumlah Penumpang"
           min="1"
-          max={if @vehicle, do: @vehicle.capacity, else: 100}
+          max={@vehicle && @vehicle.capacity || 100}
         />
 
         <:actions>
