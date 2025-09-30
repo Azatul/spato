@@ -2,10 +2,8 @@ defmodule SpatoWeb.HistoryLive.BookingHistoryLive do
   use SpatoWeb, :live_view
   import SpatoWeb.Components.Sidebar
   import SpatoWeb.Components.Headbar
-  use SpatoWeb.NotificationMixin
 
   alias Spato.Bookings
-  alias Spato.Notifications
 
   on_mount {SpatoWeb.UserAuth, :ensure_authenticated}
 
@@ -18,7 +16,6 @@ defmodule SpatoWeb.HistoryLive.BookingHistoryLive do
      |> assign(:active_tab, "history")
      |> assign(:sidebar_open, true)
      |> assign(:current_user, current_user)
-     |> assign(:show_notifications, false)
      |> assign(:selected_table, :meeting_room) # default tab
      |> assign(:equipment_history, list_closed(:equipment, current_user))
      |> assign(:room_history, list_closed(:meeting_room, current_user))
@@ -34,7 +31,6 @@ defmodule SpatoWeb.HistoryLive.BookingHistoryLive do
      |> init_filtered_lists()
      |> init_paginated_lists()
      |> assign(:selected_table, :equipment)
-     |> load_notifications()
      |> compute_stats()}
   end
 
@@ -52,31 +48,6 @@ defmodule SpatoWeb.HistoryLive.BookingHistoryLive do
 
   def handle_event("toggle_sidebar", _params, socket) do
     {:noreply, update(socket, :sidebar_open, &(!&1))}
-  end
-
-  def handle_event("toggle_notifications", _params, socket) do
-    {:noreply, assign(socket, :show_notifications, !socket.assigns.show_notifications)}
-  end
-
-  def handle_event("read_notification", %{"id" => id}, socket) do
-    case Notifications.get_notification(id) do
-      %{status: "unread"} = notification ->
-        {:ok, _} = Notifications.mark_as_read(notification)
-        socket = load_notifications(socket)
-        {:noreply, socket}
-      _ ->
-        {:noreply, socket}
-    end
-  end
-
-  defp load_notifications(socket) do
-    user_id = socket.assigns.current_user.id
-    notifications = Notifications.list_user_notifications(user_id)
-    unread_count = Notifications.count_unread(user_id, :user)
-
-    socket
-    |> assign(:notifications, notifications)
-    |> assign(:unread_count, unread_count)
   end
 
   # --- history filters ---
@@ -356,7 +327,7 @@ def render(assigns) do
       <.sidebar active_tab={@active_tab} current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar"/>
 
       <div class="flex flex-col flex-1">
-        <.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title="Sejarah Tempahan" notifications={@notifications} unread_count={@unread_count} show_notifications={@show_notifications} />
+        <.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title="Sejarah Tempahan" />
 
         <main class="flex-1 overflow-y-auto pt-20 p-6 bg-gray-100">
           <h1 class="text-xl font-bold mb-4">Sejarah Tempahan Anda</h1>
