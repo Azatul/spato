@@ -26,6 +26,8 @@ defmodule SpatoWeb.CateringBookingLive.AdminIndex do
      |> assign(:selected_status, nil)
      |> assign(:reason, nil)
      |> assign(:edit_booking, nil)
+     |> assign(:show_approve_modal, false)
+     |> assign(:approve_booking, nil)
      |> assign(:show_notifications, false)
      |> load_notifications()
      |> load_catering_bookings()
@@ -74,7 +76,9 @@ defmodule SpatoWeb.CateringBookingLive.AdminIndex do
 
   @impl true
   def handle_event("open_reject_modal", %{"id" => id}, socket) do
-    booking = Bookings.get_catering_booking!(id)
+    booking =
+      Bookings.get_catering_booking!(id)
+      |> Spato.Repo.preload([:user, :menu, user: [:user_profile, user_profile: [:department]]])
     {:noreply,
      socket
      |> assign(:reject_booking, booking)
@@ -127,8 +131,37 @@ defmodule SpatoWeb.CateringBookingLive.AdminIndex do
     {:noreply,
      socket
      |> assign(:show_reject_modal, false)
+     |> assign(:reject_booking, nil)
      |> assign(:show_edit_modal, false)
+     |> assign(:edit_booking, nil)
+     |> assign(:show_approve_modal, false)
+     |> assign(:approve_booking, nil)
      |> assign(:live_action, nil)}
+  end
+
+  @impl true
+  def handle_event("open_approve_modal", %{"id" => id}, socket) do
+    booking =
+      Bookings.get_catering_booking!(id)
+      |> Spato.Repo.preload([:user, :menu, user: [:user_profile, user_profile: [:department]]])
+
+    {:noreply,
+     socket
+     |> assign(:approve_booking, booking)
+     |> assign(:show_approve_modal, true)}
+  end
+
+  @impl true
+  def handle_event("confirm_approve", _params, socket) do
+    booking = socket.assigns.approve_booking
+    {:ok, _} = Bookings.approve_catering_booking(booking, socket.assigns.current_user)
+
+    {:noreply,
+    socket
+    |> assign(:show_approve_modal, false)
+    |> assign(:approve_booking, nil)
+    |> load_catering_bookings()
+    |> put_flash(:info, "Tempahan katering telah diluluskan")}
   end
 
   @impl true
@@ -220,7 +253,7 @@ defmodule SpatoWeb.CateringBookingLive.AdminIndex do
         <main class="flex-1 overflow-y-auto pt-20 p-6 transition-all duration-300 bg-gray-100">
           <section class="mb-4">
             <!-- Page Title -->
-            <h1 class="text-xl font-bold mb-1">Urus Tempahan Katering</h1>
+            <h1 class="text-xl font-bold mb-1">Tempahan Katering</h1>
             <p class="text-md text-gray-500 mb-4">Semak dan urus semua tempahan katering dalam sistem</p>
 
             <!-- Stats Cards -->
@@ -274,9 +307,6 @@ defmodule SpatoWeb.CateringBookingLive.AdminIndex do
                     <option value="all" selected={@filter_status in [nil, "all"]}>Semua Status</option>
                     <option value="pending" selected={@filter_status == "pending"}>Menunggu</option>
                     <option value="approved" selected={@filter_status == "approved"}>Diluluskan</option>
-                    <option value="rejected" selected={@filter_status == "rejected"}>Ditolak</option>
-                    <option value="completed" selected={@filter_status == "completed"}>Selesai</option>
-                    <option value="cancelled" selected={@filter_status == "cancelled"}>Dibatalkan</option>
                   </select>
                 </form>
 
@@ -388,7 +418,7 @@ defmodule SpatoWeb.CateringBookingLive.AdminIndex do
                   <%= case booking.status do %>
                     <% "pending" -> %>
                       <button
-                        phx-click="approve"
+                        phx-click="open_approve_modal"
                         phx-value-id={booking.id}
                         class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-600 hover:bg-green-700 text-white"
                         title="Luluskan"
@@ -486,16 +516,82 @@ defmodule SpatoWeb.CateringBookingLive.AdminIndex do
                 id={@catering_booking.id}
                 catering_booking={@catering_booking}
               />
+              <!-- Modal Footer: Action Buttons -->
+              <div class="flex justify-end gap-2 mt-4">
+                <%= case @catering_booking.status do %>
+                  <% "pending" -> %>
+                    <button
+                      phx-click="open_approve_modal"
+                      phx-value-id={@catering_booking.id}
+                      class="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+                    >
+                      Luluskan
+                    </button>
+
+                    <button
+                      phx-click="open_reject_modal"
+                      phx-value-id={@catering_booking.id}
+                      class="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700"
+                    >
+                      Tolak
+                    </button>
+
+                  <% "approved" -> %>
+                    <button
+                      phx-click="open_edit_modal"
+                      phx-value-id={@catering_booking.id}
+                      class="px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                    >
+                      Ubah Status
+                    </button>
+
+                  <% "rejected" -> %>
+                    <%= if @catering_booking.rejection_reason do %>
+                      <p class="text-sm text-gray-500">Sebab: <%= @catering_booking.rejection_reason %></p>
+                    <% end %>
+
+                  <% "completed" -> %>
+                    <span class="text-sm text-blue-600">Selesai</span>
+
+                  <% "cancelled" -> %>
+                    <%= if @catering_booking.rejection_reason do %>
+                      <p class="text-sm text-gray-500">Sebab: <%= @catering_booking.rejection_reason %></p>
+                    <% end %>
+
+                  <% _ -> %>
+                    <span class="text-gray-500">—</span>
+                <% end %>
+              </div>
             </.modal>
 
             <!-- Modal: Reject with reason -->
             <.modal :if={@show_reject_modal} id="reject-catering-modal" show on_cancel={JS.push("close_modal")}>
               <h2 class="text-lg font-semibold mb-2">Sebab Penolakan</h2>
+              <%= if @reject_booking do %>
+                <div class="text-sm text-gray-700 space-y-1 mb-3">
+                  <%= if @reject_booking.menu do %>
+                    <p>
+                      <b>Menu:</b>
+                      <%= @reject_booking.menu.name %>
+                    </p>
+                  <% end %>
+                  <%= if @reject_booking.user do %>
+                    <p><b>Pengguna:</b> <%= User.display_name(@reject_booking.user) %></p>
+                  <% end %>
+                  <p><b>Lokasi:</b> <%= @reject_booking.location %></p>
+                  <p><b>Tarikh:</b> <%= Calendar.strftime(@reject_booking.date, "%d-%m-%Y") %></p>
+                  <p><b>Masa:</b> <%= Calendar.strftime(@reject_booking.time, "%H:%M") %></p>
+                  <p><b>Peserta:</b> <%= @reject_booking.participants %> orang</p>
+                  <%= if @reject_booking.special_request do %>
+                    <p><b>Permintaan Khas:</b> <%= @reject_booking.special_request %></p>
+                  <% end %>
+                </div>
+              <% end %>
               <form phx-submit="submit_rejection" class="space-y-3">
                 <textarea name="reason" rows="3" class="w-full border rounded-md p-2 text-sm" placeholder="Nyatakan sebab penolakan..."></textarea>
                 <div class="flex justify-end gap-2">
-                  <button type="button" phx-click="close_modal" class="px-3 py-1 border rounded-md">Batal</button>
                   <button type="submit" class="px-3 py-1 bg-red-600 text-white rounded-md">Tolak</button>
+                  <button type="button" phx-click="close_modal" class="px-3 py-1 border rounded-md">Batal</button>
                 </div>
               </form>
             </.modal>
@@ -517,11 +613,40 @@ defmodule SpatoWeb.CateringBookingLive.AdminIndex do
                 <% end %>
 
                 <div class="flex justify-end gap-2">
-                  <button type="button" phx-click="close_modal" class="px-3 py-1 border rounded-md">Batal</button>
                   <button type="submit" class="px-3 py-1 bg-blue-600 text-white rounded-md">Simpan</button>
+                  <button type="button" phx-click="close_modal" class="px-3 py-1 border rounded-md">Batal</button>
                 </div>
               </form>
             </.modal>
+
+            <!-- Modal: Approve confirmation -->
+            <.modal :if={@show_approve_modal} id="approve-catering-modal" show on_cancel={JS.push("close_modal")}>
+              <h2 class="text-lg font-semibold mb-3">Sahkan Tempahan Katering</h2>
+
+              <%= if @approve_booking do %>
+                <p class="mb-2">
+                  Sahkan tempahan <b><%= @approve_booking.menu && @approve_booking.menu.name %></b>
+                  untuk <b><%= User.display_name(@approve_booking.user) %></b>?
+                </p>
+
+                <ul class="text-sm text-gray-600 space-y-1 mb-4">
+                  <li><b>Lokasi:</b> <%= @approve_booking.location %></li>
+                  <li><b>Tarikh:</b> <%= Calendar.strftime(@approve_booking.date, "%d-%m-%Y") %></li>
+                  <li><b>Masa:</b> <%= Calendar.strftime(@approve_booking.time, "%H:%M") %></li>
+                  <li><b>Peserta:</b> <%= @approve_booking.participants %> orang</li>
+                  <li><b>Jumlah Kos:</b> <%= Spato.Bookings.format_money(@approve_booking.total_cost) %></li>
+                  <%= if @approve_booking.special_request do %>
+                    <li><b>Permintaan Khas:</b> <%= @approve_booking.special_request %></li>
+                  <% end %>
+                </ul>
+              <% end %>
+
+              <div class="flex justify-end gap-2">
+                <button type="button" phx-click="confirm_approve" class="px-3 py-1 bg-green-600 text-white rounded-md">Sahkan</button>
+                <button type="button" phx-click="close_modal" class="px-3 py-1 border rounded-md">Batal</button>
+             </div>
+            </.modal>
+
           </section>
         </main>
       </div>

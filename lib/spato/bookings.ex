@@ -45,10 +45,18 @@ defmodule Spato.Bookings do
 
     # Status filter
     status_query =
-      if status != "all" do
-        from vb in scoped_query, where: vb.status == ^status
-      else
-        scoped_query
+      cond do
+        status in ["pending_approved", "open"] ->
+          from vb in scoped_query, where: vb.status in ["pending", "approved"]
+
+        status == "all" and is_nil(user) ->
+          from vb in scoped_query, where: vb.status in ["pending", "approved"]
+
+        status != "all" ->
+          from vb in scoped_query, where: vb.status == ^status
+
+        true ->
+          scoped_query
       end
 
     # Date filter
@@ -149,10 +157,18 @@ defmodule Spato.Bookings do
 
     # Status filter
     status_query =
-      if status != "all" do
-        from cb in scoped_query, where: cb.status == ^status
-      else
-        scoped_query
+      cond do
+        status in ["pending_approved", "open"] ->
+          from cb in scoped_query, where: cb.status in ["pending", "approved"]
+
+        status == "all" and is_nil(user) ->
+          from cb in scoped_query, where: cb.status in ["pending", "approved"]
+
+        status != "all" ->
+          from cb in scoped_query, where: cb.status == ^status
+
+        true ->
+          scoped_query
       end
 
     # Date filter
@@ -690,10 +706,22 @@ defmodule Spato.Bookings do
         end
 
       status_query =
-        if status != "all" do
-          from eb in scoped_query, where: eb.status == ^status
-        else
-          scoped_query
+        cond do
+          # Treat custom open aggregate as pending + approved
+          status in ["pending_approved", "open"] ->
+            from eb in scoped_query, where: eb.status in ["pending", "approved"]
+
+          # For admin (user == nil), "all" should mean only open (pending + approved)
+          status == "all" and is_nil(user) ->
+            from eb in scoped_query, where: eb.status in ["pending", "approved"]
+
+          # Explicit single-status filter
+          status != "all" ->
+            from eb in scoped_query, where: eb.status == ^status
+
+          # User context with "all" -> no status restriction
+          true ->
+            scoped_query
         end
 
       date_query =
@@ -1033,7 +1061,6 @@ defmodule Spato.Bookings do
 
   alias Spato.Bookings.MeetingRoomBooking
 
-
   def list_meeting_room_bookings_paginated(params \\ %{}, user \\ nil) do
     page   = Map.get(params, "page", 1) |> to_int()
     search = Map.get(params, "search", "")
@@ -1052,12 +1079,20 @@ defmodule Spato.Bookings do
         _ -> from b in base_query, where: b.user_id == ^user.id
       end
 
-    status_query =
-      if status != "all" do
+  status_query =
+    cond do
+      status in ["pending_approved", "open"] ->
+        from b in scoped_query, where: b.status in ["pending", "approved"]
+
+      status == "all" and is_nil(user) ->
+        from b in scoped_query, where: b.status in ["pending", "approved"]
+
+      status != "all" ->
         from b in scoped_query, where: b.status == ^status
-      else
+
+      true ->
         scoped_query
-      end
+    end
 
     date_query =
       if date != "" do
@@ -1405,6 +1440,80 @@ defmodule Spato.Bookings do
   end
 
   def valid_datetime_range?(_, _), do: false
+
+
+ # Bookings history for user
+ # Equipment Bookings
+  def list_closed_equipment_bookings(user \\ nil) do
+    base_query =
+      from eb in EquipmentBooking,
+        where: eb.status in ["cancelled", "completed", "rejected"],
+        order_by: [desc: eb.inserted_at]
+
+    scoped_query =
+      case user do
+        nil -> base_query
+        _ -> from eb in base_query, where: eb.user_id == ^user.id
+      end
+
+    scoped_query
+    |> preload([:equipment, user: [user_profile: [:department]]])
+    |> Repo.all()
+  end
+
+  # Meeting Room Bookings
+  def list_closed_room_bookings(user \\ nil) do
+    base_query =
+      from rb in MeetingRoomBooking,
+        where: rb.status in ["cancelled", "completed", "rejected"],
+        order_by: [desc: rb.inserted_at]
+
+    scoped_query =
+      case user do
+        nil -> base_query
+        _ -> from rb in base_query, where: rb.user_id == ^user.id
+      end
+
+    scoped_query
+    |> preload([:meeting_room, user: [user_profile: [:department]]])
+    |> Repo.all()
+  end
+
+  # Vehicle Bookings
+  def list_closed_vehicle_bookings(user \\ nil) do
+    base_query =
+      from vb in VehicleBooking,
+        where: vb.status in ["cancelled", "completed", "rejected"],
+        order_by: [desc: vb.inserted_at]
+
+    scoped_query =
+      case user do
+        nil -> base_query
+        _ -> from vb in base_query, where: vb.user_id == ^user.id
+      end
+
+    scoped_query
+    |> preload([:vehicle, user: [user_profile: [:department]]])
+    |> Repo.all()
+  end
+
+  # Catering Bookings
+  def list_closed_catering_bookings(user \\ nil) do
+    base_query =
+      from cb in CateringBooking,
+        where: cb.status in ["cancelled", "completed", "rejected"],
+        order_by: [desc: cb.inserted_at]
+
+    scoped_query =
+      case user do
+        nil -> base_query
+        _ -> from cb in base_query, where: cb.user_id == ^user.id
+      end
+
+    scoped_query
+    |> preload([:menu, user: [user_profile: [:department]]])
+    |> Repo.all()
+  end
 
   # --- Notification Helpers ---
 

@@ -14,6 +14,14 @@ defmodule Spato.Bookings.VehicleBooking do
     field :passengers_number, :integer
     field :rejection_reason, :string
 
+    #-- Return fields
+    field :return_proof_url, :string
+    field :return_notes, :string
+    field :return_status, :string, default: "pending"
+    field :return_verified_at, :utc_datetime
+    field :return_verified_by_user_id, :integer
+    field :return_verification_notes, :string
+
     belongs_to :user, Spato.Accounts.User
     belongs_to :vehicle, Vehicle
     belongs_to :approved_by_user, Spato.Accounts.User
@@ -37,7 +45,13 @@ defmodule Spato.Bookings.VehicleBooking do
       :pickup_time,
       :return_time,
       :status,
-      :additional_notes
+      :additional_notes,
+      :return_proof_url,
+      :return_notes,
+      :return_status,
+      :return_verified_at,
+      :return_verified_by_user_id,
+      :return_verification_notes
     ])
     |> validate_required([:purpose, :trip_destination, :pickup_time, :return_time, :vehicle_id, :passengers_number])
     |> validate_inclusion(:status, ["pending", "approved", "rejected", "cancelled", "completed"])
