@@ -12,11 +12,20 @@ defmodule SpatoWeb.AdminDashboardLive do
        |> put_flash(:error, "Access denied")
        |> redirect(to: "/dashboard")}
     else
+      vehicle_stats = Spato.Bookings.get_booking_stats()
+      catering_stats = Spato.Bookings.get_catering_booking_stats()
+      equipment_stats = Spato.Bookings.get_equipment_booking_stats()
+      meeting_room_stats = Spato.Bookings.get_meeting_room_booking_stats()
+
       {:ok,
        socket
        |> assign(:page_title, "Admin Dashboard")
        |> assign(:active_tab, "admin_dashboard")
-       |> assign(:sidebar_open, true)}
+       |> assign(:sidebar_open, true)
+       |> assign(:vehicle_stats, vehicle_stats)
+       |> assign(:catering_stats, catering_stats)
+       |> assign(:equipment_stats, equipment_stats)
+       |> assign(:meeting_room_stats, meeting_room_stats)}
     end
   end
 
@@ -30,23 +39,26 @@ defmodule SpatoWeb.AdminDashboardLive do
       <.sidebar active_tab={@active_tab} current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar"/><.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title={@page_title} />
       <.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title={@page_title} />
 
-      <main class="flex-1 pt-20 p-6 transition-all duration-300">
-      <body class="bg-gray-100 p-4 md:p-8">
+      <main class="flex-1 overflow-y-auto pt-20 p-6 transition-all duration-300 bg-gray-100">
+      <body class="p-4 md:p-8">
         <!-- Top Section: Today's Reservations -->
         <section class="mb-8">
-            <h2 class="text-xl md:text-2xl font-bold mb-4">Tempahan hari ini</h2>
+            <h2 class="text-xl md:text-2xl font-bold mb-4">Tempahan Menunggu Kelulusan</h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 
                 <!-- Card: Bilik mesyuarat (Meeting Room) -->
                 <div class="bg-white p-6 rounded-xl shadow-md flex flex-col justify-between h-40 transition-transform hover:scale-105">
                     <div>
                         <p class="text-sm text-gray-500">Bilik mesyuarat</p>
-                        <p class="text-3xl font-bold mt-1">12</p>
+                        <p class="text-3xl font-bold mt-1 text-yellow-500"><%= @meeting_room_stats.pending %></p>
                     </div>
                     <div class="w-full flex justify-end">
-                        <button class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-1 px-4 rounded-md shadow-lg transition-colors mt-4 text-sm">
-                            Ambil tindakan →
-                        </button>
+                        <.link
+                        navigate={"/admin/meeting_room_bookings?page=1&q=&status=pending&date="}
+                        class="mt-4 inline-flex items-center justify-center px-3 py-1 bg-gradient-to-r from-yellow-400 to-yellow-500 text-black font-semibold rounded-lg shadow-md hover:from-yellow-500 hover:to-yellow-600 transition-all text-sm"
+                        >
+                        Ambil tindakan →
+                        </.link>
                     </div>
                 </div>
 
@@ -54,12 +66,15 @@ defmodule SpatoWeb.AdminDashboardLive do
                 <div class="bg-white p-6 rounded-xl shadow-md flex flex-col justify-between h-40 transition-transform hover:scale-105">
                     <div>
                         <p class="text-sm text-gray-500">Kenderaan</p>
-                        <p class="text-3xl font-bold mt-1">8</p>
+                        <p class="text-3xl font-bold mt-1 text-yellow-500"><%= @vehicle_stats.pending %></p>
                     </div>
                     <div class="w-full flex justify-end">
-                        <button class="bg-green-600 hover:bg-green-700 text-white font-semibold py-1 px-4 rounded-md shadow-lg transition-colors mt-4 text-sm">
+                        <.link
+                        navigate={"/admin/vehicle_bookings?page=1&q=&status=pending&date="}
+                        class="mt-4 inline-flex items-center justify-center px-3 py-1 bg-gradient-to-r from-yellow-400 to-yellow-500 text-black font-semibold rounded-lg shadow-md hover:from-yellow-500 hover:to-yellow-600 transition-all text-sm"
+                        >
                             Ambil tindakan →
-                        </button>
+                        </.link>
                     </div>
                 </div>
 
@@ -67,26 +82,32 @@ defmodule SpatoWeb.AdminDashboardLive do
                 <div class="bg-white p-6 rounded-xl shadow-md flex flex-col justify-between h-40 transition-transform hover:scale-105">
                     <div>
                         <p class="text-sm text-gray-500">Katering</p>
-                        <p class="text-3xl font-bold mt-1">4</p>
+                        <p class="text-3xl font-bold mt-1 text-yellow-500"><%= @catering_stats.pending %></p>
                     </div>
                     <div class="w-full flex justify-end">
-                        <button class="bg-yellow-500 hover:bg-yellow-700 text-white font-semibold py-1 px-4 rounded-md shadow-lg transition-colors mt-4 text-sm">
-                            Ambil tindakan →
-                        </button>
+                    <.link
+                    navigate={"/admin/catering_bookings?page=1&q=&status=pending&date="}
+                    class="mt-4 inline-flex items-center justify-center px-3 py-1 bg-gradient-to-r from-yellow-400 to-yellow-500 text-black font-semibold rounded-lg shadow-md hover:from-yellow-500 hover:to-yellow-600 transition-all text-sm"
+                    >
+                    Ambil tindakan →
+                    </.link>
                     </div>
                 </div>
 
-                <!-- Card: Peralatan (Equipment) -->
+               <!-- Card: Peralatan (Equipment) -->
                 <div class="bg-white p-6 rounded-xl shadow-md flex flex-col justify-between h-40 transition-transform hover:scale-105">
-                    <div>
-                        <p class="text-sm text-gray-500">Peralatan</p>
-                        <p class="text-3xl font-bold mt-1">12</p>
-                    </div>
-                    <div class="w-full flex justify-end">
-                        <button class="bg-red-600 hover:bg-red-700 text-white font-semibold py-1 px-4 rounded-md shadow-lg transition-colors mt-4 text-sm">
-                            Ambil tindakan →
-                        </button>
-                    </div>
+                <div>
+                    <p class="text-sm text-gray-500">Peralatan</p>
+                    <p class="text-3xl font-bold mt-1 text-yellow-500"><%= @equipment_stats.pending %></p>
+                </div>
+                <div class="w-full flex justify-end">
+                        <.link
+                        navigate={"/admin/equipment_bookings?page=1&q=&status=pending&date="}
+                        class="mt-4 inline-flex items-center justify-center px-3 py-1 bg-gradient-to-r from-yellow-400 to-yellow-500 text-black font-semibold rounded-lg shadow-md hover:from-yellow-500 hover:to-yellow-600 transition-all text-sm"
+                        >
+                        Ambil tindakan →
+                        </.link>
+                </div>
                 </div>
             </div>
         </section>

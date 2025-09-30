@@ -165,11 +165,15 @@ defmodule SpatoWeb.EquipmentLive.Index do
           </div>
 
           <!-- Middle Section: Add Equipment Button -->
-        <section class="mb-4 flex justify-end">
-          <.link patch={~p"/admin/equipments/new"}>
-                <.button class="bg-gray-900 text-white px-4 py-2 rounded-md hover:bg-gray-700">Tambah Peralatan</.button>
+          <section class="mb-4 flex justify-end">
+              <.link
+                patch={~p"/admin/equipments/new"}
+                style="background-color: #22376F; color: white;"
+                class="inline-flex items-center justify-center rounded-md border border-transparent px-4 py-2 text-sm font-semibold hover:opacity-90"
+              >
+                Tambah Peralatan
               </.link>
-        </section>
+          </section>
 
           <!-- Bottom Section: Equipment Table -->
           <section class="bg-white p-4 md:p-6 rounded-xl shadow-md">

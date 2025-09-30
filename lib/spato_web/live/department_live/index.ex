@@ -17,12 +17,32 @@ defmodule SpatoWeb.DepartmentLive.Index do
      |> assign(:active_tab, "departments")
      |> assign(:sidebar_open, true)
      |> assign(:current_user, socket.assigns.current_user)
-     |> stream(:departments, Accounts.list_departments())}
+     |> assign(:dept_counts, Accounts.department_staff_counts())
+     |> assign(:stats, Accounts.department_stats())
+     |> assign(:page, 1)
+     |> assign(:total_pages, 1)
+     |> assign(:filtered_count, 0)
+     |> assign(:search_query, "")
+     |> stream(:departments, [])}
   end
 
   @impl true
   def handle_params(params, _url, socket) do
-    {:noreply, apply_action(assign(socket, :live_action, socket.assigns.live_action), socket.assigns.live_action, params)}
+    %{departments_page: departments, total: total, total_pages: total_pages, page: page} =
+      Accounts.list_departments_paginated(%{
+        "page" => Map.get(params, "page", "1"),
+        "search" => Map.get(params, "q", "")
+      })
+
+    socket =
+      socket
+      |> assign(:page, page)
+      |> assign(:total_pages, total_pages)
+      |> assign(:filtered_count, total)
+      |> assign(:search_query, Map.get(params, "q", ""))
+      |> stream(:departments, departments, reset: true)
+
+    {:noreply, apply_action(socket, socket.assigns.live_action, params)}
   end
 
   # Modal actions
@@ -30,6 +50,7 @@ defmodule SpatoWeb.DepartmentLive.Index do
     socket
     |> assign(:page_title, "Jabatan Baru")
     |> assign(:department, %Department{})
+    |> assign(:stats, Accounts.department_stats())
   end
 
   defp apply_action(socket, :edit, %{"id" => id}) do
@@ -61,7 +82,9 @@ defmodule SpatoWeb.DepartmentLive.Index do
   def handle_event("delete", %{"id" => id}, socket) do
     department = Accounts.get_department!(id)
     {:ok, _} = Accounts.delete_department(department)
-    {:noreply, stream_delete(socket, :departments, department)}
+    {:noreply,
+     stream_delete(socket, :departments, department)
+     |> assign(:stats, Accounts.department_stats())}
   end
 
   # Toggle sidebar
@@ -70,66 +93,152 @@ defmodule SpatoWeb.DepartmentLive.Index do
     {:noreply, update(socket, :sidebar_open, &(!&1))}
   end
 
+  def handle_event("search", %{"q" => q}, socket) do
+    {:noreply,
+     push_patch(socket,
+       to: ~p"/admin/departments?page=1&q=#{q}"
+     )}
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <div class="flex h-screen overflow-hidden">
       <!-- Sidebar -->
-      <.sidebar
-        active_tab={@active_tab}
-        current_user={@current_user}
-        open={@sidebar_open}
-        toggle_event="toggle_sidebar"
-      />
-      <.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title={@page_title} />
+      <.sidebar active_tab={@active_tab} current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar"/>
 
-      <!-- Main content -->
-       <main class="flex-1 pt-20 p-6 transition-all duration-300">
-       <body class="bg-gray-100 p-4 md:p-8">
-          <h1 class="text-xl font-bold mb-1">Jabatan</h1>
-          <p class="text-md text-gray-500 mb-6">Semak dan urus semua jabatan dalam sistem</p>
+      <div class="flex flex-col flex-1">
+        <!-- Headbar -->
+        <.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title={@page_title} />
 
-          <!-- Middle Section: Add User Button -->
-          <section class="mb-4 flex justify-end">
-            <div class="flex items-center gap-x-3">
-              <.link
-                patch={~p"/admin/departments/new"}
-                class="inline-flex items-center justify-center rounded-md border border-transparent bg-gray-900 px-4 py-2 text-sm font-semibold leading-6 text-white transition duration-150 ease-in-out hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-800 focus:ring-offset-2">
-                Tambah Jabatan
-              </.link>
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto pt-20 p-6 transition-all duration-300 bg-gray-100">
+
+          <!-- Header Section -->
+          <section class="mb-4">
+            <h1 class="text-xl font-bold mb-1">Jabatan</h1>
+            <p class="text-md text-gray-500 mb-4">Semak dan urus semua jabatan dalam sistem</p>
+          </section>
+
+          <!-- Top Section: Stats Cards -->
+          <section class="mb-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <%= for {label, value} <- [{"Jumlah Jabatan", @stats.total_departments},
+                                         {"Jabatan Aktif", @stats.active_departments},
+                                         {"Jabatan Tidak Aktif", @stats.inactive_departments},
+                                         {"Jumlah Staf", @stats.total_staff}] do %>
+                <% number_color =
+                  case label do
+                    "Jumlah Jabatan" -> "text-gray-700"
+                    "Jabatan Aktif" -> "text-green-500"
+                    "Jabatan Tidak Aktif" -> "text-red-500"
+                    "Jumlah Staf" -> "text-blue-500"
+                  end %>
+                <div class="bg-white p-4 rounded-xl shadow-md flex flex-col justify-between h-30 transition-transform hover:scale-105">
+                  <div>
+                    <p class="text-sm text-gray-500"><%= label %></p>
+                    <p class={"text-3xl font-bold mt-1 #{number_color}"}><%= value %></p>
+                  </div>
+                </div>
+              <% end %>
             </div>
           </section>
 
-          <!-- Bottom Section: User Table -->
-          <section class="bg-white p-4 md:p-6 rounded-xl shadow-md">
-          <!-- Header -->
-          <header class="flex items-center justify-between mb-4">
-            <h1 class="text-xl font-semibold leading-7 text-gray-900">Senarai Jabatan</h1>
-          </header>
-
-          <!-- Table -->
-          <.table
-            id="departments"
-            rows={@streams.departments}
-            row_click={fn {_id, dept} -> JS.patch(~p"/admin/departments/#{dept}?action=show") end}
-          >
-            <:col :let={{_id, dept}} label="Nama Jabatan">{dept.name}</:col>
-            <:col :let={{_id, dept}} label="Kod Jabatan">{dept.code}</:col>
-            <:action :let={{_id, dept}}>
-              <.link patch={~p"/admin/departments/#{dept}/edit"}>Edit</.link>
-            </:action>
-            <:action :let={{id, dept}}>
-              <.link
-                phx-click={JS.push("delete", value: %{id: dept.id}) |> hide("##{id}")}
-                data-confirm="Anda yakin?"
-              >
-                Padam
-              </.link>
-            </:action>
-          </.table>
+          <!-- Middle Section: Add Department Button -->
+          <section class="mb-4 flex justify-end">
+            <.link
+              patch={~p"/admin/departments/new"}
+              style="background-color: #22376F; color: white;"
+              class="inline-flex items-center justify-center rounded-md border border-transparent px-4 py-2 text-sm font-semibold hover:opacity-90"
+            >
+              Tambah Jabatan
+            </.link>
           </section>
 
-          <!-- Form Modal (New/Edit) -->
+          <!-- Bottom Section: Department Table -->
+          <section class="bg-white p-4 md:p-6 rounded-xl shadow-md">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-lg font-semibold text-gray-900">Senarai Jabatan</h2>
+            </div>
+
+            <.table
+              id="departments"
+              rows={@streams.departments}
+              row_click={fn {_id, dept} -> JS.patch(~p"/admin/departments/#{dept}?action=show") end}
+            >
+              <:col :let={{_id, dept}} label="ID">{dept.id}</:col>
+              <:col :let={{_id, dept}} label="Nama & Lokasi">
+                  <div class="flex flex-col">
+                    <!-- Department Name -->
+                    <div class="font-semibold text-gray-900">
+                      <%= dept.name %>
+                    </div>
+
+                    <!-- Department Location -->
+                    <div class="text-sm text-gray-500">
+                      <%= dept.location %>
+                    </div>
+                  </div>
+                </:col>
+              <:col :let={{_id, dept}} label="Kod Jabatan">{dept.code}</:col>
+              <:col :let={{_id, dept}} label="Pengurus Jabatan">{dept.head_manager}</:col>
+              <:col :let={{_id, dept}} label="Deskripsi Jabatan">{dept.description}</:col>
+              <:col :let={{_id, dept}} label="Bil. Staf">
+                <%= Map.get(@dept_counts, dept.id, 0) %>
+              </:col>
+
+              <:action :let={{_id, dept}}>
+                <.link patch={~p"/admin/departments/#{dept}/edit"}>Edit</.link>
+              </:action>
+              <:action :let={{id, dept}}>
+                <.link
+                  phx-click={JS.push("delete", value: %{id: dept.id}) |> hide("##{id}")}
+                  data-confirm="Anda yakin?"
+                >
+                  Padam
+                </.link>
+              </:action>
+            </.table>
+          </section>
+
+          <!-- Pagination -->
+          <%= if @filtered_count > 0 do %>
+          <div class="relative flex items-center mt-4">
+            <!-- Previous button -->
+            <div class="flex-1">
+              <.link
+                patch={~p"/admin/departments?page=#{max(@page - 1, 1)}&q=#{@search_query}"}
+                class={"px-3 py-1 border rounded #{if @page == 1, do: "bg-gray-200 text-gray-500 cursor-not-allowed", else: "bg-white text-gray-700 hover:bg-gray-100"}"}
+              >
+                Sebelumnya
+              </.link>
+            </div>
+
+            <!-- Page numbers (centered) -->
+            <div class="absolute left-1/2 transform -translate-x-1/2 flex space-x-1">
+              <%= for p <- 1..@total_pages do %>
+                <.link
+                  patch={~p"/admin/departments?page=#{p}&q=#{@search_query}"}
+                  class={"px-3 py-1 border rounded #{if p == @page, do: "bg-gray-700 text-white", else: "bg-white text-gray-700 hover:bg-gray-100"}"}
+                >
+                  <%= p %>
+                </.link>
+              <% end %>
+            </div>
+
+            <!-- Next button -->
+            <div class="flex-1 text-right">
+              <.link
+                patch={~p"/admin/departments?page=#{min(@page + 1, @total_pages)}&q=#{@search_query}"}
+                class={"px-3 py-1 border rounded #{if @page == @total_pages, do: "bg-gray-200 text-gray-500 cursor-not-allowed", else: "bg-white text-gray-700 hover:bg-gray-100"}"}
+              >
+                Seterusnya
+              </.link>
+            </div>
+          </div>
+          <% end %>
+
+          <!-- Modals -->
           <.modal :if={@live_action in [:new, :edit]} id="department-form-modal" show on_cancel={JS.patch(~p"/admin/departments")}>
             <.live_component
               module={FormComponent}
@@ -141,7 +250,6 @@ defmodule SpatoWeb.DepartmentLive.Index do
             />
           </.modal>
 
-          <!-- Show Modal (Read-only) -->
           <.modal :if={@live_action == :show} id="department-show-modal" show on_cancel={JS.patch(~p"/admin/departments")}>
             <.live_component
               module={ShowComponent}
@@ -150,8 +258,8 @@ defmodule SpatoWeb.DepartmentLive.Index do
             />
           </.modal>
 
-        </body>
-      </main>
+        </main>
+      </div>
     </div>
     """
   end

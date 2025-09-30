@@ -170,9 +170,11 @@ defmodule SpatoWeb.VehicleLive.Index do
 
           <!-- Middle Section: Add Vehicle Button -->
           <section class="mb-4 flex justify-end">
-            <.link patch={~p"/admin/vehicles/new"}>
-                  <.button class="bg-gray-900 text-white px-4 py-2 rounded-md hover:bg-gray-700">Tambah Kenderaan</.button>
-                </.link>
+            <.link patch={~p"/admin/vehicles/new"}
+              class="inline-flex items-center justify-center rounded-md border border-transparent bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-800 focus:ring-offset-2"
+            >
+              Tambah Kenderaan
+            </.link>
           </section>
 
           <!-- Bottom Section: Vehicle Table -->

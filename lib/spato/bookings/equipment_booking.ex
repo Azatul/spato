@@ -15,6 +15,14 @@ defmodule Spato.Bookings.EquipmentBooking do
     field :condition_after, :string
     field :rejection_reason, :string
 
+    #-- Return fields
+    field :return_proof_url, :string
+    field :return_notes, :string
+    field :return_status, :string, default: "pending"
+    field :return_verified_at, :utc_datetime
+    field :return_verified_by_user_id, :integer
+    field :return_verification_notes, :string
+
     belongs_to :user, Spato.Accounts.User
     belongs_to :equipment, Spato.Assets.Equipment
     belongs_to :approved_by_user, Spato.Accounts.User
@@ -26,7 +34,26 @@ defmodule Spato.Bookings.EquipmentBooking do
   @doc false
   def changeset(equipment_booking, attrs) do
     equipment_booking
-    |> cast(attrs, [:user_id, :equipment_id, :approved_by_user_id, :cancelled_by_user_id, :requested_quantity, :location, :usage_at, :return_at, :additional_notes, :condition_before, :condition_after, :status, :rejection_reason])
+    |> cast(attrs, [
+      :user_id,
+      :equipment_id,
+      :approved_by_user_id,
+      :cancelled_by_user_id,
+      :requested_quantity,
+      :location,
+      :usage_at,
+      :return_at,
+      :additional_notes,
+      :condition_before,
+      :condition_after,
+      :status,
+      :rejection_reason,
+      :return_proof_url,
+      :return_notes,
+      :return_status,
+      :return_verified_at,
+      :return_verified_by_user_id,
+      :return_verification_notes])
     |> validate_required([:requested_quantity, :location, :usage_at, :return_at, :additional_notes, :status])
     |> validate_inclusion(:status, ["pending", "approved", "rejected", "cancelled", "completed"])
     |> unique_constraint(:equipment_id, name: :no_overlapping_bookings)
@@ -76,6 +103,17 @@ defmodule Spato.Bookings.EquipmentBooking do
             end
         end
     end
+  end
+
+  def changeset_return(booking, attrs) do
+    booking
+    |> cast(attrs, [:return_proof_url, :return_notes, :return_status])
+  end
+
+  def changeset_return_verify(booking, attrs) do
+    booking
+    |> cast(attrs, [:return_status, :return_verification_notes, :return_verified_by_user_id])
+    |> put_change(:return_verified_at, DateTime.utc_now())
   end
 
   def human_status("pending"), do: "Menunggu Kelulusan"

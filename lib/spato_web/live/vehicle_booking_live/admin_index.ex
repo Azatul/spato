@@ -25,6 +25,8 @@ defmodule SpatoWeb.VehicleBookingLive.AdminIndex do
      |> assign(:selected_status, nil)
      |> assign(:reason, nil)
      |> assign(:edit_booking, nil)
+     |> assign(:show_approve_modal, false)
+     |> assign(:approve_booking, nil)
      |> load_vehicle_bookings()
      |> assign(:stats, Bookings.get_booking_stats())}
   end
@@ -109,7 +111,9 @@ defmodule SpatoWeb.VehicleBookingLive.AdminIndex do
 
   @impl true
   def handle_event("open_reject_modal", %{"id" => id}, socket) do
-    booking = Bookings.get_vehicle_booking!(id)
+    booking =
+      Bookings.get_vehicle_booking!(id)
+      |> Spato.Repo.preload([:user, :vehicle, user: [:user_profile, user_profile: [:department]]])
     {:noreply,
     socket
     |> assign(:reject_booking, booking)
@@ -164,7 +168,34 @@ defmodule SpatoWeb.VehicleBookingLive.AdminIndex do
     socket
     |> assign(:show_reject_modal, false)
     |> assign(:show_edit_modal, false)
+    |> assign(:show_approve_modal, false)
+    |> assign(:approve_booking, nil)
     |> assign(:live_action, nil)}
+  end
+
+  @impl true
+  def handle_event("open_approve_modal", %{"id" => id}, socket) do
+    booking =
+      Bookings.get_vehicle_booking!(id)
+      |> Spato.Repo.preload([:user, :vehicle, user: [:user_profile, user_profile: [:department]]])
+
+    {:noreply,
+    socket
+    |> assign(:approve_booking, booking)
+    |> assign(:show_approve_modal, true)}
+  end
+
+  @impl true
+  def handle_event("confirm_approve", _params, socket) do
+    booking = socket.assigns.approve_booking
+    {:ok, _} = Bookings.approve_booking(booking)
+
+    {:noreply,
+    socket
+    |> assign(:show_approve_modal, false)
+    |> assign(:approve_booking, nil)
+    |> load_vehicle_bookings()
+    |> put_flash(:info, "Tempahan kenderaan telah diluluskan")}
   end
 
   defp apply_action(socket, :show, %{"id" => id}) do
@@ -253,9 +284,6 @@ defmodule SpatoWeb.VehicleBookingLive.AdminIndex do
                     <option value="all" selected={@filter_status in [nil, "all"]}>Semua Status</option>
                     <option value="pending" selected={@filter_status == "pending"}>Menunggu</option>
                     <option value="approved" selected={@filter_status == "approved"}>Diluluskan</option>
-                    <option value="rejected" selected={@filter_status == "rejected"}>Ditolak</option>
-                    <option value="completed" selected={@filter_status == "completed"}>Selesai</option>
-                    <option value="cancelled" selected={@filter_status == "cancelled"}>Dibatalkan</option>
                   </select>
                 </form>
 
@@ -389,7 +417,7 @@ defmodule SpatoWeb.VehicleBookingLive.AdminIndex do
                     <% "pending" -> %>
                       <!-- Approve -->
                       <button
-                        phx-click="approve"
+                        phx-click="open_approve_modal"
                         phx-value-id={booking.id}
                         class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-600 hover:bg-green-700 text-white"
                         title="Luluskan"
@@ -499,7 +527,7 @@ defmodule SpatoWeb.VehicleBookingLive.AdminIndex do
                   <%= case @vehicle_booking.status do %>
                     <% "pending" -> %>
                       <button
-                        phx-click="approve"
+                        phx-click="open_approve_modal"
                         phx-value-id={@vehicle_booking.id}
                         class="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700"
                       >
@@ -544,12 +572,31 @@ defmodule SpatoWeb.VehicleBookingLive.AdminIndex do
             </.modal>
 
             <.modal :if={@show_reject_modal} id="reject-modal" show on_cancel={JS.push("close_modal")}>
+
               <h2 class="text-lg font-semibold mb-2">Sebab Penolakan</h2>
+              <%= if @reject_booking do %>
+                <div class="text-sm text-gray-700 space-y-1 mb-3">
+                  <%= if @reject_booking.vehicle do %>
+                    <p>
+                      <b>Kenderaan:</b>
+                      <%= @reject_booking.vehicle.name %>
+                      (<%= @reject_booking.vehicle.plate_number %>)
+                    </p>
+                  <% end %>
+                  <%= if @reject_booking.user do %>
+                    <p><b>Pengguna:</b> <%= User.display_name(@reject_booking.user) %></p>
+                  <% end %>
+                  <p><b>Tujuan:</b> <%= @reject_booking.purpose %></p>
+                  <p><b>Destinasi:</b> <%= @reject_booking.trip_destination %></p>
+                  <p><b>Masa Pickup:</b> <%= Calendar.strftime(@reject_booking.pickup_time, "%d-%m-%Y %H:%M") %></p>
+                  <p><b>Masa Pulang:</b> <%= Calendar.strftime(@reject_booking.return_time, "%d-%m-%Y %H:%M") %></p>
+                </div>
+              <% end %>
               <form phx-submit="submit_rejection" class="space-y-3">
                 <textarea name="reason" rows="3" class="w-full border rounded-md p-2 text-sm" placeholder="Nyatakan sebab penolakan..."></textarea>
                 <div class="flex justify-end gap-2">
+                <button type="submit" class="px-3 py-1 bg-red-600 text-white rounded-md">Tolak</button>
                   <button type="button" phx-click="close_modal" class="px-3 py-1 border rounded-md">Batal</button>
-                  <button type="submit" class="px-3 py-1 bg-red-600 text-white rounded-md">Tolak</button>
                 </div>
               </form>
             </.modal>
@@ -572,15 +619,45 @@ defmodule SpatoWeb.VehicleBookingLive.AdminIndex do
                 <% end %>
 
                 <div class="flex justify-end gap-2">
-                  <button type="button" phx-click="close_modal" class="px-3 py-1 border rounded-md">
-                    Batal
-                  </button>
                   <button type="submit" class="px-3 py-1 bg-blue-600 text-white rounded-md">
                     Simpan
+                  </button>
+                  <button type="button" phx-click="close_modal" class="px-3 py-1 border rounded-md">
+                    Batal
                   </button>
                 </div>
               </form>
             </.modal>
+
+            <!-- Modal: Approve confirmation -->
+            <.modal :if={@show_approve_modal} id="approve-vehicle-modal" show on_cancel={JS.push("close_modal")}>
+              <h2 class="text-lg font-semibold mb-3">Sahkan Tempahan Kenderaan</h2>
+
+              <%= if @approve_booking do %>
+                <p class="mb-2">
+                  Sahkan tempahan <b><%= @approve_booking.vehicle.name %> (<%= @approve_booking.vehicle.plate_number %>)</b>
+                  oleh <b><%= User.display_name(@approve_booking.user) %></b>?
+                </p>
+
+                <ul class="text-sm text-gray-600 space-y-1 mb-4">
+                  <li><b>Jabatan:</b> <%= @approve_booking.user.user_profile.department.name %></li>
+                  <li><b>Tujuan:</b> <%= @approve_booking.purpose %></li>
+                  <li><b>Destinasi:</b> <%= @approve_booking.trip_destination %></li>
+                  <li><b>Masa Pickup:</b> <%= Calendar.strftime(@approve_booking.pickup_time, "%d-%m-%Y %H:%M") %></li>
+                  <li><b>Masa Pulang:</b> <%= Calendar.strftime(@approve_booking.return_time, "%d-%m-%Y %H:%M") %></li>
+                  <li><b>Penumpang:</b> <%= @approve_booking.passengers_number %> / <%= @approve_booking.vehicle.capacity %></li>
+                  <%= if @approve_booking.additional_notes do %>
+                    <li><b>Catatan:</b> <%= @approve_booking.additional_notes %></li>
+                  <% end %>
+                </ul>
+              <% end %>
+
+              <div class="flex justify-end gap-2">
+                <button type="button" phx-click="confirm_approve" class="px-3 py-1 bg-green-600 text-white rounded-md">Sahkan</button>
+                <button type="button" phx-click="close_modal" class="px-3 py-1 border rounded-md">Batal</button>
+              </div>
+            </.modal>
+
           </section>
         </main>
       </div>

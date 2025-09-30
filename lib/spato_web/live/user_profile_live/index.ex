@@ -175,14 +175,13 @@ defmodule SpatoWeb.UserProfileLive.Index do
 
         <!-- Middle Section: Add User Button -->
         <section class="mb-4 flex justify-end">
-          <.button
+          <.link
             phx-click="show_registration_modal"
             class="inline-flex items-center justify-center rounded-md border border-transparent bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-800 focus:ring-offset-2"
           >
             Tambah Pengguna
-          </.button>
+          </.link>
         </section>
-
 
         <!-- Bottom Section: User Table -->
         <section class="bg-white p-4 md:p-6 rounded-xl shadow-md">
@@ -229,12 +228,29 @@ defmodule SpatoWeb.UserProfileLive.Index do
           <.table
             id="user_profiles"
             rows={@streams.user_profiles}
-            row_click={fn {_id, u} -> JS.patch(~p"/admin/user_profiles/#{u.id}?action=show") end}
+            row_click={fn {_id, u} -> JS.patch(~p"/admin/user_profiles/#{u.id}?action=show&page=#{@page}&q=#{@search_query}&role=#{@filter_role}&department=#{@filter_department}") end}
           >
             <:col :let={{_id, u}} label="ID"><%= u.id %></:col>
             <:col :let={{_id, u}} label="Nama Penuh"><%= if u.user_profile && Map.has_key?(u.user_profile, :full_name), do: u.user_profile.full_name, else: "Belum diisi" %></:col>
-            <:col :let={{_id, u}} label="Jawatan"><%= if u.user_profile && Map.has_key?(u.user_profile, :position), do: u.user_profile.position, else: "Belum diisi" %></:col>
-            <:col :let={{_id, u}} label="Jabatan"><%= if u.user_profile && u.user_profile.department && Map.has_key?(u.user_profile.department, :name), do: u.user_profile.department.name, else: "Belum diisi" %></:col>
+
+            <:col :let={{_id, u}} label="Jawatan">
+              <div class="flex flex-col">
+                <%= if u.user_profile && u.user_profile.position do %>
+                  <!-- Position -->
+                  <div class="font-semibold text-gray-900">
+                    <%= u.user_profile.position %>
+                  </div>
+
+                  <!-- Department Name -->
+                  <div class="text-sm text-gray-500">
+                    <%= if u.user_profile.department, do: u.user_profile.department.name, else: "Belum diisi" %>
+                  </div>
+                <% else %>
+                  <span class="text-gray-400">Belum diisi</span>
+                <% end %>
+              </div>
+            </:col>
+
             <:col :let={{_id, u}} label="Jantina"><%= if u.user_profile && u.user_profile.gender, do: UserProfile.human_gender(u.user_profile.gender), else: "Belum diisi" %></:col>
             <:col :let={{_id, u}} label="Emel & No. Telefon">
               <div class="flex flex-col">
@@ -296,7 +312,6 @@ defmodule SpatoWeb.UserProfileLive.Index do
                 <!-- No delete option for self or admins -->
               <% end %>
             </:action>
-
           </.table>
         </section>
 
@@ -338,12 +353,13 @@ defmodule SpatoWeb.UserProfileLive.Index do
           <% end %>
 
         <!-- Modals (Show & Registration) -->
-        <.modal :if={@live_action == :show} id="user-profile-show-modal" show on_cancel={JS.patch(~p"/admin/user_profiles")}>
+        <.modal :if={@live_action == :show} id="user-profile-show-modal" show on_cancel={JS.patch(~p"/admin/user_profiles?page=#{@page}&q=#{@search_query}&role=#{@filter_role}&department=#{@filter_department}")}>
           <.live_component
             module={SpatoWeb.UserProfileLive.ShowComponent}
             id={@user.id}
             title={@page_title}
             user={@user}
+            page={~p"/admin/user_profiles?page=#{@page}&q=#{@search_query}&role=#{@filter_role}&department=#{@filter_department}"}
             user_profile={@user_profile}
           />
         </.modal>
@@ -355,7 +371,7 @@ defmodule SpatoWeb.UserProfileLive.Index do
           title="Daftar Pengguna Baru"
           action={:new}
           user={%Accounts.User{}}
-          patch={~p"/admin/user_profiles"}
+          patch={~p"/admin/user_profiles?page=#{@page}&q=#{@search_query}&role=#{@filter_role}&department=#{@filter_department}"}
           form={@form}
           roles={@roles}
           check_errors={@check_errors}
