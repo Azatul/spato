@@ -188,14 +188,6 @@ defmodule SpatoWeb.VehicleLive.Index do
                                       {"Dalam Penyelenggaraan", @stats.maintenance},
                                       {"Kenderaan Aktif", @stats.active}] do %>
 
-              <% number_color =
-                case label do
-                  "Jumlah Kenderaan Berdaftar" -> "text-gray-800"
-                  "Kenderaan Tersedia" -> "text-gray-800"
-                  "Dalam Penyelenggaraan" -> "text-gray-800"
-                  "Kenderaan Aktif" -> "text-gray-800"
-                end %>
-
               <% card_colors = case label do
                 "Jumlah Kenderaan Berdaftar" -> %{border: "border-purple-300", bg: "bg-purple-100", icon: "text-purple-500", icon_class: "fa-solid fa-car"}
                 "Kenderaan Tersedia" -> %{border: "border-teal-300", bg: "bg-teal-100", icon: "text-teal-500", icon_class: "fa-solid fa-check-circle"}

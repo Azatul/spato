@@ -1560,7 +1560,7 @@ defmodule Spato.Bookings do
     end
   end
 
-  defp build_user_notification_message(booking, status, booking_type, reason) do
+  defp build_user_notification_message(_booking, status, booking_type, reason) do
     type_name = format_booking_type(booking_type)
 
     case status do
