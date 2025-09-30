@@ -394,7 +394,6 @@ defmodule SpatoWeb.AdminDashboardLive do
                         </.link>
                     </div>
                 </div>
-
                 <!-- Card: Kenderaan (Vehicle) -->
                 <div class="bg-white p-6 rounded-xl shadow-md flex flex-col justify-between h-40 transition-transform hover:scale-105">
                     <div>
