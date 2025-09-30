@@ -2,6 +2,7 @@ defmodule SpatoWeb.HistoryLive.AdminBookingHistory do
   use SpatoWeb, :live_view
   import SpatoWeb.Components.Sidebar
   import SpatoWeb.Components.Headbar
+  use SpatoWeb.NotificationMixin
 
   alias Spato.Bookings
 
@@ -14,6 +15,8 @@ defmodule SpatoWeb.HistoryLive.AdminBookingHistory do
      |> assign(:active_tab, "admin_history")
      |> assign(:sidebar_open, true)
      |> assign(:current_user, socket.assigns.current_user)
+     |> assign(:show_notifications, false)
+     |> load_notifications()
      |> assign(:selected_table, :meeting_room)
      |> assign(:equipment_history, Bookings.list_closed_equipment_bookings(nil))
      |> assign(:room_history, Bookings.list_closed_room_bookings(nil))
@@ -306,7 +309,15 @@ defmodule SpatoWeb.HistoryLive.AdminBookingHistory do
       <.sidebar active_tab={@active_tab} current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar"/>
 
       <div class="flex flex-col flex-1">
-        <.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title="Sejarah Tempahan" />
+        <.headbar
+          current_user={@current_user}
+          open={@sidebar_open}
+          toggle_event="toggle_sidebar"
+          title="Sejarah Tempahan"
+          notifications={@notifications}
+          unread_count={@unread_count}
+          show_notifications={@show_notifications}
+        />
 
         <main class="flex-1 overflow-y-auto pt-20 p-6 bg-gray-100">
           <h1 class="text-xl font-bold mb-4">Sejarah Tempahan</h1>
