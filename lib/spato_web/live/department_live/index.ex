@@ -123,7 +123,15 @@ defmodule SpatoWeb.DepartmentLive.Index do
 
       <div class="flex flex-col flex-1">
         <!-- Headbar -->
-        <.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title={@page_title} />
+        <.headbar
+          current_user={@current_user}
+          open={@sidebar_open}
+          toggle_event="toggle_sidebar"
+          title={@page_title}
+          notifications={@notifications}
+          unread_count={@unread_count}
+          show_notifications={@show_notifications}
+        />
 
         <!-- Main Content -->
         <main class="flex-1 overflow-y-auto pt-20 p-6 transition-all duration-300 bg-gray-100">

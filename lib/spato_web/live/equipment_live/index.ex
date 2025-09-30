@@ -2,10 +2,10 @@ defmodule SpatoWeb.EquipmentLive.Index do
   use SpatoWeb, :live_view
   import SpatoWeb.Components.Sidebar
   import SpatoWeb.Components.Headbar
+  use SpatoWeb.NotificationMixin
 
   alias Spato.Assets
   alias Spato.Assets.Equipment
-  alias Spato.Notifications
 
   on_mount {SpatoWeb.UserAuth, :ensure_authenticated}
 
@@ -26,22 +26,6 @@ defmodule SpatoWeb.EquipmentLive.Index do
      |> stream(:equipments, Assets.list_equipments())}
   end
 
-  # --- LOAD NOTIFICATIONS ---
-  defp load_notifications(socket) do
-    user = socket.assigns.current_user
-    role = if user.role == "admin", do: :admin, else: :user
-
-    notifications = case role do
-      :user -> Notifications.list_user_notifications(user.id)
-      :admin -> Notifications.list_admin_notifications(user.id)
-    end
-
-    unread_count = Notifications.count_unread(user.id, role)
-
-    socket
-    |> assign(:notifications, notifications)
-    |> assign(:unread_count, unread_count)
-  end
 
   # --- LOAD EQUIPMENTS ---
   defp load_equipments(socket) do

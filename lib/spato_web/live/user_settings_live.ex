@@ -1,12 +1,42 @@
 defmodule SpatoWeb.UserSettingsLive do
   use SpatoWeb, :live_view
+  use SpatoWeb.NotificationMixin
 
   alias Spato.Accounts
   alias SpatoWeb.Components.Headbar
 
+  on_mount {SpatoWeb.UserAuth, :ensure_authenticated}
+
+  @impl true
+  def mount(_params, _session, socket) do
+    user = socket.assigns.current_user
+    user_profile = Accounts.get_or_init_user_profile_for_user(user)
+
+    {:ok,
+     socket
+     |> assign(:show_notifications, false)
+     |> load_notifications()
+     |> assign(:profile_form, to_form(Accounts.change_user_profile(user_profile)))
+     |> assign(:email_form, to_form(Accounts.change_user_email(user)))
+     |> assign(:password_form, to_form(Accounts.change_user_password(user)))
+     |> assign(:department_options, Accounts.list_departments() |> Enum.map(&{&1.name, &1.id}))
+     |> assign(:gender_options, [{"Lelaki", "male"}, {"Perempuan", "female"}])
+     |> assign(:employment_status_options, [{"Aktif", "active"}, {"Tidak Aktif", "inactive"}])
+     |> assign(:dashboard_path, if(user.role == "admin", do: "/admin/dashboard", else: "/dashboard"))
+     |> assign(:profile_image_preview_url, user_profile.profile_picture_url)
+     |> allow_upload(:profile_image, accept: ~w(.jpg .jpeg .png), max_entries: 1, max_file_size: 5_000_000)}
+  end
+
   def render(assigns) do
     ~H"""
-    <Headbar.headbar current_user={@current_user} title="Tetapan" full_width={true} />
+    <Headbar.headbar
+      current_user={@current_user}
+      title="Tetapan"
+      full_width={true}
+      notifications={@notifications}
+      unread_count={@unread_count}
+      show_notifications={@show_notifications}
+    />
     <div class="container mx-auto max-w-5xl pt-20">
       <div class="bg-white rounded-lg shadow-lg p-6 md:p-8 space-y-8">
         <div class="flex items-center justify-between mb-6">
