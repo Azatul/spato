@@ -19,44 +19,22 @@ defmodule SpatoWeb.AdminDashboardLive do
        |> put_flash(:error, "Access denied")
        |> redirect(to: "/dashboard")}
     else
-      vehicle_stats = Bookings.get_booking_stats()
-      catering_stats = Bookings.get_catering_booking_stats()
-      equipment_stats = Bookings.get_equipment_booking_stats()
-      meeting_room_stats = Bookings.get_meeting_room_booking_stats()
+      vehicle_stats = Spato.Bookings.get_booking_stats()
+      catering_stats = Spato.Bookings.get_catering_booking_stats()
+      equipment_stats = Spato.Bookings.get_equipment_booking_stats()
+      meeting_room_stats = Spato.Bookings.get_meeting_room_booking_stats()
 
-      socket =
-        socket
-        |> assign(:page_title, "Admin Dashboard")
-        |> assign(:active_tab, "admin_dashboard")
-        |> assign(:sidebar_open, true)
-        |> assign(:vehicle_stats, vehicle_stats)
-        |> assign(:catering_stats, catering_stats)
-        |> assign(:equipment_stats, equipment_stats)
-        |> assign(:meeting_room_stats, meeting_room_stats)
-        |> assign(:booking_filter, "all")
-        |> assign(:view_mode, "week")
-        |> assign(:search_query, "")
-        |> assign(:date_from, Date.utc_today())
-        |> assign(:date_to, Date.add(Date.utc_today(), 7))
-        |> assign(:search_triggered, false)
-        |> assign(:show_notifications, false)
-        |> load_notifications()
-
-      {:ok, load_dashboard_data(socket)}
-      socket =
-        socket
-        |> assign(:page_title, "Admin Dashboard")
-        |> assign(:active_tab, "admin_dashboard")
-        |> assign(:sidebar_open, true)
-        |> assign(:vehicle_stats, vehicle_stats)
-        |> assign(:catering_stats, catering_stats)
-        |> assign(:equipment_stats, equipment_stats)
-        |> assign(:meeting_room_stats, meeting_room_stats)
-        |> assign_calendar_defaults()
-
-      socket = load_calendar(socket)
-
-      {:ok, socket}
+      {:ok,
+       socket
+       |> assign(:page_title, "Admin Dashboard")
+       |> assign(:active_tab, "admin_dashboard")
+       |> assign(:sidebar_open, true)
+       |> assign(:show_notifications, false)
+       |> assign(:vehicle_stats, vehicle_stats)
+       |> assign(:catering_stats, catering_stats)
+       |> assign(:equipment_stats, equipment_stats)
+       |> assign(:meeting_room_stats, meeting_room_stats)
+       |> load_notifications()}
     end
   end
 
@@ -517,15 +495,7 @@ defmodule SpatoWeb.AdminDashboardLive do
     ~H"""
     <div class="flex h-screen">
       <.sidebar active_tab={@active_tab} current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar"/>
-      <.headbar
-        current_user={@current_user}
-        open={@sidebar_open}
-        toggle_event="toggle_sidebar"
-        title={@page_title}
-        notifications={@notifications}
-        unread_count={@unread_count}
-        show_notifications={@show_notifications}
-      />
+      <.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title={@page_title} notifications={@notifications} unread_count={@unread_count} show_notifications={@show_notifications} />
 
       <main class="flex-1 overflow-y-auto pt-20 p-6 transition-all duration-300 bg-gray-100">
       <body class="p-4 md:p-8">

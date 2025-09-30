@@ -4,7 +4,6 @@ defmodule SpatoWeb.UserDashboardLive do
   import SpatoWeb.Components.Headbar
   import Ecto.Query, warn: false
 
-  alias Spato.Bookings
   alias Spato.Bookings.{MeetingRoomBooking, VehicleBooking, CateringBooking}
   alias Spato.Repo
   alias Spato.Notifications
