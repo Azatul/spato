@@ -77,19 +77,19 @@ defmodule SpatoWeb.UserDashboardLive do
   end
 
   def handle_event("book_room", _params, socket) do
-    {:noreply, push_navigate(socket, to: ~p"/meeting-rooms")}
+    {:noreply, push_navigate(socket, to: ~p"/available_rooms")}
   end
 
   def handle_event("book_vehicle", _params, socket) do
-    {:noreply, push_navigate(socket, to: ~p"/vehicles")}
+    {:noreply, push_navigate(socket, to: ~p"/available_vehicles")}
   end
 
   def handle_event("book_catering", _params, socket) do
-    {:noreply, push_navigate(socket, to: ~p"/catering-menus")}
+    {:noreply, push_navigate(socket, to: ~p"/available_catering")}
   end
 
   def handle_event("book_equipment", _params, socket) do
-    {:noreply, push_navigate(socket, to: ~p"/equipments")}
+    {:noreply, push_navigate(socket, to: ~p"/available_equipments")}
   end
 
   defp load_dashboard_data(socket) do
