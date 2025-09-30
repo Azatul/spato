@@ -980,14 +980,17 @@ defmodule Spato.Bookings do
     end
 
     # == LIST APPROVED BOOKINGS IN RANGE ==
-      def list_approved_bookings_in_range(start_date, end_date) do
+      def list_approved_bookings_in_range(range_start_dt, range_end_dt) do
         import Ecto.Query
 
-        # Vehicles
+        # Vehicles (overlap within range)
         vehicle_query =
           from v in Spato.Bookings.VehicleBooking,
-            where: v.status == "approved" and v.pickup_time >= ^start_date and v.return_time <= ^end_date,
             join: veh in assoc(v, :vehicle),
+            where:
+              v.status == "approved" and
+              v.pickup_time < ^range_end_dt and
+              v.return_time > ^range_start_dt,
             select: %{
               id: v.id,
               type: "vehicle",
@@ -996,11 +999,14 @@ defmodule Spato.Bookings do
               return_at: v.return_time
             }
 
-        # Equipments
+        # Equipments (overlap within range)
         equipment_query =
           from e in Spato.Bookings.EquipmentBooking,
-            where: e.status == "approved" and e.usage_at >= ^start_date and e.return_at <= ^end_date,
             join: eq in assoc(e, :equipment),
+            where:
+              e.status == "approved" and
+              e.usage_at < ^range_end_dt and
+              e.return_at > ^range_start_dt,
             select: %{
               id: e.id,
               type: "equipment",
@@ -1009,8 +1015,60 @@ defmodule Spato.Bookings do
               return_at: e.return_at
             }
 
-        # Merge both
-        Repo.all(union_all(vehicle_query, ^equipment_query))
+        # Meeting Rooms (overlap within range)
+        meeting_query =
+          from m in Spato.Bookings.MeetingRoomBooking,
+            join: room in assoc(m, :meeting_room),
+            where:
+              m.status == "approved" and
+              m.start_time < ^range_end_dt and
+              m.end_time > ^range_start_dt,
+            select: %{
+              id: m.id,
+              type: "meeting_room",
+              title: room.name,
+              usage_at: m.start_time,
+              return_at: m.end_time
+            }
+
+        # Catering (date lies within range) – select raw fields; build datetimes in Elixir
+        catering_query =
+          from c in Spato.Bookings.CateringBooking,
+            where:
+              c.status == "approved" and
+              c.date >= ^DateTime.to_date(range_start_dt) and
+              c.date <= ^DateTime.to_date(range_end_dt),
+            select: %{
+              id: c.id,
+              type: "catering",
+              title: c.location,
+              date: c.date,
+              time: c.time
+            }
+
+        vehicles = Repo.all(vehicle_query)
+        equipments = Repo.all(equipment_query)
+        meetings = Repo.all(meeting_query)
+        caterings = Repo.all(catering_query)
+
+        caterings =
+          Enum.map(caterings, fn c ->
+            usage_dt = date_to_dt(c.date, Map.get(c, :time))
+            %{id: c.id, type: c.type, title: c.title, usage_at: usage_dt, return_at: usage_dt}
+          end)
+
+        vehicles ++ equipments ++ meetings ++ caterings
+      end
+
+      # Convert date + time (or default) into a UTC DateTime for uniform select shape
+      defp date_to_dt(%Date{} = date, nil) do
+        {:ok, dt} = DateTime.new(date, ~T[12:00:00], "Etc/UTC")
+        dt
+      end
+
+      defp date_to_dt(%Date{} = date, %Time{} = time) do
+        {:ok, dt} = DateTime.new(date, time, "Etc/UTC")
+        dt
       end
 
   def get_user_catering_booking_stats(user_id) do
@@ -1560,7 +1618,7 @@ defmodule Spato.Bookings do
     end
   end
 
-  defp build_user_notification_message(booking, status, booking_type, reason) do
+  defp build_user_notification_message(_booking, status, booking_type, reason) do
     type_name = format_booking_type(booking_type)
 
     case status do
