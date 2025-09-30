@@ -2,6 +2,7 @@ defmodule SpatoWeb.HistoryLive.BookingHistoryLive do
   use SpatoWeb, :live_view
   import SpatoWeb.Components.Sidebar
   import SpatoWeb.Components.Headbar
+  use SpatoWeb.NotificationMixin
 
   alias Spato.Bookings
 
@@ -16,6 +17,8 @@ defmodule SpatoWeb.HistoryLive.BookingHistoryLive do
      |> assign(:active_tab, "history")
      |> assign(:sidebar_open, true)
      |> assign(:current_user, current_user)
+     |> assign(:show_notifications, false)
+     |> load_notifications()
      |> assign(:selected_table, :meeting_room) # default tab
      |> assign(:equipment_history, list_closed(:equipment, current_user))
      |> assign(:room_history, list_closed(:meeting_room, current_user))
@@ -48,6 +51,21 @@ defmodule SpatoWeb.HistoryLive.BookingHistoryLive do
 
   def handle_event("toggle_sidebar", _params, socket) do
     {:noreply, update(socket, :sidebar_open, &(!&1))}
+  end
+
+  def handle_event("toggle_notifications", _params, socket) do
+    {:noreply, assign(socket, :show_notifications, !socket.assigns.show_notifications)}
+  end
+
+  def handle_event("read_notification", %{"id" => id}, socket) do
+    case Spato.Notifications.get_notification(id) do
+      %{status: "unread"} = notification ->
+        {:ok, _} = Spato.Notifications.mark_as_read(notification)
+        socket = load_notifications(socket)
+        {:noreply, socket}
+      _ ->
+        {:noreply, socket}
+    end
   end
 
   # --- history filters ---
@@ -327,7 +345,15 @@ def render(assigns) do
       <.sidebar active_tab={@active_tab} current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar"/>
 
       <div class="flex flex-col flex-1">
-        <.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title="Sejarah Tempahan" />
+        <.headbar
+          current_user={@current_user}
+          open={@sidebar_open}
+          toggle_event="toggle_sidebar"
+          title="Sejarah Tempahan"
+          notifications={@notifications}
+          unread_count={@unread_count}
+          show_notifications={@show_notifications}
+        />
 
         <main class="flex-1 overflow-y-auto pt-20 p-6 bg-gray-100">
           <h1 class="text-xl font-bold mb-4">Sejarah Tempahan Anda</h1>
