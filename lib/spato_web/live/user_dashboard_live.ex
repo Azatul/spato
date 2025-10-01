@@ -115,7 +115,7 @@ defmodule SpatoWeb.UserDashboardLive do
     |> assign(:calendar_data, calendar_data)
   end
 
-  defp get_user_booking_stats(user, date_from, date_to) do
+  defp get_user_booking_stats(user, date_from, _date_to) do
     # This week's bookings
     week_start = Date.beginning_of_week(date_from)
     week_end = Date.end_of_week(date_from)
@@ -246,7 +246,7 @@ defmodule SpatoWeb.UserDashboardLive do
     end
   end
 
-  defp build_calendar_data(bookings, date_from, date_to, view_mode) do
+  defp build_calendar_data(bookings, date_from, _date_to, view_mode) do
     case view_mode do
       "day" -> build_day_view(bookings, date_from)
       "week" -> build_week_view(bookings, date_from)
@@ -282,7 +282,7 @@ defmodule SpatoWeb.UserDashboardLive do
     week_end = Date.end_of_week(start_date)
 
     # Generate all days in week
-    week_days = Date.range(week_start, week_end) |> Enum.to_list()
+    _week_days = Date.range(week_start, week_end) |> Enum.to_list()
 
     # Get bookings for the week
     week_bookings =

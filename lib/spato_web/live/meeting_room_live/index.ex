@@ -6,6 +6,7 @@ defmodule SpatoWeb.MeetingRoomLive.Index do
 
   alias Spato.Assets
   alias Spato.Assets.MeetingRoom
+  alias Spato.Notifications
 
   on_mount {SpatoWeb.UserAuth, :ensure_authenticated}
 

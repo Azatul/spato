@@ -6,6 +6,7 @@ defmodule SpatoWeb.EquipmentLive.Index do
 
   alias Spato.Assets
   alias Spato.Assets.Equipment
+  alias Spato.Notifications
 
   on_mount {SpatoWeb.UserAuth, :ensure_authenticated}
 
@@ -99,7 +100,7 @@ defmodule SpatoWeb.EquipmentLive.Index do
 
   @impl true
   def handle_event("read_notification", %{"id" => id}, socket) do
-    case Notifications.get_notification(id) do
+    case Spato.Notifications.get_notification(id) do
       %{status: "unread"} = notification ->
         {:ok, _} = Notifications.mark_as_read(notification)
         socket = load_notifications(socket)

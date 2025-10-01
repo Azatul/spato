@@ -6,6 +6,7 @@ defmodule SpatoWeb.VehicleLive.Index do
 
   alias Spato.Assets
   alias Spato.Assets.Vehicle
+  alias Spato.Notifications
 
   on_mount {SpatoWeb.UserAuth, :ensure_authenticated}
 
