@@ -2,6 +2,7 @@ defmodule SpatoWeb.UserProfileLive.Index do
   use SpatoWeb, :live_view
   import SpatoWeb.Components.Sidebar
   import SpatoWeb.Components.Headbar
+  use SpatoWeb.NotificationMixin
 
   alias Spato.Accounts
   alias Spato.Accounts.UserProfile
@@ -33,6 +34,8 @@ defmodule SpatoWeb.UserProfileLive.Index do
      |> assign(:filter_role, "all")
      |> assign(:filter_department, "all")
      |> assign(:departments, Accounts.list_departments())
+     |> assign(:show_notifications, false)
+     |> load_notifications()
      |> stream(:user_profiles, [])}
   end
 
@@ -92,6 +95,17 @@ defmodule SpatoWeb.UserProfileLive.Index do
     {:noreply, update(socket, :sidebar_open, &(!&1))}
   end
 
+  # Notification events
+  @impl true
+  def handle_event("toggle_notifications", params, socket) do
+    handle_toggle_notifications(params, socket)
+  end
+
+  @impl true
+  def handle_event("read_notification", params, socket) do
+    handle_read_notification(params, socket)
+  end
+
   # Modal toggle
   def handle_event("show_registration_modal", _, socket) do
     {:noreply, assign(socket, show_registration_modal: true)}
@@ -141,7 +155,7 @@ defmodule SpatoWeb.UserProfileLive.Index do
       <div class="flex h-screen overflow-hidden">
       <.sidebar active_tab={@active_tab} current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar"/>
       <div class="flex flex-col flex-1">
-      <.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title={@page_title} />
+      <.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title={@page_title} notifications={@notifications} unread_count={@unread_count} show_notifications={@show_notifications} />
 
       <main class="flex-1 overflow-y-auto pt-20 p-6 transition-all duration-300 bg-gray-100">
       <section class="mb-4">
@@ -156,17 +170,19 @@ defmodule SpatoWeb.UserProfileLive.Index do
                                       {"Admin", @stats.admins},
                                       {"Staf Biasa", @stats.users},
                                       {"Pengguna Aktif", @stats.active_users}] do %>
-              <% number_color =
-                case label do
-                  "Jumlah Pengguna Berdaftar" -> "text-gray-700"
-                  "Admin" -> "text-green-500"
-                  "Staf Biasa" -> "text-purple-500"
-                  "Pengguna Aktif" -> "text-blue-500"
-                end %>
-              <div class="bg-white p-4 rounded-xl shadow-md flex flex-col justify-between h-30 transition-transform hover:scale-105">
+              <% card_colors = case label do
+                "Jumlah Pengguna Berdaftar" -> %{border: "border-purple-300", bg: "bg-purple-100", icon: "text-purple-500", icon_class: "fa-solid fa-users"}
+                "Admin" -> %{border: "border-teal-300", bg: "bg-teal-100", icon: "text-teal-500", icon_class: "fa-solid fa-user-shield"}
+                "Staf Biasa" -> %{border: "border-amber-300", bg: "bg-amber-100", icon: "text-amber-500", icon_class: "fa-solid fa-user"}
+                "Pengguna Aktif" -> %{border: "border-purple-300", bg: "bg-purple-100", icon: "text-purple-500", icon_class: "fa-solid fa-user-check"}
+              end %>
+              <div class={"bg-white p-6 rounded-xl shadow-md flex justify-between items-center min-h-[130px] border-l-4 #{card_colors.border} transition-transform hover:scale-105"}>
                 <div>
-                  <p class="text-sm text-gray-500"><%= label %></p>
-                  <p class={"text-3xl font-bold mt-1 #{number_color}"}><%= value %></p>
+                  <h3 class="text-gray-600 text-sm font-semibold"><%= label %></h3>
+                  <p class="text-4xl font-bold text-gray-800 mt-2"><%= value %></p>
+                </div>
+                <div class={"#{card_colors.bg} p-3 rounded-full"}>
+                  <i class={"#{card_colors.icon_class} #{card_colors.icon} text-2xl"}></i>
                 </div>
               </div>
             <% end %>

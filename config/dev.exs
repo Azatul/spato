@@ -3,7 +3,7 @@ import Config
 # Configure your database
 config :spato, Spato.Repo,
   username: "postgres",
-  password: "Azatul27",
+  password: "Arissa",
   hostname: "localhost",
   database: "spato_dev",
   stacktrace: true,

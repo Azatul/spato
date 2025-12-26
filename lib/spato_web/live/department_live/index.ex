@@ -2,6 +2,7 @@ defmodule SpatoWeb.DepartmentLive.Index do
   use SpatoWeb, :live_view
   import SpatoWeb.Components.Sidebar
   import SpatoWeb.Components.Headbar
+  use SpatoWeb.NotificationMixin
 
   alias Spato.Accounts
   alias Spato.Accounts.Department
@@ -23,6 +24,8 @@ defmodule SpatoWeb.DepartmentLive.Index do
      |> assign(:total_pages, 1)
      |> assign(:filtered_count, 0)
      |> assign(:search_query, "")
+     |> assign(:show_notifications, false)
+     |> load_notifications()
      |> stream(:departments, [])}
   end
 
@@ -100,6 +103,17 @@ defmodule SpatoWeb.DepartmentLive.Index do
      )}
   end
 
+  # Notification events
+  @impl true
+  def handle_event("toggle_notifications", params, socket) do
+    handle_toggle_notifications(params, socket)
+  end
+
+  @impl true
+  def handle_event("read_notification", params, socket) do
+    handle_read_notification(params, socket)
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -109,7 +123,7 @@ defmodule SpatoWeb.DepartmentLive.Index do
 
       <div class="flex flex-col flex-1">
         <!-- Headbar -->
-        <.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title={@page_title} />
+        <.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title={@page_title} notifications={@notifications} unread_count={@unread_count} show_notifications={@show_notifications} />
 
         <!-- Main Content -->
         <main class="flex-1 overflow-y-auto pt-20 p-6 transition-all duration-300 bg-gray-100">

@@ -7,6 +7,9 @@ defmodule Spato.Bookings do
   alias Spato.Repo
   alias Spato.Bookings.VehicleBooking
   alias Spato.Bookings.CateringBooking
+  alias Spato.Bookings.MeetingRoomBooking
+  alias Spato.Bookings.EquipmentBooking
+  alias Spato.Notifications
 
   @per_page 10
 
@@ -396,9 +399,17 @@ defmodule Spato.Bookings do
   end
 
   def create_vehicle_booking(attrs) do
-    %VehicleBooking{}
-    |> VehicleBooking.changeset(attrs)
-    |> Repo.insert()
+    Ecto.Multi.new()
+    |> Ecto.Multi.insert(:booking, VehicleBooking.changeset(%VehicleBooking{}, attrs))
+    |> Ecto.Multi.run(:notification, fn _repo, %{booking: booking} ->
+      create_admin_notification(booking, "vehicle")
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{booking: booking}} -> {:ok, booking}
+      {:error, :booking, changeset, _} -> {:error, changeset}
+      {:error, _operation, reason, _} -> {:error, reason}
+    end
   end
 
   def update_vehicle_booking(%VehicleBooking{} = vb, attrs) do
@@ -439,9 +450,17 @@ defmodule Spato.Bookings do
   end
 
   def create_catering_booking(attrs \\ %{}) do
-    %CateringBooking{}
-    |> CateringBooking.changeset(attrs)
-    |> Repo.insert()
+    Ecto.Multi.new()
+    |> Ecto.Multi.insert(:booking, CateringBooking.changeset(%CateringBooking{}, attrs))
+    |> Ecto.Multi.run(:notification, fn _repo, %{booking: booking} ->
+      create_admin_notification(booking, "catering")
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{booking: booking}} -> {:ok, booking}
+      {:error, :booking, changeset, _} -> {:error, changeset}
+      {:error, _operation, reason, _} -> {:error, reason}
+    end
   end
 
   def update_catering_booking(%CateringBooking{} = cb, attrs) do
@@ -460,11 +479,30 @@ defmodule Spato.Bookings do
 
   # --- Vehicle Booking Actions ---
 
-  def approve_booking(%VehicleBooking{} = vb),
-    do: update_vehicle_booking(vb, %{status: "approved"})
+  def approve_booking(%VehicleBooking{} = vb) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:booking, VehicleBooking.changeset(vb, %{status: "approved"}))
+    |> Ecto.Multi.run(:notification, fn _repo, %{booking: booking} ->
+      create_user_notification(booking, "approved", "vehicle")
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{booking: booking}} -> {:ok, booking}
+      {:error, :booking, changeset, _} -> {:error, changeset}
+    end
+  end
 
   def reject_booking(%VehicleBooking{} = vb, reason \\ nil) do
-    update_vehicle_booking(vb, %{status: "rejected", rejection_reason: reason})
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:booking, VehicleBooking.changeset(vb, %{status: "rejected", rejection_reason: reason}))
+    |> Ecto.Multi.run(:notification, fn _repo, %{booking: booking} ->
+      create_user_notification(booking, "rejected", "vehicle", reason)
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{booking: booking}} -> {:ok, booking}
+      {:error, :booking, changeset, _} -> {:error, changeset}
+    end
   end
 
   def cancel_booking(%VehicleBooking{} = vb, %Spato.Accounts.User{} = user, reason \\ nil) do
@@ -483,15 +521,33 @@ defmodule Spato.Bookings do
   # --- Catering Booking Actions ---
 
   def approve_catering_booking(%CateringBooking{} = cb, %Spato.Accounts.User{} = user) do
-    update_catering_booking(cb, %{status: "approved", approved_by_user_id: user.id})
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:booking, CateringBooking.changeset(cb, %{status: "approved", approved_by_user_id: user.id}))
+    |> Ecto.Multi.run(:notification, fn _repo, %{booking: booking} ->
+      create_user_notification(booking, "approved", "catering")
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{booking: booking}} -> {:ok, booking}
+      {:error, :booking, changeset, _} -> {:error, changeset}
+    end
   end
 
   def reject_catering_booking(%CateringBooking{} = cb, %Spato.Accounts.User{} = user, reason \\ nil) do
-    update_catering_booking(cb, %{
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:booking, CateringBooking.changeset(cb, %{
       status: "rejected",
       approved_by_user_id: user.id,
       rejection_reason: reason
-    })
+    }))
+    |> Ecto.Multi.run(:notification, fn _repo, %{booking: booking} ->
+      create_user_notification(booking, "rejected", "catering", reason)
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{booking: booking}} -> {:ok, booking}
+      {:error, :booking, changeset, _} -> {:error, changeset}
+    end
   end
 
   def cancel_catering_booking(%CateringBooking{} = cb, %Spato.Accounts.User{} = user, reason \\ nil) do
@@ -817,9 +873,17 @@ defmodule Spato.Bookings do
     end
 
     def create_equipment_booking(attrs) do
-      %EquipmentBooking{}
-      |> EquipmentBooking.changeset(attrs)
-      |> Repo.insert()
+      Ecto.Multi.new()
+      |> Ecto.Multi.insert(:booking, EquipmentBooking.changeset(%EquipmentBooking{}, attrs))
+      |> Ecto.Multi.run(:notification, fn _repo, %{booking: booking} ->
+        create_admin_notification(booking, "equipment")
+      end)
+      |> Repo.transaction()
+      |> case do
+        {:ok, %{booking: booking}} -> {:ok, booking}
+        {:error, :booking, changeset, _} -> {:error, changeset}
+        {:error, _operation, reason, _} -> {:error, reason}
+      end
     end
 
     def complete_equipment_booking(%EquipmentBooking{} = booking) do
@@ -851,7 +915,16 @@ defmodule Spato.Bookings do
     def change_equipment_booking(%EquipmentBooking{} = eb, attrs \\ %{}), do: EquipmentBooking.changeset(eb, attrs)
 
     def approve_equipment_booking(%EquipmentBooking{} = booking) do
-      update_equipment_booking(booking, %{status: "approved"})
+      Ecto.Multi.new()
+      |> Ecto.Multi.update(:booking, EquipmentBooking.changeset(booking, %{status: "approved"}))
+      |> Ecto.Multi.run(:notification, fn _repo, %{booking: booking} ->
+        create_user_notification(booking, "approved", "equipment")
+      end)
+      |> Repo.transaction()
+      |> case do
+        {:ok, %{booking: booking}} -> {:ok, booking}
+        {:error, :booking, changeset, _} -> {:error, changeset}
+      end
     end
 
     def reject_equipment_booking(%EquipmentBooking{} = booking, reason \\ nil) do
@@ -867,6 +940,9 @@ defmodule Spato.Bookings do
         equipment
         |> Ecto.Changeset.change(%{total_quantity: new_qty})
         |> repo.update()
+      end)
+      |> Ecto.Multi.run(:notification, fn _repo, %{booking: booking} ->
+        create_user_notification(booking, "rejected", "equipment", reason)
       end)
       |> Repo.transaction()
     end
@@ -904,14 +980,17 @@ defmodule Spato.Bookings do
     end
 
     # == LIST APPROVED BOOKINGS IN RANGE ==
-      def list_approved_bookings_in_range(start_date, end_date) do
+      def list_approved_bookings_in_range(range_start_dt, range_end_dt) do
         import Ecto.Query
 
-        # Vehicles
+        # Vehicles (overlap within range)
         vehicle_query =
           from v in Spato.Bookings.VehicleBooking,
-            where: v.status == "approved" and v.pickup_time >= ^start_date and v.return_time <= ^end_date,
             join: veh in assoc(v, :vehicle),
+            where:
+              v.status == "approved" and
+              v.pickup_time < ^range_end_dt and
+              v.return_time > ^range_start_dt,
             select: %{
               id: v.id,
               type: "vehicle",
@@ -920,11 +999,14 @@ defmodule Spato.Bookings do
               return_at: v.return_time
             }
 
-        # Equipments
+        # Equipments (overlap within range)
         equipment_query =
           from e in Spato.Bookings.EquipmentBooking,
-            where: e.status == "approved" and e.usage_at >= ^start_date and e.return_at <= ^end_date,
             join: eq in assoc(e, :equipment),
+            where:
+              e.status == "approved" and
+              e.usage_at < ^range_end_dt and
+              e.return_at > ^range_start_dt,
             select: %{
               id: e.id,
               type: "equipment",
@@ -933,8 +1015,60 @@ defmodule Spato.Bookings do
               return_at: e.return_at
             }
 
-        # Merge both
-        Repo.all(union_all(vehicle_query, ^equipment_query))
+        # Meeting Rooms (overlap within range)
+        meeting_query =
+          from m in Spato.Bookings.MeetingRoomBooking,
+            join: room in assoc(m, :meeting_room),
+            where:
+              m.status == "approved" and
+              m.start_time < ^range_end_dt and
+              m.end_time > ^range_start_dt,
+            select: %{
+              id: m.id,
+              type: "meeting_room",
+              title: room.name,
+              usage_at: m.start_time,
+              return_at: m.end_time
+            }
+
+        # Catering (date lies within range) – select raw fields; build datetimes in Elixir
+        catering_query =
+          from c in Spato.Bookings.CateringBooking,
+            where:
+              c.status == "approved" and
+              c.date >= ^DateTime.to_date(range_start_dt) and
+              c.date <= ^DateTime.to_date(range_end_dt),
+            select: %{
+              id: c.id,
+              type: "catering",
+              title: c.location,
+              date: c.date,
+              time: c.time
+            }
+
+        vehicles = Repo.all(vehicle_query)
+        equipments = Repo.all(equipment_query)
+        meetings = Repo.all(meeting_query)
+        caterings = Repo.all(catering_query)
+
+        caterings =
+          Enum.map(caterings, fn c ->
+            usage_dt = date_to_dt(c.date, Map.get(c, :time))
+            %{id: c.id, type: c.type, title: c.title, usage_at: usage_dt, return_at: usage_dt}
+          end)
+
+        vehicles ++ equipments ++ meetings ++ caterings
+      end
+
+      # Convert date + time (or default) into a UTC DateTime for uniform select shape
+      defp date_to_dt(%Date{} = date, nil) do
+        {:ok, dt} = DateTime.new(date, ~T[12:00:00], "Etc/UTC")
+        dt
+      end
+
+      defp date_to_dt(%Date{} = date, %Time{} = time) do
+        {:ok, dt} = DateTime.new(date, time, "Etc/UTC")
+        dt
       end
 
   def get_user_catering_booking_stats(user_id) do
@@ -1165,9 +1299,17 @@ defmodule Spato.Bookings do
   end
 
   def create_meeting_room_booking(attrs \\ %{}) do
-    %MeetingRoomBooking{}
-    |> MeetingRoomBooking.changeset(attrs)
-    |> Repo.insert()
+    Ecto.Multi.new()
+    |> Ecto.Multi.insert(:booking, MeetingRoomBooking.changeset(%MeetingRoomBooking{}, attrs))
+    |> Ecto.Multi.run(:notification, fn _repo, %{booking: booking} ->
+      create_admin_notification(booking, "meeting_room")
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{booking: booking}} -> {:ok, booking}
+      {:error, :booking, changeset, _} -> {:error, changeset}
+      {:error, _operation, reason, _} -> {:error, reason}
+    end
   end
 
   def update_meeting_room_booking(%MeetingRoomBooking{} = meeting_room_booking, attrs) do
@@ -1184,11 +1326,31 @@ defmodule Spato.Bookings do
     MeetingRoomBooking.changeset(meeting_room_booking, attrs)
   end
 
-  def approve_meeting_room_booking(%MeetingRoomBooking{} = vb),
-    do: update_meeting_room_booking(vb, %{status: "approved"})
+  def approve_meeting_room_booking(%MeetingRoomBooking{} = vb) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:booking, MeetingRoomBooking.changeset(vb, %{status: "approved"}))
+    |> Ecto.Multi.run(:notification, fn _repo, %{booking: booking} ->
+      create_user_notification(booking, "approved", "meeting_room")
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{booking: booking}} -> {:ok, booking}
+      {:error, :booking, changeset, _} -> {:error, changeset}
+    end
+  end
 
-  def reject_meeting_room_booking(%MeetingRoomBooking{} = vb, reason \\ nil),
-    do: update_meeting_room_booking(vb, %{status: "rejected", rejection_reason: reason})
+  def reject_meeting_room_booking(%MeetingRoomBooking{} = vb, reason \\ nil) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:booking, MeetingRoomBooking.changeset(vb, %{status: "rejected", rejection_reason: reason}))
+    |> Ecto.Multi.run(:notification, fn _repo, %{booking: booking} ->
+      create_user_notification(booking, "rejected", "meeting_room", reason)
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{booking: booking}} -> {:ok, booking}
+      {:error, :booking, changeset, _} -> {:error, changeset}
+    end
+  end
 
   def cancel_meeting_room_booking(%MeetingRoomBooking{} = vb, %Spato.Accounts.User{} = user, reason \\ nil) do
     case vb.status do
@@ -1410,5 +1572,82 @@ defmodule Spato.Bookings do
     |> preload([:menu, user: [user_profile: [:department]]])
     |> Repo.all()
   end
+
+  # --- Notification Helpers ---
+
+  defp create_admin_notification(booking, booking_type) do
+    # Get all admin users
+    admin_users = from(u in Spato.Accounts.User, where: u.role == "admin") |> Repo.all()
+
+    # Create notification for each admin
+    Enum.each(admin_users, fn admin ->
+      message = build_admin_notification_message(booking, booking_type)
+
+      Notifications.create_notification(%{
+        title: "Tempahan Baru - #{format_booking_type(booking_type)}",
+        message: message,
+        type: "booking_created",
+        admin_id: admin.id
+      })
+    end)
+
+    {:ok, :notifications_created}
+  end
+
+  defp create_user_notification(booking, status, booking_type, reason \\ nil) do
+    {title, message} = build_user_notification_message(booking, status, booking_type, reason)
+
+    Notifications.create_notification(%{
+      title: title,
+      message: message,
+      type: "booking_#{status}",
+      user_id: booking.user_id
+    })
+  end
+
+  defp build_admin_notification_message(booking, booking_type) do
+    case booking_type do
+      "vehicle" ->
+        "Tempahan kenderaan baru untuk #{booking.purpose} pada #{format_datetime(booking.pickup_time)}. Sila semak dan luluskan."
+      "catering" ->
+        "Tempahan katering baru untuk #{booking.participants} orang pada #{format_date(booking.date)}. Sila semak dan luluskan."
+      "meeting_room" ->
+        "Tempahan bilik mesyuarat baru untuk #{booking.purpose} pada #{format_datetime(booking.start_time)}. Sila semak dan luluskan."
+      "equipment" ->
+        "Tempahan peralatan baru (#{booking.requested_quantity} unit) pada #{format_datetime(booking.usage_at)}. Sila semak dan luluskan."
+    end
+  end
+
+  defp build_user_notification_message(_booking, status, booking_type, reason) do
+    type_name = format_booking_type(booking_type)
+
+    case status do
+      "approved" ->
+        {"Tempahan Diluluskan", "Tempahan #{type_name} anda telah diluluskan. Sila semak butiran tempahan anda."}
+      "rejected" ->
+        message = if reason do
+          "Tempahan #{type_name} anda telah ditolak. Sebab: #{reason}"
+        else
+          "Tempahan #{type_name} anda telah ditolak."
+        end
+        {"Tempahan Ditolak", message}
+    end
+  end
+
+  defp format_booking_type("vehicle"), do: "Kenderaan"
+  defp format_booking_type("catering"), do: "Katering"
+  defp format_booking_type("meeting_room"), do: "Bilik Mesyuarat"
+  defp format_booking_type("equipment"), do: "Peralatan"
+
+  defp format_datetime(datetime) do
+    Calendar.strftime(datetime, "%d/%m/%Y %H:%M")
+  end
+
+  defp format_date(date) do
+    Calendar.strftime(date, "%d/%m/%Y")
+  end
+
+
+
 
 end

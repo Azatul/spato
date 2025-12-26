@@ -2,6 +2,7 @@ defmodule SpatoWeb.CateringMenuLive.Index do
   use SpatoWeb, :live_view
   import SpatoWeb.Components.Sidebar
   import SpatoWeb.Components.Headbar
+  use SpatoWeb.NotificationMixin
 
   alias Spato.Assets
   alias Spato.Assets.CateringMenu
@@ -20,6 +21,8 @@ defmodule SpatoWeb.CateringMenuLive.Index do
      |> assign(:filter_type, "all")
      |> assign(:search_query, "")
      |> assign(:page, 1)
+     |> assign(:show_notifications, false)
+     |> load_notifications()
      |> stream(:catering_menus, Assets.list_catering_menus())}
   end
 
@@ -80,6 +83,17 @@ defmodule SpatoWeb.CateringMenuLive.Index do
   @impl true
   def handle_event("toggle_sidebar", _, socket), do: {:noreply, update(socket, :sidebar_open, &(!&1))}
 
+  # Notification events
+  @impl true
+  def handle_event("toggle_notifications", params, socket) do
+    handle_toggle_notifications(params, socket)
+  end
+
+  @impl true
+  def handle_event("read_notification", params, socket) do
+    handle_read_notification(params, socket)
+  end
+
   @impl true
   def handle_event("delete", %{"id" => id}, socket) do
     catering_menu = Assets.get_catering_menu!(id)
@@ -124,7 +138,7 @@ defmodule SpatoWeb.CateringMenuLive.Index do
       <div class="flex h-screen overflow-hidden">
       <.sidebar active_tab={@active_tab} current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar"/>
      <div class="flex flex-col flex-1">
-      <.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title={@page_title} />
+      <.headbar current_user={@current_user} open={@sidebar_open} toggle_event="toggle_sidebar" title={@page_title} notifications={@notifications} unread_count={@unread_count} show_notifications={@show_notifications} />
 
       <main class="flex-1 overflow-y-auto pt-20 p-6 transition-all duration-300 bg-gray-100">
       <section class="mb-4">
@@ -136,17 +150,18 @@ defmodule SpatoWeb.CateringMenuLive.Index do
                                       {"Tersedia", @stats.active},
                                       {"Tidak Tersedia", @stats.inactive}] do %>
 
-              <% number_color =
-                case label do
-                  "Jumlah Menu" -> "text-gray-700"
-                  "Tersedia" -> "text-green-500"
-                  "Tidak Tersedia" -> "text-red-500"
-                end %>
-
-              <div class="bg-white p-4 rounded-xl shadow-md flex flex-col justify-between h-30 transition-transform hover:scale-105">
+              <% card_colors = case label do
+                "Jumlah Menu" -> %{border: "border-purple-300", bg: "bg-purple-100", icon: "text-purple-500", icon_class: "fa-solid fa-utensils"}
+                "Tersedia" -> %{border: "border-teal-300", bg: "bg-teal-100", icon: "text-teal-500", icon_class: "fa-solid fa-check-circle"}
+                "Tidak Tersedia" -> %{border: "border-amber-300", bg: "bg-amber-100", icon: "text-amber-500", icon_class: "fa-solid fa-times-circle"}
+              end %>
+              <div class={"bg-white p-6 rounded-xl shadow-md flex justify-between items-center min-h-[130px] border-l-4 #{card_colors.border} transition-transform hover:scale-105"}>
                 <div>
-                  <p class="text-sm text-gray-500"><%= label %></p>
-                  <p class={"text-3xl font-bold mt-1 #{number_color}"}><%= value %></p>
+                  <h3 class="text-gray-600 text-sm font-semibold"><%= label %></h3>
+                  <p class="text-4xl font-bold text-gray-800 mt-2"><%= value %></p>
+                </div>
+                <div class={"#{card_colors.bg} p-3 rounded-full"}>
+                  <i class={"#{card_colors.icon_class} #{card_colors.icon} text-2xl"}></i>
                 </div>
               </div>
             <% end %>
